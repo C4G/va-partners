@@ -53,7 +53,7 @@ export default function HistoricalEvaluationPage(props) {
     let user = {};
     try {
       const beneficiary = await fetch(
-        `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/beneficiary?mrn=${props.mrn}`,
+        `${process.env.VERCEL_URL}/api/beneficiary?mrn=${props.mrn}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
