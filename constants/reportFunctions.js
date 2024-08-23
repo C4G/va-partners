@@ -157,7 +157,7 @@ function populateAhdHeaders(hospitals) {
     ahdSubHeader1.push(hospitals[i]);
     addEmptyElements(ahdSubHeader1, "", 1);
     ahdSubHeader2.push("Sessions");
-    ahdSubHeader2.push("Beneficiaries");
+    ahdSubHeader2.push("Unique Beneficiaries in each category (beneficiaries can appear in more than one category)");
   }
   addEmptyElements(ahdSubHeader1, "", 2);
 
@@ -179,6 +179,11 @@ function filterByDate(training, start, end) {
   );
 }
 
+const getDateWithTimezoneOffset = (date) => {
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - (offset >= 0 ? -offset : offset));
+};
+
 // Get the latest dispensed device from descending sorted CLVE data
 function getLatestDispensedDevice(sortedClveData, deviceType) {
   for (let clveRow of sortedClveData) {
@@ -191,7 +196,7 @@ function getLatestDispensedDevice(sortedClveData, deviceType) {
 // Returns common columns of all Excel sheets
 function getCommonData(beneficiary) {
   const commonData = {
-    "Date of Evaluation": new Date(beneficiary["dateOfBirth"]),
+    "Date of Evaluation": getDateWithTimezoneOffset(new Date(beneficiary["dateOfBirth"])),
     MRN: beneficiary["mrn"],
     "Name of the Patient": beneficiary["beneficiaryName"],
     Age: getAge(beneficiary["dateOfBirth"]),
@@ -246,7 +251,7 @@ function getBeneficiaryJson(commonData, beneficiary) {
 // Get CLVE Sheet data
 function getClveJson(commonData, clveData) {
   let clveJson = { ...commonData };
-  clveJson["Date of Evaluation"] = new Date(clveData["date"]);
+  clveJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(clveData["date"]));
   clveJson["Diagnosis"] = clveData["diagnosis"];
   clveJson["Acuity Notation"] =
     clveData["distanceVisualAcuityRE"].split(" ")[1]; // insert check for if [1] exists
@@ -295,7 +300,7 @@ function getClveJson(commonData, clveData) {
 // Get Vison Enhancement Sheet data
 function getVeJson(commonData, veData) {
   let veJson = { ...commonData };
-  veJson["Date of Evaluation"] = new Date(veData["date"]);
+  veJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(veData["date"]));
   veJson["Diagnosis"] = veData["Diagnosis"];
   veJson["Session Number"] = veData["sessionNumber"];
   veJson["MDVI"] = veData["MDVI"];
@@ -307,7 +312,7 @@ function getVeJson(commonData, veData) {
 // Get Low Vision Screening Sheet data
 function getLveJson(commonData, lveData) {
   let lveJson = { ...commonData };
-  lveJson["Date of Evaluation"] = new Date(lveData["date"]);
+  lveJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(lveData["date"]));
   lveJson["Diagnosis"] = lveData["diagnosis"];
   lveJson["Session Number"] = lveData["sessionNumber"];
   lveJson["MDVI"] = lveData["mdvi"];
@@ -336,7 +341,7 @@ function getLveJson(commonData, lveData) {
 // Get Training Sheet data
 function getTrainingJson(commonData, tData) {
   let tJson = { ...commonData };
-  tJson["Date of Evaluation"] = new Date(tData["date"]);
+  tJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(tData["date"]));
   tJson["Session Number"] = tData["sessionNumber"];
   tJson["Type of Training"] = tData["type"]; // has been referred in customizedReports. Please make necessary changes if this column name is changed.
   tJson["Sub Type"] = tData["subType"];
@@ -348,7 +353,7 @@ function getTrainingJson(commonData, tData) {
 // Get Counselling Education Sheet data
 function getCeJson(commonData, ceData) {
   let ceJson = { ...commonData };
-  ceJson["Date of Evaluation"] = new Date(ceData["date"]);
+  ceJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(ceData["date"]));
   ceJson["Session Number"] = ceData["sessionNumber"];
   ceJson["MDVI"] = ceData["MDVI"];
   ceJson["Vision Type"] = ceData["vision"];
@@ -556,7 +561,7 @@ function getAggregatedHospitalData(
   
   // Couseling and Dispensed Devices Only
   let counselingDevicesOnlyRow = {
-    Programs1: "Couseling and Dispensed Devices Only Only",
+    Programs1: "Couseling and Dispensed Devices Only",
     Programs2: "",
   };
   let counselingDevicesOnlyTotal = 0;
@@ -576,12 +581,6 @@ function getAggregatedHospitalData(
     Programs2: "",
   };
   let clveOnlyBeneficiariesTotal = 0;
-
-  // let otherRow = {
-  //   Programs1: "Other Combinations",
-  //   Programs2: ""
-  // };
-  // let otherRowTotal = 0;
 
 
   // Total beneficiaries
@@ -942,11 +941,6 @@ function getAggregatedHospitalData(
       + counselingDevicesOnlyRow[hospital.name + " Beneficiaries"]
       + trainingDevicesCounselingOnlyRow[hospital.name + " Beneficiaries"];
     totalBeneficiariesTotal += totalBeneficiariesRow[hospital.name + " Beneficiaries"];
-
-    // const hospitalBeneficiariesUniqueCount = filteredBeneficiaryData.filter((ben) => ben.hospital.name === hospital.name).length;
-    // otherRow[hospital.name + " Beneficiaries"] = hospitalBeneficiariesUniqueCount - totalBeneficiariesTotal;
-
-    // otherRowTotal += otherRow[hospital.name + " Beneficiaries"];
   }
 
   // Push totals of each row
@@ -1044,9 +1038,6 @@ function getAggregatedHospitalData(
     totalBeneficiariesRow["Number of Sessions"] = "";
     totalBeneficiariesRow["Number of Beneficiaries"] = totalBeneficiariesTotal;
 
-    // otherRow["Number of Sessions"] = "";
-    // otherRow["Number of Beneficiaries"] = otherRowTotal;
-
   }
   // Add rows to the aggregated hospital data
   aggregatedHospitalData.push(lveRow);
@@ -1057,33 +1048,39 @@ function getAggregatedHospitalData(
   aggregatedHospitalData.push(overallTrainingRow);
   aggregatedHospitalData.push(devicesRow);
   aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(screeningsOnlyRow); // 1st
-  aggregatedHospitalData.push(visionEnhancementOnlyRow); // 2nd
-  aggregatedHospitalData.push(clveOnlyRow); // 3rd
-  aggregatedHospitalData.push(screeningsAndCLVERow); // 4th
-  aggregatedHospitalData.push(visionCLVERow); // 5th
-  aggregatedHospitalData.push(screeningsVisionEnhancementRow); // 6th
-  aggregatedHospitalData.push(screeningsCLVEVisionRow); // 7th
+  aggregatedHospitalData.push({ Programs1: "Accurate Beneficiary Count (no double counting)", Programs2: "" });
+  aggregatedHospitalData.push(blankRow);
+  aggregatedHospitalData.push({ Programs1: "Evaluations Only: ", Programs2: "" });
+  aggregatedHospitalData.push(blankRow);
+  aggregatedHospitalData.push(screeningsOnlyRow);
+  aggregatedHospitalData.push(visionEnhancementOnlyRow);
+  aggregatedHospitalData.push(clveOnlyRow);
+  aggregatedHospitalData.push(screeningsAndCLVERow);
+  aggregatedHospitalData.push(visionCLVERow);
+  aggregatedHospitalData.push(screeningsVisionEnhancementRow);
+  aggregatedHospitalData.push(screeningsCLVEVisionRow);
+  aggregatedHospitalData.push(blankRow);
+  aggregatedHospitalData.push({ Programs1: "Services Only: ", Programs2: "" });
+  aggregatedHospitalData.push(blankRow);
+  aggregatedHospitalData.push(trainingOnlyRow);
+  aggregatedHospitalData.push(counselingOnlyRow);
+  aggregatedHospitalData.push(devicesOnlyRow);
+  aggregatedHospitalData.push(trainingCounselingOnlyRow);
+  aggregatedHospitalData.push(trainingDevicesOnlyRow);
+  aggregatedHospitalData.push(counselingDevicesOnlyRow);
+  aggregatedHospitalData.push(trainingDevicesCounselingOnlyRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push({ Programs1: "Evaluation(s) + Services: ", Programs2: "" });
   aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesRow); // 8th
-  aggregatedHospitalData.push(screeningsCLVEVisionCounselingRow); // 9th
-  aggregatedHospitalData.push(screeningsCLVEVisionTrainingRow); // 10th
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingRow); // 11th
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesTrainingRow); // 12th
-  aggregatedHospitalData.push(screeningsCLVEVisionCounselingTrainingRow); // 13th
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingTrainingRow); // 14th
-  aggregatedHospitalData.push(trainingOnlyRow); // 15th
-  aggregatedHospitalData.push(counselingOnlyRow); // 16th
-  aggregatedHospitalData.push(devicesOnlyRow); // 17th
-  aggregatedHospitalData.push(trainingCounselingOnlyRow); // 18th
-  aggregatedHospitalData.push(trainingDevicesOnlyRow); // 19th
-  aggregatedHospitalData.push(counselingDevicesOnlyRow); // 20th
-  aggregatedHospitalData.push(trainingDevicesCounselingOnlyRow); // 21st
+  aggregatedHospitalData.push(screeningsCLVEVisionDevicesRow);
+  aggregatedHospitalData.push(screeningsCLVEVisionCounselingRow);
+  aggregatedHospitalData.push(screeningsCLVEVisionTrainingRow);
+  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingRow);
+  aggregatedHospitalData.push(screeningsCLVEVisionDevicesTrainingRow);
+  aggregatedHospitalData.push(screeningsCLVEVisionCounselingTrainingRow);
+  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingTrainingRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push(totalBeneficiariesRow);
-  // aggregatedHospitalData.push(otherRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push(mdviRow);
 
