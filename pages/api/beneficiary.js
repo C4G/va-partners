@@ -60,33 +60,16 @@ export const readBeneficiaryOtherParam = async (otherParam) => {
         },
       },
     });
-    var hospitalId = [];
-    if (hospitalList != null && hospitalList.length > 0) {
-      hospitalList.forEach((hospital) => {
-        hospitalId.push(hospital.id);
-      });
-    }
-    const beneficiary = await prisma.beneficiary.findMany({
+
+    const hospitalIds = hospitalList.map(hospital => hospital.id);
+
+    const beneficiaries = await prisma.beneficiary.findMany({
       where: {
         OR: [
-          {
-            beneficiaryName: {
-              contains: otherParam,
-            },
-          },
-          {
-            hospitalId: { in: hospitalId },
-          },
-          {
-            mrn: {
-              contains: otherParam,
-            },
-          },
-          {
-            phoneNumber: {
-              contains: otherParam,
-            },
-          },
+          { beneficiaryName: { contains: otherParam } },
+          { hospitalId: { in: hospitalIds } },
+          { mrn: { contains: otherParam } },
+          { phoneNumber: { contains: otherParam } },
         ],
         deleted: false,
       },
@@ -102,7 +85,12 @@ export const readBeneficiaryOtherParam = async (otherParam) => {
         Training: true,
       },
     });
-    return beneficiary;
+
+    // Map the hospital name into the response for easier access in the frontend
+    return beneficiaries.map(beneficiary => ({
+      ...beneficiary,
+      hospitalName: beneficiary.hospital.name, // Add hospital name to each beneficiary
+    }));
   } catch (error) {
     console.log(error);
     return { error: "Couldn't read from db" };
