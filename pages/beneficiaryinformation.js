@@ -46,6 +46,7 @@ function RequiredFields(props) {
   const router = useRouter();
 
   const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
   const today = moment(new Date()).format("YYYY-MM-DD");
   const [beneficiaryNameVal, setBeneficiaryNameVal] = useState(
     props.beneficiaryName
@@ -57,6 +58,7 @@ function RequiredFields(props) {
   };
 
   async function submitInfo(e) {
+    setLoading(true);
     e.preventDefault();
     let mrn =
       document.getElementById("mrn") != null
@@ -170,6 +172,7 @@ function RequiredFields(props) {
     if (response.ok) {
       router.push("/user?mrn=" + mrn);
     } else {
+      setLoading(false);
       alert(
         "Beneficiary could not be added. MRN " + mrn + " already exists in the system."
       );
@@ -315,13 +318,14 @@ function RequiredFields(props) {
   } else {
     education = (
       <div>
-        <label htmlFor="education">Education</label>
+        <label htmlFor="education">Education{required()}</label>
         <input
           type="text"
           className="form-control"
           id="education"
           placeholder="Enter beneficiary's educational qualifications"
           autoComplete="off"
+          required
         />
       </div>
     );
@@ -333,13 +337,14 @@ function RequiredFields(props) {
   } else {
     occupation = (
       <div>
-        <label htmlFor="occupation">Occupation</label>
+        <label htmlFor="occupation">Occupation{required()}</label>
         <input
           type="text"
           className="form-control"
           id="occupation"
           placeholder="Enter beneficiary's occupation"
           autoComplete="off"
+          required
         />
       </div>
     );
@@ -351,13 +356,14 @@ function RequiredFields(props) {
   } else {
     districts = (
       <div>
-        <label htmlFor="districts">District</label>
+        <label htmlFor="districts">District{required()}</label>
         <input
           type="text"
           className="form-control"
           id="districts"
           placeholder="Enter beneficiary's district (location)"
           autoComplete="off"
+          required
         />
       </div>
     );
@@ -369,13 +375,14 @@ function RequiredFields(props) {
   } else {
     state = (
       <div>
-        <label htmlFor="state">State</label>
+        <label htmlFor="state">State{required()}</label>
         <input
           type="text"
           className="form-control"
           id="state"
           placeholder="Enter beneficiary's state (location)"
           autoComplete="off"
+          required
         />
       </div>
     );
@@ -425,9 +432,9 @@ function RequiredFields(props) {
   mDVI = (
     <div className="form-group">
       <label className="form-check-label" htmlFor="mDVI">
-        MDVI
+        MDVI{required()}
       </label>
-      <select className="form-select" id="mDVI">
+      <select className="form-select" id="mDVI" required>
         <option key="Yes" value="Yes">
           Yes
         </option>
@@ -527,6 +534,7 @@ function RequiredFields(props) {
             </div>
             <br />
             <button
+              disabled={loading}
               type="submit"
               className="btn btn-success border-0 btn-block"
             >

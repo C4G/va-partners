@@ -18,6 +18,7 @@ export default function NewEvaluationDashboard(props) {
   const trainingTypeList = props.trainingTypeList;
   const trainingSubTypeList = props.trainingSubTypeList;
 
+  const [loading, setLoading] = useState(false);
   const [mobileTrainingData, setMobileTrainingData] = useState([]);
   const [trainingData, setTrainingData] = useState([]);
   const [computerTrainingData, setComputerTrainingData] = useState([]);
@@ -70,6 +71,7 @@ export default function NewEvaluationDashboard(props) {
 
     // Handle response from the API
     if (!response.ok) {
+      setLoading(false);
       alert("An error occurred while saving data. Please try again.");
     }
   };
@@ -95,8 +97,10 @@ export default function NewEvaluationDashboard(props) {
     // Handle response from the API
     if (response.ok) {
       alert("Training data saved successfully!");
+      setLoading(false);
     } else {
       alert("An error occurred while saving data. Please try again.");
+      setLoading(false);
     }
     Router.reload();
   };
@@ -206,6 +210,8 @@ export default function NewEvaluationDashboard(props) {
                 ]}
                 api="comprehensiveLowVisionEvaluation"
                 allfields={true}
+                loading={loading}
+                onSubmit={setLoading}
               />
             )}
             {props.service === "Low_Vision_Screening" && (
@@ -227,6 +233,8 @@ export default function NewEvaluationDashboard(props) {
                 ]}
                 api="lowVisionEvaluation"
                 allfields={false}
+                loading={loading}
+                onSubmit={setLoading}
               />
             )}
             {props.service === "Vision_Enhancement" && (
@@ -242,6 +250,8 @@ export default function NewEvaluationDashboard(props) {
                 updateMDVIForBeneficiary={updateMDVIForBeneficiary}
                 mdviValue={props.user.mDVI}
                 subTypeList={null}
+                loading={loading}
+                onSubmit={setLoading}
               />
             )}
             {props.service === "Counselling_Education" && (
@@ -255,6 +265,8 @@ export default function NewEvaluationDashboard(props) {
                 typeList={counsellingTypeList}
                 mdvi={false}
                 subTypeList={null}
+                loading={loading}
+                onSubmit={setLoading}
               />
             )}
             {props.service === "Training" && (
@@ -268,6 +280,8 @@ export default function NewEvaluationDashboard(props) {
                 typeList={trainingTypeList}
                 mdvi={false}
                 subTypeList={trainingSubTypeList}
+                loading={loading}
+                onSubmit={setLoading}
               />
             )}
           </div>

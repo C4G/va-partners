@@ -7,4 +7,5 @@ export const diagnosisValues = [
   "Hereditary Eye Disease",
   "Neuro-ophthalmic Condition",
   "Other",
+  "No clear diagnosis",
 ];

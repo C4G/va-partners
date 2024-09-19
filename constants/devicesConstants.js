@@ -111,6 +111,7 @@ export const nonOpticalDevicesIndices = [0, 16, 29, 36, 51, 52];
 export const electronicDevices = [
   // Electronic Devices
   "Smart vision glasses",
+  "Smartphones",
   "Portable Digital magnifiers 3.5 inch",
   "Portable Digital magnifiers 4 inch",
   "Portable Digital Magnifiers 5 inch",

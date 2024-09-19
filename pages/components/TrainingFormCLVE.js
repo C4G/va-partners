@@ -45,6 +45,8 @@ const TrainingFormCLVE = ({
   title,
   api,
   allfields,
+  loading,
+  onSubmit,
 }) => {
   const ITEM_HEIGHT = 48;
   const ITEM_PADDING_TOP = 8;
@@ -100,7 +102,7 @@ const TrainingFormCLVE = ({
       alert('Please complete all required fields!');
       return;
     }
-    console.log(formData);
+    onSubmit(true);
     const customDataDistance = customFieldsDistance.reduce((acc, field) => {
       if(formData[field] === otherField) {
         acc[field] = formData[field];
@@ -624,9 +626,10 @@ const TrainingFormCLVE = ({
           <Row>
             <Col>
               <Form.Group controlId="date">
-                <Form.Label>Date</Form.Label>
+                <Form.Label>Date{ required() }</Form.Label>
                 <Form.Control
                   type="date"
+                  required
                   value={moment(formData["date"]).format("YYYY-MM-DD")}
                   onChange={(e) => updateFormData(e, "date")}
                 />
@@ -648,9 +651,10 @@ const TrainingFormCLVE = ({
         )}
         {section === "vision_evaluation" && (
           <Form.Group controlId="unit-distance">
-            <Form.Label>Select Distance metric:</Form.Label>
+            <Form.Label>Select Distance metric:{ required() }</Form.Label>
             <Form.Control
               as="select"
+              required
               value={formData["unitDistance"]}
               onChange={changeDvValues}
             >
@@ -667,8 +671,9 @@ const TrainingFormCLVE = ({
               customFieldsDistance.map((field) => (
                 <Col key={field}>
                   <Form.Group controlId={field} key={field}>
-                    <Form.Label>{field}</Form.Label>
+                    <Form.Label>{field}{ required() }</Form.Label>
                     <Form.Control
+                      required
                       as="select"
                       value={formData[field]}
                       onChange={(e) => updateFormData(e, field)}
@@ -682,9 +687,10 @@ const TrainingFormCLVE = ({
         )}
         {section === "vision_evaluation" && (
           <Form.Group controlId="unit-near">
-            <Form.Label>Select Near metric:</Form.Label>
+            <Form.Label>Select Near metric:{ required() }</Form.Label>
             <Form.Control
               as="select"
+              required
               value={formData["unitNear"]}
               onChange={changeNvValues}
             >
@@ -702,9 +708,10 @@ const TrainingFormCLVE = ({
               customFieldsNear.map((field) => (
                 <Col key={field}>
                   <Form.Group controlId={field} key={field}>
-                    <Form.Label>{field}</Form.Label>
+                    <Form.Label>{field}{ required() }</Form.Label>
                     <Form.Control
                       as="select"
+                      required
                       value={formData[field]}
                       onChange={(e) => {
                         updateFormData(e, field);
@@ -767,8 +774,9 @@ const TrainingFormCLVE = ({
         {section === "spectacle" && allfields && (
           <div>
             <Form.Group controlId="dispensedDateSpectacle">
-              <Form.Label>Dispensed Date Spectacle</Form.Label>
+              <Form.Label>Dispensed Date Spectacle{required()}</Form.Label>
               <Form.Control
+                required
                 type="date"
                 value={moment(formData["dispensedDateSpectacle"]).format(
                   "YYYY-MM-DD"
@@ -779,9 +787,10 @@ const TrainingFormCLVE = ({
             <Row>
               <Col>
                 <Form.Group controlId="costSpectacle">
-                  <Form.Label>Cost Spectacle</Form.Label>
+                  <Form.Label>Cost Spectacle{required()}</Form.Label>
                   <Form.Control
                     type="number"
+                    required
                     min={0}
                     autoComplete="off"
                     value={formData["costSpectacle"]}
@@ -791,9 +800,10 @@ const TrainingFormCLVE = ({
               </Col>
               <Col>
                 <Form.Group controlId="costToBeneficiarySpectacle">
-                  <Form.Label>Cost to Beneficiary Spectacle</Form.Label>
+                  <Form.Label>Cost to Beneficiary Spectacle{required()}</Form.Label>
                   <Form.Control
                     type="number"
+                    required
                     min={0}
                     autoComplete="off"
                     value={formData["costToBeneficiarySpectacle"]}
@@ -808,11 +818,12 @@ const TrainingFormCLVE = ({
               <Col>
                 <Row>
                   <Form.Group controlId="dispensedSpectacle">
-                    <Form.Label>Dispensed Spectacle</Form.Label>
+                    <Form.Label>Dispensed Spectacle{required()}</Form.Label>
                   </Form.Group>
                 </Row>
                 <FormControl fullWidth size="small">
                   <Select
+                    required
                     value={devices.dispensedSpectacle}
                     onChange={(e) => {
                       handleMultiSelectChange(e, "dispensedSpectacle");
@@ -827,9 +838,10 @@ const TrainingFormCLVE = ({
               </Col>
               <Col>
                 <Form.Group controlId="trainingGivenSpectacle">
-                  <Form.Label>Training Given Spectacle</Form.Label>
+                  <Form.Label>Training Given Spectacle{required()}</Form.Label>
                   <Form.Control
                     as="select"
+                    required
                     value={formData["trainingGivenSpectacle"]}
                     onChange={(e) =>
                       updateFormData(e, "trainingGivenSpectacle")
@@ -1344,6 +1356,7 @@ const TrainingFormCLVE = ({
           <div>
             <br />
             <Button
+              disabled={loading}
               className="btn btn-success border-0 btn-block"
               type="submit"
             >
