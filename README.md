@@ -5,19 +5,7 @@ with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/
 
 ## Getting Started
 
-Start the mysql server
-
-```
-docker compose up -d --force-recreate
-```
-
-Migrate and seed the data
-
-```
-npx prisma migrate dev
-```
-
-First, run the development server:
+Run the app locally:
 
 ```bash
 npm run dev
@@ -28,6 +16,40 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Local Development
+
+Run commands from root directory
+
+Start a local mysql server container
+
+```
+docker compose up -d --force-recreate
+```
+
+Update .env DATABASE_URL from prod to local
+
+DATABASE_URL="mysql://root:root@localhost:3306/vision"
+
+Add yourself as User with relevant privledges to seed.js
+
+Migrate/apply schema and seed mock records into database
+
+```
+npx prisma migrate dev
+```
+
+Connect to mysql server to verify migration and seed and test API changes.
+
+docker exec -it vision-aid-prototype-v1-db-1 mysql -u root -p
+
+Enter "root" when prompted for password.
+
+Helpful mysql CLI commands:
+use vision;
+show tables;
+describe <table name>;
+<SQL queries>;
 
 You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
 
