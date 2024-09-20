@@ -32,6 +32,18 @@ async function main() {
     })
     await prisma.user.create({
         data: {
+            email: "bsy2106@columbia.edu",
+            admin: {
+                create: {}
+            },
+        },
+        include: {
+            admin: true,
+            hospitalRole: true
+        },
+    })
+    await prisma.user.create({
+        data: {
             email: "visionaidp11ad@gmail.com",
             admin: {
                 create: {}

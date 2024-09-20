@@ -14,6 +14,8 @@ const TrainingForm = ({
   updateMDVIForBeneficiary,
   mdviValue = "No",
   subTypeList,
+  loading,
+  onSubmit,
 }) => {
   if (mdviValue === null || mdviValue === undefined || mdviValue === "")
     mdviValue = "No";
@@ -21,6 +23,7 @@ const TrainingForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    onSubmit(true);
     const customData = customFields.reduce((acc, field) => {
       acc[field] = e.target[field].value;
       return acc;
@@ -207,7 +210,7 @@ const TrainingForm = ({
             <Form.Control as="textarea" rows={3} autoComplete="off" />
           </Form.Group>
           <br />
-          <Button className="btn btn-success border-0 btn-block" type="submit">
+          <Button disabled={loading} className="btn btn-success border-0 btn-block" type="submit">
             {submitButtonTest}
           </Button>
         </Form>
