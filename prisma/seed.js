@@ -1,4 +1,5 @@
 const {PrismaClient} = require('@prisma/client')
+const { data } = require('autoprefixer')
 const prisma = new PrismaClient()
 
 async function main() {
@@ -16,6 +17,11 @@ async function main() {
         },
         include: {
             hospitalRole: true,
+        },
+    })
+    await prisma.schemaChange.create({
+        data: {
+            email: "testemail@ngmail.com"
         },
     })
     await prisma.user.create({
