@@ -20,8 +20,8 @@ model User {
 }
 
 model SchemaChange {
-  id             Int            @id @default(autoincrement())
-  email          String         @unique
+  id    Int    @id @default(autoincrement())
+  email String @unique
 }
 
 model Admin {
@@ -190,10 +190,10 @@ model Low_Vision_Evaluation {
 
 model Comprehensive_Low_Vision_Evaluation {
   beneficiaryId               String
-  distanceVisualAcuityRE      String
-  distanceVisualAcuityLE      String
-  nearVisualAcuityRE          String
-  nearVisualAcuityLE          String
+  distanceVisualAcuityRE      String?
+  distanceVisualAcuityLE      String?
+  nearVisualAcuityRE          String?
+  nearVisualAcuityLE          String?
   extraInformation            String      @db.Text
   id                          Int         @id @default(autoincrement())
   distanceBinocularVisionBE   String
