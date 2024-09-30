@@ -10,6 +10,15 @@ CREATE TABLE `User` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `SchemaChange` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `SchemaChange_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Admin` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userId` INTEGER NOT NULL,
@@ -42,7 +51,6 @@ CREATE TABLE `HospitalRole` (
 CREATE TABLE `Beneficiary` (
     `mrn` VARCHAR(191) NOT NULL,
     `beneficiaryName` VARCHAR(191) NOT NULL,
-    `hospitalId` INTEGER NOT NULL,
     `dateOfBirth` DATETIME(3) NOT NULL,
     `gender` VARCHAR(191) NOT NULL,
     `phoneNumber` VARCHAR(191) NULL,
@@ -51,6 +59,7 @@ CREATE TABLE `Beneficiary` (
     `districts` VARCHAR(191) NULL,
     `state` VARCHAR(191) NULL,
     `diagnosis` VARCHAR(191) NULL,
+    `hospitalId` INTEGER NOT NULL,
     `vision` VARCHAR(191) NULL,
     `mDVI` VARCHAR(191) NULL,
     `extraInformation` TEXT NOT NULL,
@@ -84,9 +93,9 @@ CREATE TABLE `Computer_Training` (
     `beneficiaryId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
+    `extraInformation` TEXT NOT NULL,
     `visionType` VARCHAR(191) NULL,
     `typeOfTraining` VARCHAR(191) NULL,
-    `extraInformation` TEXT NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -108,9 +117,9 @@ CREATE TABLE `Mobile_Training` (
     `beneficiaryId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
+    `extraInformation` TEXT NOT NULL,
     `vision` VARCHAR(191) NULL,
     `typeOfTraining` VARCHAR(191) NULL,
-    `extraInformation` TEXT NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -132,9 +141,9 @@ CREATE TABLE `Orientation_Mobility_Training` (
     `beneficiaryId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
+    `extraInformation` TEXT NOT NULL,
     `vision` VARCHAR(191) NULL,
     `typeOfTraining` VARCHAR(191) NULL,
-    `extraInformation` TEXT NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -156,9 +165,9 @@ CREATE TABLE `Vision_Enhancement` (
     `beneficiaryId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
+    `extraInformation` TEXT NOT NULL,
     `Diagnosis` VARCHAR(191) NULL,
     `MDVI` VARCHAR(191) NULL,
-    `extraInformation` TEXT NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -179,7 +188,6 @@ CREATE TABLE `Low_Vision_Evaluation` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `beneficiaryId` VARCHAR(191) NOT NULL,
     `diagnosis` VARCHAR(191) NULL,
-    `mdvi` VARCHAR(191) NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
     `distanceVisualAcuityRE` VARCHAR(191) NULL,
@@ -188,60 +196,61 @@ CREATE TABLE `Low_Vision_Evaluation` (
     `nearVisualAcuityRE` VARCHAR(191) NULL,
     `nearVisualAcuityLE` VARCHAR(191) NULL,
     `nearBinocularVisionBE` VARCHAR(191) NULL,
-    `recommendationSpectacle` VARCHAR(191) NULL,
-    `recommendationOptical` VARCHAR(191) NULL,
-    `recommendationNonOptical` VARCHAR(191) NULL,
-    `recommendationElectronic` VARCHAR(191) NULL,
     `extraInformation` TEXT NOT NULL,
+    `recommendationElectronic` VARCHAR(191) NULL,
+    `recommendationNonOptical` VARCHAR(191) NULL,
+    `recommendationOptical` VARCHAR(191) NULL,
+    `mdvi` VARCHAR(191) NULL,
+    `recommendationSpectacle` VARCHAR(191) NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Comprehensive_Low_Vision_Evaluation` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
     `beneficiaryId` VARCHAR(191) NOT NULL,
-    `diagnosis` VARCHAR(191) NULL,
-    `mdvi` VARCHAR(191) NULL,
+    `distanceVisualAcuityRE` VARCHAR(191) NULL,
+    `distanceVisualAcuityLE` VARCHAR(191) NULL,
+    `nearVisualAcuityRE` VARCHAR(191) NULL,
+    `nearVisualAcuityLE` VARCHAR(191) NULL,
+    `extraInformation` TEXT NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `distanceBinocularVisionBE` VARCHAR(191) NOT NULL,
+    `nearBinocularVisionBE` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
-    `distanceVisualAcuityRE` VARCHAR(191) NOT NULL,
-    `distanceVisualAcuityLE` VARCHAR(191) NOT NULL,
-    `distanceBinocularVisionBE` VARCHAR(191) NOT NULL,
-    `nearVisualAcuityRE` VARCHAR(191) NOT NULL,
-    `nearVisualAcuityLE` VARCHAR(191) NOT NULL,
-    `nearBinocularVisionBE` VARCHAR(191) NOT NULL,
-    `recommendationSpectacle` VARCHAR(191) NULL,
-    `dispensedSpectacle` VARCHAR(191) NULL,
-    `dispensedDateSpectacle` DATETIME(3) NULL,
+    `diagnosis` VARCHAR(191) NULL,
+    `colourVisionLE` VARCHAR(191) NULL,
+    `colourVisionRE` VARCHAR(191) NULL,
+    `contrastSensitivityLE` VARCHAR(191) NULL,
+    `contrastSensitivityRE` VARCHAR(191) NULL,
+    `visualFieldsLE` VARCHAR(191) NULL,
+    `visualFieldsRE` VARCHAR(191) NULL,
+    `costElectronic` INTEGER NULL,
+    `costNonOptical` INTEGER NULL,
+    `costOptical` INTEGER NULL,
+    `costToBeneficiaryElectronic` INTEGER NULL,
+    `costToBeneficiaryNonOptical` INTEGER NULL,
+    `costToBeneficiaryOptical` INTEGER NULL,
+    `dispensedDateElectronic` DATETIME(3) NULL,
+    `dispensedDateNonOptical` DATETIME(3) NULL,
+    `dispensedDateOptical` DATETIME(3) NULL,
+    `dispensedElectronic` VARCHAR(191) NULL,
+    `dispensedNonOptical` VARCHAR(191) NULL,
+    `dispensedOptical` VARCHAR(191) NULL,
+    `recommendationElectronic` VARCHAR(191) NULL,
+    `recommendationNonOptical` VARCHAR(191) NULL,
+    `recommendationOptical` VARCHAR(191) NULL,
+    `mdvi` VARCHAR(191) NULL,
     `costSpectacle` INTEGER NULL,
     `costToBeneficiarySpectacle` INTEGER NULL,
-    `trainingGivenSpectacle` VARCHAR(191) NULL,
-    `recommendationOptical` VARCHAR(191) NULL,
-    `dispensedOptical` VARCHAR(191) NULL,
-    `dispensedDateOptical` DATETIME(3) NULL,
-    `costOptical` INTEGER NULL,
-    `costToBeneficiaryOptical` INTEGER NULL,
-    `trainingGivenOptical` VARCHAR(191) NULL,
-    `recommendationNonOptical` VARCHAR(191) NULL,
-    `dispensedNonOptical` VARCHAR(191) NULL,
-    `dispensedDateNonOptical` DATETIME(3) NULL,
-    `costNonOptical` INTEGER NULL,
-    `costToBeneficiaryNonOptical` INTEGER NULL,
-    `trainingGivenNonOptical` VARCHAR(191) NULL,
-    `recommendationElectronic` VARCHAR(191) NULL,
-    `dispensedElectronic` VARCHAR(191) NULL,
-    `dispensedDateElectronic` DATETIME(3) NULL,
-    `costElectronic` INTEGER NULL,
-    `costToBeneficiaryElectronic` INTEGER NULL,
+    `dispensedDateSpectacle` DATETIME(3) NULL,
+    `dispensedSpectacle` VARCHAR(191) NULL,
+    `recommendationSpectacle` VARCHAR(191) NULL,
     `trainingGivenElectronic` VARCHAR(191) NULL,
-    `colourVisionRE` VARCHAR(191) NULL,
-    `colourVisionLE` VARCHAR(191) NULL,
-    `contrastSensitivityRE` VARCHAR(191) NULL,
-    `contrastSensitivityLE` VARCHAR(191) NULL,
-    `visualFieldsRE` VARCHAR(191) NULL,
-    `visualFieldsLE` VARCHAR(191) NULL,
-    `extraInformation` TEXT NOT NULL,
+    `trainingGivenNonOptical` VARCHAR(191) NULL,
+    `trainingGivenOptical` VARCHAR(191) NULL,
+    `trainingGivenSpectacle` VARCHAR(191) NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -261,9 +270,9 @@ CREATE TABLE `Training` (
     `beneficiaryId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
+    `extraInformation` TEXT NOT NULL,
     `type` VARCHAR(191) NULL,
     `subType` VARCHAR(191) NULL,
-    `extraInformation` TEXT NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -280,8 +289,8 @@ CREATE TABLE `Training_Type` (
 -- CreateTable
 CREATE TABLE `Training_Sub_Type` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `trainingTypeId` INTEGER NOT NULL,
     `value` VARCHAR(191) NOT NULL,
+    `trainingTypeId` INTEGER NOT NULL,
 
     UNIQUE INDEX `Training_Sub_Type_trainingTypeId_value_key`(`trainingTypeId`, `value`),
     PRIMARY KEY (`id`)
@@ -302,11 +311,11 @@ CREATE TABLE `Counselling_Education` (
     `beneficiaryId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NULL,
     `sessionNumber` INTEGER NULL,
+    `typeCounselling` VARCHAR(191) NULL,
+    `extraInformation` TEXT NOT NULL,
+    `MDVI` VARCHAR(191) NULL,
     `vision` VARCHAR(191) NULL,
     `type` VARCHAR(191) NULL,
-    `typeCounselling` VARCHAR(191) NULL,
-    `MDVI` VARCHAR(191) NULL,
-    `extraInformation` TEXT NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -369,9 +378,9 @@ CREATE TABLE `School_Screening` (
 -- CreateTable
 CREATE TABLE `Landing_Page` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userId` INTEGER NOT NULL,
     `creationDate` DATETIME(3) NULL,
     `content` VARCHAR(191) NULL,
-    `userId` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -386,4 +395,3 @@ CREATE TABLE `Feedback` (
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
