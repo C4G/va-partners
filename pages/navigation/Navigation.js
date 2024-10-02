@@ -106,19 +106,6 @@ function Navigation(props) {
                   </Link>
                 </li>
               )}
-              {user && role != "invalid" && (
-                <li className="nav-item p-4">
-                  <Link href="/dashboard" legacyBehavior>
-                    <a
-                      className={`nav-link custom-link ${
-                        router.pathname === "/dashboard" ? "active" : ""
-                      }`}
-                    >
-                      Dashboard
-                    </a>
-                  </Link>
-                </li>
-              )}
             </ul>
           </div>
         </div>
