@@ -1,13 +1,13 @@
-import Navigation from "../navigation/Navigation";
-import Layout from './layout';
+import Navigation from "./navigation/Navigation";
+import Layout from './components/layout';
 import Head from "next/head";
 import { getSession } from "next-auth/react";
-import { readUser } from "../api/user";
+import { readUser } from "./api/user";
 import { AgGridReact } from 'ag-grid-react'; 
 import "ag-grid-community/styles/ag-grid.css"; 
 import "ag-grid-community/styles/ag-theme-quartz.css"; 
 import { useState, useEffect, useRef } from "react";
-import { readBeneficiaryOtherParam } from "../api/beneficiary";
+import { readBeneficiaryOtherParam } from "./api/beneficiary";
 import { FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Tabs, Tab, Box, TextField } from "@mui/material";
 import * as agCharts from 'ag-charts-community';
 
@@ -442,7 +442,7 @@ export async function getServerSideProps(ctx) {
 }
 
 // React Component
-export default function Dashboard(props) {
+export default function FeedbackPage(props) {
   const globalFieldOptions = { filter: true };
   const pagination = true;
   const paginationPageSize = 100;
@@ -464,11 +464,11 @@ export default function Dashboard(props) {
 
 
   useEffect(() => {
-    if (props.hospitals?.length > 0) {
+    if (props.hospitals.length > 0) {
       // Auto-select the first hospital from the list
       setSelectedHospitals([props.hospitals[0]]);
       // Filter data based on the first hospital
-      const filteredData = props.users?.filter(user => user.hospitalName === props.hospitals[0]);
+      const filteredData = props.users.filter(user => user.hospitalName === props.hospitals[0]);
       setRowData(filteredData);
       updateGenderData(filteredData);
       updateAgeData(filteredData);
@@ -501,8 +501,8 @@ export default function Dashboard(props) {
 
   // Update gender data for the bar chart
   const updateGenderData = (data) => {
-    const maleCount = data?.filter(user => user.gender.toLowerCase() === 'male' || user.gender.toLowerCase() === 'm').length;
-    const femaleCount = data?.filter(user => user.gender.toLowerCase() === 'female' || user.gender.toLowerCase() === 'f').length;
+    const maleCount = data.filter(user => user.gender.toLowerCase() === 'male' || user.gender.toLowerCase() === 'm').length;
+    const femaleCount = data.filter(user => user.gender.toLowerCase() === 'female' || user.gender.toLowerCase() === 'f').length;
 
     const chartData = [
       { category: "Male", value: maleCount },
@@ -534,7 +534,7 @@ export default function Dashboard(props) {
       "66+": 0
     };
 
-    data?.forEach(user => {
+    data.forEach(user => {
       const age = calculateAge(user.dateOfBirth);
       if (age <= 18) ageGroups["0-18"]++;
       else if (age <= 35) ageGroups["19-35"]++;
@@ -553,8 +553,8 @@ export default function Dashboard(props) {
 
   // Update mDVI data for the bar chart
   const updateMVDIData = (data) => {
-    const yesCount = data?.filter(user => user.mDVI && user.mDVI.toLowerCase() === 'yes').length;
-    const noCount = data?.filter(user => user.mDVI && user.mDVI.toLowerCase() === 'no').length;
+    const yesCount = data.filter(user => user.mDVI && user.mDVI.toLowerCase() === 'yes').length;
+    const noCount = data.filter(user => user.mDVI && user.mDVI.toLowerCase() === 'no').length;
 
     const chartData = [
       { category: "Yes", value: yesCount },
@@ -669,12 +669,12 @@ const renderBarChart = (chartRef, chartData, title, containerId) => {
   ]);
 
   return (
-    <div style={{ padding: '1rem' }}>
-      {/* <Navigation user={props.user} /> */}
-      {/* <Head>
+    <Layout>
+      <Navigation user={props.user} />
+      <Head>
         <title>Dashboard</title>
-      </Head> */}
-      {/* <div className="container-flex" style={{ padding: '1rem' }}> */}
+      </Head>
+      <div className="container-flex" style={{ padding: '1rem' }}>
       {/* Filter row: Hospital Filter and Date Range Filter */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
         {/* Hospital Filter */}
@@ -686,7 +686,7 @@ const renderBarChart = (chartRef, chartData, title, containerId) => {
             onChange={handleHospitalChange}
             renderValue={(selected) => selected.join(', ')}
           >
-            {props.hospitals?.map((hospital) => (
+            {props.hospitals.map((hospital) => (
               <MenuItem key={hospital} value={hospital}>
                 <Checkbox checked={selectedHospitals.indexOf(hospital) > -1} />
                 <ListItemText primary={hospital} />
@@ -743,9 +743,9 @@ const renderBarChart = (chartRef, chartData, title, containerId) => {
       <Box hidden={tabIndex !== 4}>
         <CounsellingEducationTable users={props.users} selectedHospitals={selectedHospitals} startDate={startDate} endDate={endDate} />
       </Box>
-    {/* </div> */}
+    </div>
 
-        {/* <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ width: '30%' }}>
             <div id="genderChartContainer" style={{ width: "100%", height: "400px" }}></div>
           </div>
@@ -755,8 +755,9 @@ const renderBarChart = (chartRef, chartData, title, containerId) => {
           <div style={{ width: '30%' }}>
             <div id="mDVIChartContainer" style={{ width: "100%", height: "400px" }}></div>
           </div>
-        </div> */}
+        </div>
       {/* </div> */}
-    </div>
+    </Layout>
   );
-  }
+}
+

@@ -1,6 +1,4 @@
 import { readUser, allHospitalRoles } from "./api/user";
-import { readBeneficiaryOtherParam } from "./api/beneficiary";
-import Dashboard from "./components/dashboard"
 import { getSession } from "next-auth/react";
 import { Chart as ChartJS } from "chart.js/auto";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -8,7 +6,7 @@ import { Bar } from "react-chartjs-2";
 import {
   getSummaryForAllHospitals,
 } from "@/pages/api/hospital";
-import { Button,Container } from "react-bootstrap";
+import { Container } from "react-bootstrap";
 import Navigation from "./navigation/Navigation";
 import Layout from './components/layout';
 import moment from "moment";
@@ -28,8 +26,6 @@ import {
   filterTrainingSummaryByDateRange,
 } from "@/constants/reportFunctions";
 
-
-
 // This function is called to load data from the server side.
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
@@ -40,10 +36,6 @@ export async function getServerSideProps(ctx) {
         destination: "/",
         permanent: false,
       },
-      props: {
-        user: null,
-        users: [],
-      }
     };
   }
 
@@ -68,15 +60,12 @@ export async function getServerSideProps(ctx) {
 
   // We finally return all the data to the page
   const summary = await getSummaryForAllHospitals(isAdmin, hospitalIds);
-  let users = await readBeneficiaryOtherParam();
-  const hospitals = [...new Set(users.map(user => user.hospitalName))];
+
   return {
     props: {
       user: JSON.parse(JSON.stringify(user)),
       summary: JSON.parse(JSON.stringify(summary)),
-      hospitals,
       error: null,
-      users: JSON.parse(JSON.stringify(users)),
     },
   };
 }
@@ -475,14 +464,10 @@ function buildRecDevicesBreakdownGraph(data, breakdownType) {
   return chartData;
 }
 
-
-
 export default function Summary({
   user,
-  users,
   summary,
   error,
-  hospitals
 }) {
   // Downloaded reports reference sheet data
   // TODO: this hardcoded information will be fetched from database in the future
@@ -527,18 +512,18 @@ export default function Summary({
     moment().subtract(1, "year").toDate()
   );
   const [endDate, setEndDate] = useState(moment().toDate());
-  const [masterTabIndex, setMasterTabIndex] = useState(0); // State to manage the master tab (Table/Graph)
+
   const [selectedHospitals, setSelectedHospitals] = useState([]);
   const [selectedHospitalNames, setSelectedHospitalNames] = useState([]);
 
   const router = useRouter();
 
   useEffect(() => {
-    setSelectedHospitals(summary?.map((item) => item.id));
+    setSelectedHospitals(summary.map((item) => item.id));
   }, [summary]);
 
   useEffect(() => {
-    setSelectedHospitalNames(summary?.map((item) => item.name));
+    setSelectedHospitalNames(summary.map((item) => item.name));
   }, [summary]);
 
   const handleMultiSelectChange = (e) => {
@@ -631,8 +616,6 @@ export default function Summary({
     const filteredBeneficiaryData = dateFilteredBeneficiaryData.filter((item) =>
       selectedHospitals.includes(item.hospital.id)
     );
-
-  
 
     const {
       beneficiaryData,
@@ -827,169 +810,130 @@ export default function Summary({
   const enableGraphs = (user.admin || user.hospitalRole[0].admin) ||
     (user.hospitalRole.length != 0 && !user.hospitalRole[0].admin);
 
-
-  
-return (
-  <Layout>
+  return (
+    <Layout>
     <div className="content">
       <Navigation user={user} />
       <Container className="p-3">
         <h1 className="text-center mt-4 mb-4">Visualization and Reports</h1>
-        
-        {/* Buttons for additional actions */}
         <div className="row">
-          <div className="col-md-2">
+          <div className="col-md-2 ">
             {(user.admin || user.hospitalRole[0].admin) && (
-              <Button
+              <button
                 onClick={() => router.push("/customizedReport")}
-                variant="success"
-                className="btn-block"
+                className="btn btn-success border-0 btn-block"
               >
                 More Customization
-              </Button>
+              </button>
             )}
           </div>
           {(user.admin || user.hospitalRole[0].admin) && (
             <div className="offset-md-8 col-md-2">
-              <Button
-                className="btn-block"
-                variant="success"
+              <button
+                className="btn btn-success border-0 btn-block text-align-right"
                 onClick={downloadFilteredReport}
               >
-                <Download /> Download Report
-              </Button>
+                <Download></Download> Download Report
+              </button>
             </div>
           )}
         </div>
-
         <br />
-
-        {/* Master Tab - Toggle between Table and Graphs */}
-        <Tabs
-          value={masterTabIndex}
-          onChange={(event, newValue) => setMasterTabIndex(newValue)}
-          indicatorColor="primary"
-          textColor="primary"
-          centered
-        >
-          <Tab label="Table" />
-          <Tab label="Graphs" />
-        </Tabs>
-
-        {/* Render Table or Graph based on selected Master Tab */}
-        {masterTabIndex === 0 ? (
-          <div>
-            {/* Table rendering logic here */}
-            {/* <h2>Table View</h2>
-            <p>Render the data table here.</p> */}
-            <Dashboard hospitals={hospitals} users={users} user={user}/>
-            {/* You can add table components or data table rendering logic */}
-          </div>
-        ) : (
-          <div>
-            {/* Graph Customization */}
-            <div className="row">
-              <div className="col-md-3">
-                <GraphCustomizer
-                  user={user}
-                  summary={summary}
-                  selectedHospitals={selectedHospitalNames}
-                  handleHospitalSelection={handleMultiSelectChange}
-                  startDate={startDate}
-                  handleStartDateChange={(e) => setStartDate(moment(e.target.value).toDate())}
-                  endDate={endDate}
-                  handleEndDateChange={(e) => setEndDate(moment(e.target.value).toDate())}
-                  handleAllSelect={handleAllSelect}
-                />
-              </div>
-
-              <div className="col-md-9">
-                <Paper>
-                  {/* Sub-Tabs for different Graphs */}
-                  <Tabs
-                    value={activeGraphTab}
-                    onChange={(event, newValue) => setActiveGraphTab(newValue)}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    centered
-                  >
-                    <Tab label="Beneficiaries" />
-                    <Tab label="Activities" />
-                    <Tab label="Dispensed Devices" />
-                    <Tab label="Recommended Devices" />
-                  </Tabs>
-
-                  {/* Beneficiary Graph Sub-Tab */}
-                  {activeGraphTab === 0 && (
-                    <Tabs
-                      value={activeBeneficiaryGraphTab}
-                      onChange={(event, newValue) => setActiveBeneficiaryGraphTab(newValue)}
-                      indicatorColor="primary"
-                      textColor="primary"
-                      centered
-                    >
-                      <Tab label="All Beneficiaries" />
-                    </Tabs>
-                  )}
-
-                  {/* Activities Graph Sub-Tab */}
-                  {activeGraphTab === 1 && (
-                    <Tabs
-                      value={activeActivitiesGraphTab}
-                      onChange={(event, newValue) => setActiveActivitiesGraphTab(newValue)}
-                      indicatorColor="primary"
-                      textColor="primary"
-                      centered
-                    >
-                      <Tab label="All Activities" />
-                      <Tab label="Training Activities" />
-                      <Tab label="Counselling Activities" />
-                    </Tabs>
-                  )}
-
-                  {/* Dispensed Devices Graph Sub-Tab */}
-                  {activeGraphTab === 2 && (
-                    <Tabs
-                      value={activeDevicesGraphTab}
-                      onChange={(event, newValue) => setActiveDevicesGraphTab(newValue)}
-                      indicatorColor="primary"
-                      textColor="primary"
-                      centered
-                    >
-                      <Tab label="All Devices" />
-                      <Tab label="Electronic" />
-                      <Tab label="Spectacle" />
-                      <Tab label="Optical" />
-                      <Tab label="Non-Optical" />
-                    </Tabs>
-                  )}
-
-                  {/* Recommended Devices Graph Sub-Tab */}
-                  {activeGraphTab === 3 && (
-                    <Tabs
-                      value={activeRecDevicesGraphTab}
-                      onChange={(event, newValue) => setActiveRecDevicesGraphTab(newValue)}
-                      indicatorColor="primary"
-                      textColor="primary"
-                      centered
-                    >
-                      <Tab label="All Devices" />
-                      <Tab label="Electronic" />
-                      <Tab label="Spectacle" />
-                      <Tab label="Optical" />
-                      <Tab label="Non-Optical" />
-                    </Tabs>
-                  )}
-
-                  {/* Render the selected graph */}
-                  {renderGraph()}
-                </Paper>
-              </div>
+        {enableGraphs && (
+          <div className="row">
+            <div className="col-md-3">
+              <GraphCustomizer
+                user={user}
+                summary={summary}
+                selectedHospitals={selectedHospitalNames}
+                handleHospitalSelection={handleMultiSelectChange}
+                startDate={startDate}
+                handleStartDateChange={handleStartDateChange}
+                endDate={endDate}
+                handleEndDateChange={handleEndDateChange}
+                handleAllSelect={handleAllSelect}
+              />
+            </div>
+            <div className="col-md-9">
+              <Paper>
+                <Tabs
+                  value={activeGraphTab}
+                  onChange={handleGraphTabChange}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  centered
+                >
+                  <Tab label="Beneficiaries" />
+                  <Tab label="Activities" />
+                  <Tab label="Dispensed Devices" />
+                  <Tab label="Recommended Devices" />
+                </Tabs>
+                {activeGraphTab == 0 ?
+                <Tabs
+                  value={activeBeneficiaryGraphTab}
+                  onChange={handleBeneficiaryGraphTabChange}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  centered
+                >
+                  <Tab label="All Beneficiaries" />
+                </Tabs>
+                : <></>
+                }
+                {activeGraphTab == 1 ?
+                <Tabs
+                  value={activeActivitiesGraphTab}
+                  onChange={handleActivitiesGraphTabChange}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  centered
+                >
+                  <Tab label="All Activities" />
+                  <Tab label="Training Activities" />
+                  <Tab label="Counselling Activities" />
+                </Tabs>
+                : <></>
+                }
+                {activeGraphTab == 2 ?
+                <Tabs
+                  value={activeDevicesGraphTab}
+                  onChange={handleDevicesGraphTabChange}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  centered
+                >
+                  <Tab label="All Devices" />
+                  <Tab label="Electronic" />
+                  <Tab label="Spectacle" />
+                  <Tab label="Optical" />
+                  <Tab label="Non-Optical" />
+                </Tabs>
+                : <></>
+                }
+                {activeGraphTab == 3 ?
+                <Tabs
+                  value={activeRecDevicesGraphTab}
+                  onChange={handleRecDevicesGraphTabChange}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  centered
+                >
+                  <Tab label="All Devices" />
+                  <Tab label="Electronic" />
+                  <Tab label="Spectacle" />
+                  <Tab label="Optical" />
+                  <Tab label="Non-Optical" />
+                </Tabs>
+                : <></>
+                }
+                {renderGraph()}
+              </Paper>
             </div>
           </div>
         )}
       </Container>
       <br />
     </div>
-  </Layout>
-); }
+    </Layout>
+  );
+}
