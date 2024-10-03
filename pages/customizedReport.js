@@ -10,13 +10,13 @@ import {
   setAhdHeader,
   setClveHeader,
   setLveHeader,
-  getAge,
   getReportData,
   filterTrainingSummaryByDateRange,
 } from "@/constants/reportFunctions";
 import { getSession } from "next-auth/react";
 import { readUser, allHospitalRoles } from "./api/user";
 import { getTrainingTypes } from "./api/trainingType";
+import { calculateAge } from "@/global/calculate-age";
 
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
@@ -207,14 +207,15 @@ function ReportCustomizer(props) {
     )
       ? document.getElementById("maxAge").value
       : 100;
-
     const filteredBeneficiaryData = dateFilteredBeneficiaryData.filter(
-      (item) =>
-        selectedHospitals.includes(item.hospital.id) &&
-        selectedGenders.includes(item.gender) &&
-        selectedMdvi.includes(item.mDVI) &&
-        minAge <= getAge(item.dateOfBirth) &&
-        getAge(item.dateOfBirth) <= maxAge
+      (item) => {
+        const age = calculateAge(item.dateOfBirth);
+        return selectedHospitals.includes(item.hospital.id) &&
+          selectedGenders.includes(item.gender) &&
+          selectedMdvi.includes(item.mDVI) &&
+          minAge <= age &&
+          age <= maxAge
+      }
     );
 
     const numFilteredBeneficiaries = filteredBeneficiaryData.length;
