@@ -19,11 +19,6 @@ async function main() {
             hospitalRole: true,
         },
     })
-    await prisma.schemaChange.create({
-        data: {
-            email: "testemail@ngmail.com"
-        },
-    })
     await prisma.user.create({
         data: {
             email: "sethlevine111@gmail.com",

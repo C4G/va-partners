@@ -19,11 +19,6 @@ model User {
   lPageEntries   Landing_Page[]
 }
 
-model SchemaChange {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-}
-
 model Admin {
   id     Int  @id @default(autoincrement())
   userId Int  @unique

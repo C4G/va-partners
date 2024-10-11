@@ -1,6 +1,7 @@
 import XLSX from "xlsx-js-style";
 import { isNotNullEmptyOrUndefined, union, difference, intersect } from "./globalFunctions";
 import moment from "moment";
+import { calculateAge } from "@/global/calculate-age";
 
 function getFormattedDate(date) {
   const day = date.getDate();
@@ -199,7 +200,7 @@ function getCommonData(beneficiary) {
     "Date of Evaluation": getDateWithTimezoneOffset(new Date(beneficiary["dateOfBirth"])),
     MRN: beneficiary["mrn"],
     "Name of the Patient": beneficiary["beneficiaryName"],
-    Age: getAge(beneficiary["dateOfBirth"]),
+    Age: calculateAge(beneficiary["dateOfBirth"]),
     Gender: beneficiary["gender"],
     Education: beneficiary["education"],
     Occupation: beneficiary["occupation"],
@@ -1191,19 +1192,6 @@ export function filterTrainingSummaryByDateRange(
   });
 
   return filteredSummary;
-}
-
-
-// Get age from date of birth
-export function getAge(dateString) {
-  let today = new Date();
-  let birthDate = new Date(dateString);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  let m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age -= 1;
-  }
-  return age;
 }
 
 // Sets the header for CLVE sheet, including merged cells and sub-headers
