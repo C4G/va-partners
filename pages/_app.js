@@ -4,7 +4,6 @@ import 'bootstrap/dist/css/bootstrap.css'
 import {SessionProvider} from "next-auth/react"
 import { Inter } from '@next/font/google'
 import { useEffect } from "react";
-import '../styles/LandingPage.css'
 import Head from 'next/head';
 
 
