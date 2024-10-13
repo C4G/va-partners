@@ -1,12 +1,6 @@
-import { useRouter } from 'next/router';
 import { Table } from 'react-bootstrap';
 
 function UserList({ users }) {
-  const router = useRouter();
-  const openUserPage = (mrn = null) => {
-    if (mrn) router.push(`/user?mrn=${mrn}`);
-    else router.push(`/beneficiaryinformation`);
-  };
   return (
     <>
       {users && users.length > 0 && (
@@ -28,13 +22,7 @@ function UserList({ users }) {
                 <td>{(new Date(user.dateOfBirth)).toDateString()}</td>
                 <td>{user.gender}</td>
                 <td>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      openUserPage(user.mrn);
-                    }}
-                  >
+                  <a href={`/user?mrn=${user.mrn}&hospitalId=${user.hospitalId}`}>
                     View Details
                   </a>
                 </td>

@@ -6,20 +6,21 @@ export default function BeneficiaryServicesTable(props) {
 
   const openUserHistoricalEvaluationPage = async (
     mrn = null,
+    hospitalId = null,
     service = null
   ) => {
-    if (mrn)
+    if (mrn && hospitalId)
       router.push(
-        `/historicalEvaluationDashboard?mrn=${mrn}&service=${service}`
+        `/historicalEvaluationDashboard?mrn=${mrn}&hospitalId=${hospitalId}&service=${service}`
       );
     else {
       router.push(`/beneficiaryinformation`, undefined, { shallow: true });
     }
   };
 
-  const openNewEvalutaionPage = async (mrn = null, service = null) => {
-    if (mrn) {
-      router.push(`/newEvaluationDashboard?mrn=${mrn}&service=${service}`);
+  const openNewEvalutaionPage = async (mrn = null, hospitalId = null, service = null) => {
+    if (mrn && hospitalId) {
+      router.push(`/newEvaluationDashboard?mrn=${mrn}&hospitalId=${hospitalId}&service=${service}`);
     } else {
       router.push(`/beneficiaryinformation`);
     }
@@ -46,6 +47,7 @@ export default function BeneficiaryServicesTable(props) {
               onClick={() =>
                 openUserHistoricalEvaluationPage(
                   props.user.mrn,
+                  props.user.hospitalId,
                   "Comprehensive_Low_Vision_Evaluation"
                 )
               }
@@ -59,6 +61,7 @@ export default function BeneficiaryServicesTable(props) {
               onClick={() =>
                 openNewEvalutaionPage(
                   props.user.mrn,
+                  props.user.hospitalId,
                   "Comprehensive_Low_Vision_Evaluation"
                 )
               }
@@ -76,6 +79,7 @@ export default function BeneficiaryServicesTable(props) {
               onClick={() =>
                 openUserHistoricalEvaluationPage(
                   props.user.mrn,
+                  props.user.hospitalId,
                   "Vision_Enhancement"
                 )
               }
@@ -87,7 +91,11 @@ export default function BeneficiaryServicesTable(props) {
               type="button"
               className="btn btn-success border-0 btn-block"
               onClick={() =>
-                openNewEvalutaionPage(props.user.mrn, "Vision_Enhancement")
+                openNewEvalutaionPage(
+                  props.user.mrn,
+                  props.user.hospitalId,
+                  "Vision_Enhancement"
+                )
               }
             >
               New Evaluation
@@ -103,6 +111,7 @@ export default function BeneficiaryServicesTable(props) {
               onClick={() =>
                 openUserHistoricalEvaluationPage(
                   props.user.mrn,
+                  props.user.hospitalId,
                   "Counselling_Education"
                 )
               }
@@ -114,7 +123,11 @@ export default function BeneficiaryServicesTable(props) {
               type="button"
               className="btn btn-success border-0 btn-block"
               onClick={() =>
-                openNewEvalutaionPage(props.user.mrn, "Counselling_Education")
+                openNewEvalutaionPage(
+                  props.user.mrn,
+                  props.user.hospitalId,
+                  "Counselling_Education"
+                )
               }
             >
               New Evaluation
@@ -128,7 +141,11 @@ export default function BeneficiaryServicesTable(props) {
               type="button"
               className="btn btn-success border-0 btn-block"
               onClick={() =>
-                openUserHistoricalEvaluationPage(props.user.mrn, "Training")
+                openUserHistoricalEvaluationPage(
+                  props.user.mrn, 
+                  props.user.hospitalId,
+                  "Training"
+                )
               }
             >
               History
@@ -137,7 +154,11 @@ export default function BeneficiaryServicesTable(props) {
             <button
               type="button"
               className="btn btn-success border-0 btn-block"
-              onClick={() => openNewEvalutaionPage(props.user.mrn, "Training")}
+              onClick={() => openNewEvalutaionPage(
+                props.user.mrn,
+                props.user.hospitalId,
+                "Training"
+              )}
             >
               New Evaluation
             </button>
@@ -152,6 +173,7 @@ export default function BeneficiaryServicesTable(props) {
               onClick={() =>
                 openUserHistoricalEvaluationPage(
                   props.user.mrn,
+                  props.user.hospitalId,
                   "Low_Vision_Screening"
                 )
               }
@@ -163,7 +185,11 @@ export default function BeneficiaryServicesTable(props) {
               type="button"
               className="btn btn-success border-0 btn-block"
               onClick={() =>
-                openNewEvalutaionPage(props.user.mrn, "Low_Vision_Screening")
+                openNewEvalutaionPage(
+                  props.user.mrn,
+                  props.user.hospitalId,
+                  "Low_Vision_Screening"
+                )
               }
             >
               New Evaluation

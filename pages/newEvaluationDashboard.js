@@ -60,6 +60,7 @@ export default function NewEvaluationDashboard(props) {
 
   const updateMDVIForBeneficiary = async (data) => {
     data["mrn"] = props.user.mrn;
+    data["hospitalId"] = props.user.hospitalId;
 
     const response = await fetch(`api/beneficiary`, {
       method: "PATCH",
@@ -81,6 +82,7 @@ export default function NewEvaluationDashboard(props) {
     // parse date
     data["date"] = new Date(data["date"]);
     data["beneficiaryId"] = props.user.mrn;
+    data["hospitalId"] = props.user.hospitalId;
     if (data["type"] == "Other" && data["subType"] == null) {
       data["type"] = data["typeOther"];
     } else if (data["subType"] == "Other") {
@@ -303,7 +305,7 @@ export async function getServerSideProps(ctx) {
     };
   }
   const currentUser = await readUser(session.user.email);
-  const user = await readBeneficiaryMrn(ctx.query.mrn);
+  const user = await readBeneficiaryMrn(ctx.query.mrn, ctx.query.hospitalId);
   const service = ctx.query.service;
 
   if (!user) {

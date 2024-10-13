@@ -62,6 +62,7 @@ async function addData(req, res) {
   const create = {
     data: {
       beneficiaryId: body.beneficiaryId,
+      hospitalId: body.hospitalId,
       mdvi: body.mdvi,
       diagnosis: body.diagnosis,
       date: body.date,

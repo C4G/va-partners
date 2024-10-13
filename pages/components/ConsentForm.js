@@ -7,10 +7,12 @@ export default function ConsentForm({ consent }) {
       <div className="profile-info">
         <hr />
         <table>
-          <tr>
-            <td>Consent:</td>
-            <td>{consent}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td>Consent:</td>
+              <td>{consent}</td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </div>

@@ -90,6 +90,7 @@ async function addData(req, res) {
   const create = {
     data: {
       beneficiaryId: body.beneficiaryId,
+      hospitalId: body.hospitalId,
       date: body.date,
       sessionNumber: body.sessionNumber,
       typeOfTraining: body.typeOfTraining,

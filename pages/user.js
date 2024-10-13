@@ -192,14 +192,14 @@ function UserPage(props) {
     }
   };
 
-  const softDeleteBeneficiary = async () => {
+  const deleteBeneficiary = async () => {
     // Update user data in the database
     const response = await fetch(`/api/beneficiary`, {
-      method: "PATCH",
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ mrn: props.user.mrn, deleted: true }),
+      body: JSON.stringify({ mrn: props.user.mrn, hospitalId: props.user.hospitalId }),
     });
     // Handle response from the API
     if (response.ok) {
@@ -740,7 +740,7 @@ function UserPage(props) {
 
                 {/* <!-- Modal body --> */}
                 <div className="modal-body">
-                  Please confirm that you wish to delete this beneficiary permanently.
+                  Please confirm that you wish to delete this beneficiary permanently. This will remove all training data associated with this beneficiary.
                 </div>
 
                 {/* <!-- Modal footer --> */}
@@ -749,7 +749,7 @@ function UserPage(props) {
                     type="button"
                     className="btn btn-danger"
                     data-bs-dismiss="modal"
-                    onClick={() => softDeleteBeneficiary()}
+                    onClick={() => deleteBeneficiary()}
                   >
                     Delete
                   </button>
@@ -831,7 +831,7 @@ export async function getServerSideProps(ctx) {
     };
   }
   const currentUser = await readUser(session.user.email);
-  const user = await readBeneficiaryMrn(ctx.query.mrn);
+  const user = await readBeneficiaryMrn(ctx.query.mrn, ctx.query.hospitalId);
 
   if (!user) {
     return {
