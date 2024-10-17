@@ -62,8 +62,6 @@ export async function getServerSideProps(ctx) {
 
   // Fetch the summary and other necessary data
   const summary = await getSummaryForAllHospitals(isAdmin, hospitalIds);
-  let users = await readBeneficiaryOtherParam();
-  const hospitals = [...new Set(users.map((user) => user.hospitalName))];
 
   // Fetch trainingTypes before returning props
   const trainingTypes = await getTrainingTypes();
@@ -72,9 +70,7 @@ export async function getServerSideProps(ctx) {
     props: {
       user: JSON.parse(JSON.stringify(user)),
       summary: JSON.parse(JSON.stringify(summary)),
-      hospitals,
       error: null,
-      users: JSON.parse(JSON.stringify(users)),
       trainingTypes, // Pass trainingTypes to props
     },
   };
@@ -540,10 +536,7 @@ function buildAgeGraph(beneficiaries) {
 
 export default function Summary({
   user,
-  users,
   summary,
-  error,
-  hospitals,
   trainingTypes,
 }) {
   // Downloaded reports reference sheet data
@@ -566,23 +559,6 @@ export default function Summary({
   14\t\tTraining for Life skills/ Money identification/ Home management / Kitchen skills\t
   15\t\tJob Coaching /IBPS\tIntegrated training program for Institute of Banking Personnel Selection and other job coaching
   16\t\tSpoken english training\tTraining to speak in English for both beginners and Intermediate.`;
-  const refRows = refData.split('\n').map(row => row.split('\t'));
-
-  const hospitalAbbr = {
-    "Aravind Eye Hospital, Madurai": "AEH, MDU",
-    "Aravind Eye Hospital, Coimbatore": "AEH, CBE",
-    "Aravind Eye Hospital, Pondicherry": "AEH, PY",
-    "Aravind Eye Hospital, Tirupati": "AEH, TPTY",
-    "Aravind Eye Hospital, Tirunelveli": "AEH, TVL",
-    "Sankara Nethralaya, Chennai": "SN, CHE",
-    "Sankara Nethralaya, Kolkata": "SN, KOL",
-    "Dr. Shroff's Charity Eye Hospital": "SCEH, DL",
-    "Narayana Nethralaya, Rajajinagar, Bangalore": "NN, BLR",
-    "Dr. Jawahar Lal Rohatgi Eye Hospital, Kanpur": "JLR, UP",
-    "Sitapur Eye Hospital, Sitapur, UP": "SEH, UP",
-    "Voluntary Health Services": "VHS, CHE",
-    "Community Eye Care Foundation": "CECF, PUN"
-  };
 
   // create start date and end data states, start date is set to one year ago, end date is set to today
   const [startDate, setStartDate] = useState(
@@ -717,8 +693,8 @@ export default function Summary({
 
         setBeneficiaries(filteredBeneficiaryData);
       } catch (error) {
-        console.error("Error fetching beneficiary list:", error);
         setErrorState(error);
+        console.error("Error fetching beneficiary list:", errorState);
       } finally {
         setIsLoading(false);
       }
