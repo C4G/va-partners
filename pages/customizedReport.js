@@ -1,378 +1,297 @@
-import moment from "moment";
-import { useState, useEffect, useCallback } from "react";
-import Navigation from "./navigation/Navigation";
-import Layout from './components/layout';
-import { Table } from "react-bootstrap";
-import { getSummaryForAllHospitals } from "./api/hospital";
-import XLSX from "xlsx-js-style";
-import { isNotNullEmptyOrUndefined } from "@/constants/globalFunctions";
+// export default ReportCustomizer;
+import moment from 'moment';
+import { useState } from 'react';
+import XLSX from 'xlsx-js-style';
+import { calculateAge } from "@/global/calculate-age";
 import {
   setAhdHeader,
   setClveHeader,
   setLveHeader,
   getReportData,
   filterTrainingSummaryByDateRange,
-} from "@/constants/reportFunctions";
-import { getSession } from "next-auth/react";
-import { readUser, allHospitalRoles } from "./api/user";
-import { getTrainingTypes } from "./api/trainingType";
-import { calculateAge } from "@/global/calculate-age";
-
-export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
-  if (session == null) {
-    console.log("session is null");
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
-  }
-
-  const getHospitalIdsByUsers = (id, users) => {
-    let hospitalIds = [];
-    for (const user of users ) {
-      if (user.userId === id) {
-        hospitalIds.push(user.hospitalId);
-      }
-    }
-    return hospitalIds;
-  }
-
-  const user = await readUser(session.user.email);
-  const roles = await allHospitalRoles();
-  let hospitalIds;
-  const isAdmin = user.admin != null;
-  if (!isAdmin) {
-    hospitalIds = getHospitalIdsByUsers(user.id, roles);
-  }
-
-  const trainingTypes = await getTrainingTypes();
-
-  const summary = await getSummaryForAllHospitals(isAdmin, hospitalIds);
-
-  return {
-    props: {
-      user: JSON.parse(JSON.stringify(user)),
-      summary: JSON.parse(JSON.stringify(summary)),
-      trainingTypes,
-    },
-  };
-}
+} from '@/constants/reportFunctions';
+import { isNotNullEmptyOrUndefined } from '@/constants/globalFunctions';
 
 function ReportCustomizer(props) {
-  const { user, summary, trainingTypes } = props;
+  const {
+    user,
+    summary =[],
+    trainingTypes= [],
+    startDate: initialStartDate,
+    endDate: initialEndDate,
+    selectedHospitals: initialSelectedHospitals = [],
+  } = props;
+
   const [startDate, setStartDate] = useState(
-    moment().subtract(1, "year").toDate()
+    initialStartDate || moment().subtract(1, 'year').toDate()
   );
-  const [endDate, setEndDate] = useState(moment().toDate());
-  const [selectedHospitals, setSelectedHospitals] = useState([]);
-  const [selectedGenders, setSelectedGenders] = useState(["M", "F", "Other"]);
-  const [selectedMdvi, setSelectedMdvi] = useState(["Yes", "No", "At Risk"]);
-  const [selectedSheets, setSelectedSheets] = useState([
-    "Beneficiary",
-    "Vision Enhancement",
-    "Low Vision Screening",
-    "Comprehensive Low Vision Evaluation",
-    "Electronic Devices Break Up",
-    "Training",
-    "Counselling Education",
-    "Aggregated Hospital Data",
+  const [endDate, setEndDate] = useState(
+    initialEndDate || moment().toDate()
+  );
+  const [selectedHospitals, setSelectedHospitals] = useState(
+    initialSelectedHospitals || []
+  );
+  const [selectedGenders, setSelectedGenders] = useState([
+    'M',
+    'F',
+    'Other',
   ]);
-  const today = moment(new Date()).format("YYYY-MM-DD");
-  const [selectedTrainingTypes, setSelectedTrainingTypes] =
-    useState(trainingTypes);
+  const [selectedMdvi, setSelectedMdvi] = useState([
+    'Yes',
+    'No',
+    'At Risk',
+  ]);
+  const [selectedSheets, setSelectedSheets] = useState([
+    'Beneficiary',
+    'Vision Enhancement',
+    'Low Vision Screening',
+    'Comprehensive Low Vision Evaluation',
+    'Electronic Devices Break Up',
+    'Training',
+    'Counselling Education',
+    'Aggregated Hospital Data',
+  ]);
+  const [selectedTrainingTypes, setSelectedTrainingTypes] = useState(
+    trainingTypes || []
+  );
+  const [minAge, setMinAge] = useState(0);
+  const [maxAge, setMaxAge] = useState(100);
 
-  const handleSelectAll = useCallback(() => {
-      setSelectedHospitals(props.summary.map((item) => item.id));
-  }, [props.summary]);
-
-  useEffect(() => {
-    handleSelectAll(props.summary);
-  }, [handleSelectAll, props.summary]);
-
-  const handleHospitalSelection = (event) => {
-    const hospitalId = parseInt(event.target.value);
-    const isChecked = event.target.checked;
+  // Event Handlers
+  const updateGender = (e) => {
+    const gender = e.target.id;
+    const isChecked = e.target.checked;
 
     if (isChecked) {
-      setSelectedHospitals((selectedHospitals) => [
-        ...selectedHospitals,
-        hospitalId,
-      ]);
+      setSelectedGenders((prev) => [...prev, gender]);
     } else {
-      setSelectedHospitals((selectedHospitals) =>
-        selectedHospitals.filter((id) => id !== hospitalId)
-      );
-    }
-  };
-
-  const hospitalTable = summary.map((item) => (
-    <tr key={item.id}>
-      <td>{item.name}</td>
-      <td>
-        <input
-          type="checkbox"
-          id={`hospital-${item.id}`}
-          value={item.id}
-          onChange={handleHospitalSelection}
-          checked={selectedHospitals.includes(item.id)}
-        />
-      </td>
-    </tr>
-  ));
-
-  const updateGender = (e) => {
-    if (e.target.checked) {
-      setSelectedGenders((selectedGenders) => [
-        ...selectedGenders,
-        e.target.id,
-      ]);
-    } else {
-      setSelectedGenders((selectedGenders) =>
-        selectedGenders.filter((gender) => gender !== e.target.id)
-      );
+      setSelectedGenders((prev) => prev.filter((g) => g !== gender));
     }
   };
 
   const updateMdvi = (e) => {
-    if (e.target.checked) {
-      setSelectedMdvi((selectedMdvi) => [...selectedMdvi, e.target.id]);
+    const mdvi = e.target.id;
+    const isChecked = e.target.checked;
+
+    if (isChecked) {
+      setSelectedMdvi((prev) => [...prev, mdvi]);
     } else {
-      setSelectedMdvi((selectedMdvi) =>
-        selectedMdvi.filter((mdvi) => mdvi !== e.target.id)
-      );
+      setSelectedMdvi((prev) => prev.filter((m) => m !== mdvi));
     }
   };
 
   const updateSheets = (e) => {
-    if (e.target.checked) {
-      setSelectedSheets((selectedSheets) => [...selectedSheets, e.target.id]);
+    const sheet = e.target.id;
+    const isChecked = e.target.checked;
+
+    if (isChecked) {
+      setSelectedSheets((prev) => [...prev, sheet]);
     } else {
-      setSelectedSheets((selectedSheets) =>
-        selectedSheets.filter((sheetName) => sheetName !== e.target.id)
-      );
+      setSelectedSheets((prev) => prev.filter((s) => s !== sheet));
     }
   };
 
   const updateTrainingTypes = (e) => {
-    if (e.target.checked) {
-      setSelectedTrainingTypes((selectedTrainingTypes) => [
-        ...selectedTrainingTypes,
-        e.target.id,
-      ]);
+    const trainingType = e.target.id;
+    const isChecked = e.target.checked;
+
+    if (isChecked) {
+      setSelectedTrainingTypes((prev) => [...prev, trainingType]);
     } else {
-      setSelectedTrainingTypes((selectedTrainingTypes) =>
-        selectedTrainingTypes.filter((type) => type !== e.target.id)
+      setSelectedTrainingTypes((prev) =>
+        prev.filter((t) => t !== trainingType)
       );
     }
   };
 
   const downloadFilteredReport = async () => {
     try {
-      startDate.setUTCHours(0, 0, 0, 0);
-      endDate.setUTCHours(23, 59, 59, 999);
-      const beneficiaryListAPI = selectedHospitals.map((id) => fetch(
-        `/api/beneficiaryList?id=${id}&startDate=${startDate.toUTCString()}&endDate=${endDate.toUTCString()}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      ));
+      const adjustedStartDate = new Date(startDate);
+      adjustedStartDate.setUTCHours(0, 0, 0, 0);
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setUTCHours(23, 59, 59, 999);
+
+      const selectedHospitalIds = summary
+        .filter((hospital) => selectedHospitals.includes(hospital.name))
+        .map((hospital) => hospital.id);
+
+      const beneficiaryListAPI = selectedHospitalIds.map((id) =>
+        fetch(
+          `/api/beneficiaryList?id=${id}&startDate=${adjustedStartDate.toUTCString()}&endDate=${adjustedEndDate.toUTCString()}`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      );
       let promises = await Promise.all(beneficiaryListAPI);
-      var finalResult = await Promise.all(promises.map(res => res.json ? res.json().catch(err => err) : res));
-    } catch (error) {
-      console.error("Error fetching beneficiary list:", error);
-    }
-    const beneficiaryList = finalResult.flat();
-    const dateFilteredBeneficiaryData = filterTrainingSummaryByDateRange(
-      startDate,
-      endDate,
-      beneficiaryList,
-      "beneficiary"
-    );
+      const finalResult = await Promise.all(
+        promises.map((res) => (res.json ? res.json().catch((err) => err) : res))
+      );
+      const beneficiaryList = finalResult.flat();
 
+      const dateFilteredBeneficiaryData = filterTrainingSummaryByDateRange(
+        adjustedStartDate,
+        adjustedEndDate,
+        beneficiaryList,
+        'beneficiary'
+      );
 
-    const numTotalBeneficiaries = dateFilteredBeneficiaryData.length;
+      const numTotalBeneficiaries = dateFilteredBeneficiaryData.length;
 
-    const minAge = isNotNullEmptyOrUndefined(
-      document.getElementById("minAge").value
-    )
-      ? document.getElementById("minAge").value
-      : 0;
-
-    const maxAge = isNotNullEmptyOrUndefined(
-      document.getElementById("maxAge").value
-    )
-      ? document.getElementById("maxAge").value
-      : 100;
-    const filteredBeneficiaryData = dateFilteredBeneficiaryData.filter(
-      (item) => {
-        const age = calculateAge(item.dateOfBirth);
-        return selectedHospitals.includes(item.hospital.id) &&
+      const filteredBeneficiaryData = dateFilteredBeneficiaryData.filter(
+        (item) =>
+          selectedHospitalIds.includes(item.hospital.id) &&
           selectedGenders.includes(item.gender) &&
           selectedMdvi.includes(item.mDVI) &&
-          minAge <= age &&
-          age <= maxAge
-      }
-    );
-
-    const numFilteredBeneficiaries = filteredBeneficiaryData.length;
-    
-    // filter summary data based on start and end date of the training
-    const dateFilteredSummary = filterTrainingSummaryByDateRange(
-      startDate,
-      endDate,
-      summary,
-      "hospital"
-    );
-
-    // filter summary data based on selected hospitals
-    const filteredSummary = dateFilteredSummary.filter((item) =>
-      selectedHospitals.includes(item.id)
-    );
-
-    const {
-      beneficiaryData,
-      visionEnhancementData,
-      lowVisionEvaluationData,
-      comprehensiveLowVisionEvaluationData,
-      electronicDevicesData,
-      trainingData,
-      counsellingEducationData,
-      aggregatedHospitalData,
-    } = getReportData(
-      filteredBeneficiaryData,
-      filteredSummary,
-      numTotalBeneficiaries === numFilteredBeneficiaries
-    );
-
-    const wb = XLSX.utils.book_new();
-
-    if (selectedSheets.includes("Beneficiary")) {
-      const wben = XLSX.utils.json_to_sheet(beneficiaryData);
-      XLSX.utils.book_append_sheet(wb, wben, "Beneficiary Sheet");
-    }
-
-    if (selectedSheets.includes("Vision Enhancement")) {
-      const wved = XLSX.utils.json_to_sheet(visionEnhancementData);
-      XLSX.utils.book_append_sheet(wb, wved, "Vision Enhancement Sheet");
-    }
-
-    if (selectedSheets.includes("Low Vision Screening")) {
-      const wlved = XLSX.utils.json_to_sheet([]);
-      XLSX.utils.book_append_sheet(wb, wlved, "Low Vision Screening");
-      setLveHeader(wlved);
-      XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
-        skipHeader: true,
-        origin: -1,
-      });
-    }
-
-    if (selectedSheets.includes("Comprehensive Low Vision Evaluation")) {
-      const wclve = XLSX.utils.json_to_sheet([]);
-      XLSX.utils.book_append_sheet(wb, wclve, "CLVE Sheet");
-      setClveHeader(wclve);
-      XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
-        skipHeader: true,
-        origin: -1,
-      });
-    }
-
-    if (selectedSheets.includes("Electronic Devices Break Up")) {
-      const wed = XLSX.utils.json_to_sheet(electronicDevicesData);
-      XLSX.utils.book_append_sheet(wb, wed, "Electronic Devices Break Up");
-    }
-
-    if (selectedSheets.includes("Training")) {
-      let finalTrainingData = trainingData;
-      // Check if less number of training types are selected compared to the total number of training types
-      if (trainingTypes.length > selectedTrainingTypes.length) {
-        // "Type of Training" is a column title in the Training sheet
-        finalTrainingData = trainingData.filter((training) =>
-          selectedTrainingTypes.includes(training["Type of Training"])
-        );
-      }
-      const wtd = XLSX.utils.json_to_sheet(finalTrainingData);
-      XLSX.utils.book_append_sheet(wb, wtd, "Training Sheet");
-    }
-
-    if (selectedSheets.includes("Counselling Education")) {
-      const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
-      XLSX.utils.book_append_sheet(wb, wced, "Counselling Education Sheet");
-    }
-
-    if (selectedSheets.includes("Aggregated Hospital Data")) {
-      const wahd = XLSX.utils.json_to_sheet([]);
-      XLSX.utils.book_append_sheet(wb, wahd, "Aggregated Hospital Sheet");
-      setAhdHeader(
-        wahd,
-        filteredSummary.map((hospital) => hospital.name)
+          minAge <= calculateAge(item.dateOfBirth) &&
+          calculateAge(item.dateOfBirth) <= maxAge
       );
-      XLSX.utils.sheet_add_json(wahd, aggregatedHospitalData, {
-        skipHeader: true,
-        origin: -1,
-      });
-    }
 
-    XLSX.writeFile(wb, "customized_report.xlsx");
+      const numFilteredBeneficiaries = filteredBeneficiaryData.length;
+
+      // Filter summary data based on start and end date of the training
+      const dateFilteredSummary = filterTrainingSummaryByDateRange(
+        adjustedStartDate,
+        adjustedEndDate,
+        summary,
+        'hospital'
+      );
+
+      // Filter summary data based on selected hospitals
+      const filteredSummary = dateFilteredSummary.filter((item) =>
+        selectedHospitalIds.includes(item.id)
+      );
+
+      const {
+        beneficiaryData,
+        visionEnhancementData,
+        lowVisionEvaluationData,
+        comprehensiveLowVisionEvaluationData,
+        electronicDevicesData,
+        trainingData,
+        counsellingEducationData,
+        aggregatedHospitalData,
+      } = getReportData(
+        filteredBeneficiaryData,
+        filteredSummary,
+        numTotalBeneficiaries === numFilteredBeneficiaries
+      );
+
+      const wb = XLSX.utils.book_new();
+
+      if (selectedSheets.includes("Beneficiary")) {
+        const wben = XLSX.utils.json_to_sheet(filteredBeneficiaryData);
+        XLSX.utils.book_append_sheet(wb, wben, "Beneficiary Sheet");
+      }
+
+      if (selectedSheets.includes("Vision Enhancement")) {
+        const wved = XLSX.utils.json_to_sheet(visionEnhancementData);
+        XLSX.utils.book_append_sheet(wb, wved, "Vision Enhancement Sheet");
+      }
+
+      if (selectedSheets.includes("Low Vision Screening")) {
+        const wlved = XLSX.utils.json_to_sheet([]);
+        XLSX.utils.book_append_sheet(wb, wlved, "Low Vision Screening");
+        setLveHeader(wlved);
+        XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
+          skipHeader: true,
+          origin: -1,
+        });
+      }
+
+      if (selectedSheets.includes("Comprehensive Low Vision Evaluation")) {
+        const wclve = XLSX.utils.json_to_sheet([]);
+        XLSX.utils.book_append_sheet(wb, wclve, "CLVE Sheet");
+        setClveHeader(wclve);
+        XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
+          skipHeader: true,
+          origin: -1,
+        });
+      }
+
+      if (selectedSheets.includes("Electronic Devices Break Up")) {
+        const wed = XLSX.utils.json_to_sheet(electronicDevicesData);
+        XLSX.utils.book_append_sheet(wb, wed, "Electronic Devices Break Up");
+      }
+
+      if (selectedSheets.includes("Training")) {
+        let finalTrainingData = trainingData;
+        // Check if less number of training types are selected compared to the total number of training types
+        if (trainingTypes.length > selectedTrainingTypes.length) {
+          // "Type of Training" is a column title in the Training sheet
+          finalTrainingData = trainingData.filter((training) =>
+            selectedTrainingTypes.includes(training["Type of Training"])
+          );
+        }
+        const wtd = XLSX.utils.json_to_sheet(finalTrainingData);
+        XLSX.utils.book_append_sheet(wb, wtd, "Training Sheet");
+      }
+
+      if (selectedSheets.includes("Counselling Education")) {
+        const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
+        XLSX.utils.book_append_sheet(wb, wced, "Counselling Education Sheet");
+      }
+
+      if (selectedSheets.includes("Aggregated Hospital Data")) {
+        const wahd = XLSX.utils.json_to_sheet([]);
+        XLSX.utils.book_append_sheet(wb, wahd, "Aggregated Hospital Sheet");
+        setAhdHeader(
+          wahd,
+          filteredSummary.map((hospital) => hospital.name)
+        );
+        XLSX.utils.sheet_add_json(wahd, aggregatedHospitalData, {
+          skipHeader: true,
+          origin: -1,
+        });
+      }
+
+      XLSX.writeFile(wb, "customized_report.xlsx");
+    } catch (error) {
+      console.error('Error fetching beneficiary list:', error);
+    }
   };
 
   return (
-    <Layout>
     <div className="content">
-      <Navigation user={user} />
       <div className="container p-4 mb-3">
-        <h1 className="mt-4 mb-4">Customize Report</h1>
-
         <div className="accordion">
+          {/* Date Range */}
           <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingOne">
+            <h2 className="accordion-header" id="panelsStayOpen-headingDateRange">
               <button
                 className="accordion-button collapsed"
                 type="button"
                 data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseOne"
+                data-bs-target="#panelsStayOpen-collapseDateRange"
                 aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseOne"
+                aria-controls="panelsStayOpen-collapseDateRange"
               >
-                <strong>Date Range For Trainings</strong>
+                <strong>Date Range</strong>
               </button>
             </h2>
             <div
-              id="panelsStayOpen-collapseOne"
+              id="panelsStayOpen-collapseDateRange"
               className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingOne"
+              aria-labelledby="panelsStayOpen-headingDateRange"
             >
               <div className="accordion-body">
                 <div className="row">
                   <div className="col-md-4 text-align-left">
-                    <label htmlFor="startDate">Start Date: </label>
+                    <label>Start Date: </label>
                     <input
                       type="date"
-                      id="startDate"
-                      name="startDate"
-                      value={moment(startDate).format("YYYY-MM-DD")}
-                      onChange={(e) =>
-                        setStartDate(moment(e.target.value).toDate())
-                      }
-                      max={today}
+                      value={moment(startDate).format('YYYY-MM-DD')}
+                      onChange={(e) => setStartDate(moment(e.target.value).toDate())}
                       className="margin-left"
                     />
                   </div>
                   <div className="col-md-4 text-align-left">
-                    <label htmlFor="endDate">End Date: </label>
+                    <label>End Date: </label>
                     <input
                       type="date"
-                      id="endDate"
-                      name="endDate"
-                      value={moment(endDate).format("YYYY-MM-DD")}
-                      onChange={(e) =>
-                        setEndDate(moment(e.target.value).toDate())
-                      }
-                      min={moment(startDate).format("YYYY-MM-DD")}
-                      max={today}
+                      value={moment(endDate).format('YYYY-MM-DD')}
+                      onChange={(e) => setEndDate(moment(e.target.value).toDate())}
                       className="margin-left"
                     />
                   </div>
@@ -380,49 +299,54 @@ function ReportCustomizer(props) {
               </div>
             </div>
           </div>
+
+          {/* Hospitals */}
           <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingTwo">
+            <h2 className="accordion-header" id="panelsStayOpen-headingHospitals">
               <button
                 className="accordion-button collapsed"
                 type="button"
                 data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseTwo"
+                data-bs-target="#panelsStayOpen-collapseHospitals"
                 aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseTwo"
+                aria-controls="panelsStayOpen-collapseHospitals"
               >
                 <strong>Hospitals</strong>
               </button>
             </h2>
             <div
-              id="panelsStayOpen-collapseTwo"
+              id="panelsStayOpen-collapseHospitals"
               className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingTwo"
+              aria-labelledby="panelsStayOpen-headingHospitals"
             >
               <div className="accordion-body">
                 <div className="row">
-                  <div className="col-md-6">
-                    <Table striped bordered hover>
-                      <thead>
-                        <tr>
-                          <th>Hospitals</th>
-                          <th>
-                            <button
-                              type="button"
-                              className="btn btn-light"
-                              onClick={handleSelectAll}
-                            >
-                              Select All
-                            </button>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>{summary != null && hospitalTable}</tbody>
-                    </Table>
-                  </div>
+                  {summary.map((hospital) => (
+                    <div className="col-md-6 text-align-left" key={hospital.id}>
+                      <input
+                        type="checkbox"
+                        id={hospital.id}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          if (isChecked) {
+                            setSelectedHospitals((prev) => [...prev, hospital.name]);
+                          } else {
+                            setSelectedHospitals((prev) =>
+                              prev.filter((h) => h !== hospital.name)
+                            );
+                          }
+                        }}
+                        checked={selectedHospitals.includes(hospital.name)}
+                      />
+                      <label className="margin-left">{hospital.name}</label>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Gender */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="panelsStayOpen-headingThree">
               <button
@@ -477,6 +401,7 @@ function ReportCustomizer(props) {
             </div>
           </div>
 
+          {/* Age */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="panelsStayOpen-headingFour">
               <button
@@ -503,7 +428,8 @@ function ReportCustomizer(props) {
                       type="number"
                       min={0}
                       max={100}
-                      id="minAge"
+                      value={minAge}
+                      onChange={(e) => setMinAge(e.target.value)}
                       className="margin-left"
                     />
                   </div>
@@ -514,7 +440,8 @@ function ReportCustomizer(props) {
                       type="number"
                       min={0}
                       max={100}
-                      id="maxAge"
+                      value={maxAge}
+                      onChange={(e) => setMaxAge(e.target.value)}
                       className="margin-left"
                     />
                   </div>
@@ -522,6 +449,8 @@ function ReportCustomizer(props) {
               </div>
             </div>
           </div>
+
+          {/* MDVI */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="panelsStayOpen-headingFive">
               <button
@@ -576,6 +505,7 @@ function ReportCustomizer(props) {
             </div>
           </div>
 
+          {/* Sheets to Include */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="panelsStayOpen-headingSix">
               <button
@@ -726,19 +656,23 @@ function ReportCustomizer(props) {
                 aria-labelledby="panelsStayOpen-headingSeven"
               >
                 <div className="accordion-body">
-                  {trainingTypes.map((type) => (
-                    <div className="row" key={type}>
-                      <div className="col-md-6 text-align-left">
-                        <input
-                          type="checkbox"
-                          id={type}
-                          onChange={(e) => updateTrainingTypes(e)}
-                          checked={selectedTrainingTypes.includes(type)}
-                        />
-                        <label className="margin-left">{type}</label>
+                  {trainingTypes && trainingTypes.length > 0 ? (
+                    trainingTypes.map((type) => (
+                      <div className="row" key={type}>
+                        <div className="col-md-6 text-align-left">
+                          <input
+                            type="checkbox"
+                            id={type}
+                            onChange={(e) => updateTrainingTypes(e)}
+                            checked={selectedTrainingTypes.includes(type)}
+                          />
+                          <label className="margin-left">{type}</label>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p>No training types available</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -757,7 +691,6 @@ function ReportCustomizer(props) {
       </div>
       <br />
     </div>
-    </Layout>
   );
 }
 
