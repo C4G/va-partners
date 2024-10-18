@@ -58,7 +58,7 @@ async function deleteData(req, res) {
   return res.status(200).json(training, { success: true });
 }
 
-async function updateData(req, res) {}
+async function updateData() {}
 
 export const readTrainingType = async () => {
   const training = await prisma.training_Type.findMany({});

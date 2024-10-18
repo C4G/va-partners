@@ -1,5 +1,3 @@
-import moment from "moment/moment";
-
 export function formatDate(date) {
   const options = { year: "numeric", month: "long", day: "numeric" };
   // return moment(date).toLocaleDateString(undefined, options);

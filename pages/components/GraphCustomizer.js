@@ -1,6 +1,5 @@
 // components/GraphCustomizer.js
 
-import React from 'react';
 import {
   FormControl,
   InputLabel,
@@ -17,7 +16,6 @@ import {
 import moment from 'moment';
 
 function GraphCustomizer({
-  user,
   summary =[],
   selectedHospitals,
   handleHospitalSelection,

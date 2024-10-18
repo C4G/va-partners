@@ -10,11 +10,9 @@ import {
   getReportData,
   filterTrainingSummaryByDateRange,
 } from '@/constants/reportFunctions';
-import { isNotNullEmptyOrUndefined } from '@/constants/globalFunctions';
 
 function ReportCustomizer(props) {
   const {
-    user,
     summary =[],
     trainingTypes= [],
     startDate: initialStartDate,
@@ -164,7 +162,6 @@ function ReportCustomizer(props) {
       );
 
       const {
-        beneficiaryData,
         visionEnhancementData,
         lowVisionEvaluationData,
         comprehensiveLowVisionEvaluationData,

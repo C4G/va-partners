@@ -36,14 +36,11 @@ import moment from "moment";
 import { required } from "../../global/required";
 
 const TrainingFormCLVE = ({
-  existingTrainings = [],
   addNewTraining,
   updateMDVIForBeneficiary,
   mdvi,
   customFieldsDistance,
   customFieldsNear,
-  title,
-  api,
   allfields,
   loading,
   onSubmit,
@@ -305,19 +302,6 @@ const TrainingFormCLVE = ({
     return values.map((value) => <option key={value}>{value}</option>);
   };
 
-  const createOptionGroupList = (values, subheadings, indices) => {
-    const allOptions = createOptionList(values);
-    const optionGroups = [];
-    for (var i = 0; i < subheadings.length; i++) {
-      optionGroups.push(
-        <optgroup key={subheadings[i]} label={subheadings[i]}>
-          {allOptions.slice(indices[i], indices[i + 1])}
-        </optgroup>
-      );
-    }
-    return optionGroups;
-  };
-
   const changeDvValues = (e) => {
     setFormData((formData) => ({ ...formData, unitDistance: e.target.value }));
     if (e.target.value == "LogMAR") {
@@ -360,7 +344,7 @@ const TrainingFormCLVE = ({
       }));
     });
     console.log(formData);
-  }, [dvAcuityValues]);
+  }, [customFieldsDistance, dvAcuityValues, formData]);
 
   useEffect(() => {
     console.log("entered nv");
@@ -371,7 +355,7 @@ const TrainingFormCLVE = ({
       }));
     });
     console.log(formData);
-  }, [nvAcuityValues]);
+  }, [customFieldsNear, formData, nvAcuityValues]);
 
   const diagnosisOptions = createMenu(diagnosisValues, true, diagnosis);
   const recommendationSpectacleOptions = createMenu(

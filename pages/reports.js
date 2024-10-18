@@ -1,5 +1,4 @@
 import { readUser, allHospitalRoles } from "./api/user";
-import { readBeneficiaryOtherParam } from "./api/beneficiary";
 import { getSession } from "next-auth/react";
 import { Chart as ChartJS } from "chart.js/auto";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -12,9 +11,7 @@ import moment from "moment";
 import { useState, useEffect } from "react";
 import GraphCustomizer from "./components/GraphCustomizer";
 import { Tab, Tabs, Paper } from "@mui/material";
-import XLSX from "xlsx-js-style";
 import { isNotNullBlankOrUndefined } from "@/constants/globalFunctions";
-import { useRouter } from "next/router";
 import {
   filterTrainingSummaryByDateRange,
 } from "@/constants/reportFunctions";
@@ -539,27 +536,6 @@ export default function Summary({
   summary,
   trainingTypes,
 }) {
-  // Downloaded reports reference sheet data
-  // TODO: this hardcoded information will be fetched from database in the future
-  // Your tab-separated data
-  const refData = `S.no\tPrograms\tTypes\tDescription
-  1\tScreening /Out reach activities/ Camp\tLow Vision Screening\tLow vision screening of the school of the blind and Identification of the visually impaired for assistive technology
-  2\t\tIdentification of MDVI\tBeneficiaries come under Multiple disabilities and vision impairment.
-  3\tFunctional Vision/Early Intervention/ Vision enhancement\t\tAge group less than 7 years. Training of infants,children and parents to improve the brain’s ability to use and interpret visual information especially in kids with Cortical visual impairment (CVI)
-  4\tLVD beneficiairies/Comprehensive Low Vision Evaluation - CLVE\t\tLow vision assessment / Functional vision assessment done by a Professional - Optometrist / Low vision care specialist / Rehabilitation Specialist
-  5\tAssistive devices and aids\tAssistive devices/aids/RLF tactile books/ Optical/ Non Optical/ Electronic\tDevices for individuals with low vision and total blindness
-  6\tLow vision device training\tTraining is given after dispensing devices\t
-  7\tCounseling & referrals/ Counseling and education\tEducation and counseling\tList of referrals
-  8\tOrientation & Mobility training (O and M)\t\tTraining to help the visually impaired orient to the environment around and navigate safely
-  9\tComputer training\t\tTraining programs are conducted to build proficiency in computer skills using assistive technology like screen readers, magnification and contrast modifcations
-  10\tMobile technologies \t\tEducating on various mobile app for navigation and other functions
-  11\tVisual skills training\tAll subtypes under it as a whole\tVisual skills training greater than 7 years and adults
-  12\tOther training\tCorporate skill development\tComputer Programming, Digital accessibility testing DAT
-  13\t\tBraille Training & resources and Training with Braille reader / ORBIT reader\tTraining on Braille devices for education and Braille literacy
-  14\t\tTraining for Life skills/ Money identification/ Home management / Kitchen skills\t
-  15\t\tJob Coaching /IBPS\tIntegrated training program for Institute of Banking Personnel Selection and other job coaching
-  16\t\tSpoken english training\tTraining to speak in English for both beginners and Intermediate.`;
-
   // create start date and end data states, start date is set to one year ago, end date is set to today
   const [startDate, setStartDate] = useState(
     moment().subtract(1, "year").toDate()
@@ -701,9 +677,7 @@ export default function Summary({
     }
 
     fetchBeneficiaries();
-  }, [selectedHospitals, startDate, endDate]);
-
-  const router = useRouter();
+  }, [selectedHospitals, startDate, endDate, errorState]);
 
   useEffect(() => {
     setSelectedHospitals([summary?.[0]?.id]);
@@ -779,29 +753,6 @@ export default function Summary({
   const [activeDevicesGraphTab, setActiveDevicesGraphTab] = useState(0);
   const [activeRecDevicesGraphTab, setActiveRecDevicesGraphTab] = useState(0);
   const [activeActivitiesGraphTab, setActiveActivitiesGraphTab] = useState(0);
-  const handleGraphTabChange = (event, newValue) => {
-    setActiveGraphTab(newValue);
-    setActiveBeneficiaryGraphTab(0);
-    setActiveDevicesGraphTab(0);
-    setActiveRecDevicesGraphTab(0);
-    setActiveActivitiesGraphTab(0);
-  };
-
-  const handleBeneficiaryGraphTabChange = (event, newValue) => {
-    setActiveBeneficiaryGraphTab(newValue);
-  };
-
-  const handleDevicesGraphTabChange = (event, newValue) => {
-    setActiveDevicesGraphTab(newValue);
-  };
-
-  const handleRecDevicesGraphTabChange = (event, newValue) => {
-    setActiveRecDevicesGraphTab(newValue);
-  };
-
-  const handleActivitiesGraphTabChange = (event, newValue) => {
-    setActiveActivitiesGraphTab(newValue);
-  };
 
   const options={
     plugins: {

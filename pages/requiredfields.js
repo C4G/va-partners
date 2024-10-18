@@ -415,20 +415,6 @@ function RequiredFields(props) {
     );
   });
 
-  var showForm = {
-    ComprehensiveLowVisionEvaluation: false,
-    visionEnhancement: false,
-    counsellingEducation: false,
-    mobile: false,
-    computer: false,
-    orientationMobility: false,
-    addCounsellingType: false,
-    addTrainingType: false,
-    removeCounsellingType: false,
-    removeTrainingType: false,
-    addTrainingSubType: false,
-  };
-
   const hospitalOptions = [];
   for (let i = 0; i < props.hospitals.length; i++) {
     const hospital = props.hospitals[i];

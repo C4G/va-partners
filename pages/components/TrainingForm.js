@@ -3,11 +3,8 @@ import { Form, Row, Col, Button } from "react-bootstrap";
 import { required } from "../../global/required";
 
 const TrainingForm = ({
-  existingTrainings = [],
   addNewTraining,
   customFields,
-  title,
-  api,
   submitButtonTest,
   typeList,
   mdvi,

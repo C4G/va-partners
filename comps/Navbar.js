@@ -1,6 +1,5 @@
 import Link from "next/link";
-import styles from '@/styles/Home.module.css'
-import {useSession, signIn, signOut, getSession} from "next-auth/react";
+import {useSession, signIn, signOut} from "next-auth/react";
 
 
 export default function Navbar() {

@@ -42,7 +42,7 @@ async function updateData(req, res) {
   }
 }
 
-async function readData(req, res) {}
+async function readData() {}
 
 async function deleteData(req, res) {
   const body = req.body;

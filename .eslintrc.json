@@ -10,7 +10,7 @@
     "plugin:react/jsx-runtime"
   ],
   "rules": {
-    "no-unused-vars": "warn", // Would like to make this an error someday
+    "no-unused-vars": "error",
 
     // REACT RULES
     "react/no-unknown-property": [
