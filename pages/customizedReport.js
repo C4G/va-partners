@@ -1,6 +1,5 @@
-// export default ReportCustomizer;
+import { useState, useEffect } from 'react';
 import moment from 'moment';
-import { useState } from 'react';
 import XLSX from 'xlsx-js-style';
 import { calculateAge } from "@/global/calculate-age";
 import {
@@ -11,15 +10,33 @@ import {
   filterTrainingSummaryByDateRange,
 } from '@/constants/reportFunctions';
 
+// Import Material-UI components
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Button,
+  Typography,
+  Checkbox,
+  FormControlLabel,
+  TextField,
+  Box,
+  IconButton,
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
+
 function ReportCustomizer(props) {
   const {
-    summary =[],
-    trainingTypes= [],
+    summary = [],
+    trainingTypes = [],
     startDate: initialStartDate,
     endDate: initialEndDate,
     selectedHospitals: initialSelectedHospitals = [],
+    onClose,
   } = props;
 
+  // Local states for filters
   const [startDate, setStartDate] = useState(
     initialStartDate || moment().subtract(1, 'year').toDate()
   );
@@ -40,6 +57,7 @@ function ReportCustomizer(props) {
     'At Risk',
   ]);
   const [selectedSheets, setSelectedSheets] = useState([
+    'Summary of Services',
     'Beneficiary',
     'Vision Enhancement',
     'Low Vision Screening',
@@ -47,7 +65,6 @@ function ReportCustomizer(props) {
     'Electronic Devices Break Up',
     'Training',
     'Counselling Education',
-    'Aggregated Hospital Data',
   ]);
   const [selectedTrainingTypes, setSelectedTrainingTypes] = useState(
     trainingTypes || []
@@ -55,10 +72,31 @@ function ReportCustomizer(props) {
   const [minAge, setMinAge] = useState(0);
   const [maxAge, setMaxAge] = useState(100);
 
+  // Synchronize startDate with props
+  useEffect(() => {
+    if (initialStartDate) {
+      setStartDate(initialStartDate);
+    }
+  }, [initialStartDate]);
+
+  // Synchronize endDate with props
+  useEffect(() => {
+    if (initialEndDate) {
+      setEndDate(initialEndDate);
+    }
+  }, [initialEndDate]);
+
+  // Synchronize selectedHospitals with props
+  useEffect(() => {
+    if (initialSelectedHospitals) {
+      setSelectedHospitals(initialSelectedHospitals);
+    }
+  }, [initialSelectedHospitals]);
+
   // Event Handlers
-  const updateGender = (e) => {
-    const gender = e.target.id;
-    const isChecked = e.target.checked;
+  const updateGender = (event) => {
+    const gender = event.target.name;
+    const isChecked = event.target.checked;
 
     if (isChecked) {
       setSelectedGenders((prev) => [...prev, gender]);
@@ -67,9 +105,9 @@ function ReportCustomizer(props) {
     }
   };
 
-  const updateMdvi = (e) => {
-    const mdvi = e.target.id;
-    const isChecked = e.target.checked;
+  const updateMdvi = (event) => {
+    const mdvi = event.target.name;
+    const isChecked = event.target.checked;
 
     if (isChecked) {
       setSelectedMdvi((prev) => [...prev, mdvi]);
@@ -78,9 +116,9 @@ function ReportCustomizer(props) {
     }
   };
 
-  const updateSheets = (e) => {
-    const sheet = e.target.id;
-    const isChecked = e.target.checked;
+  const updateSheets = (event) => {
+    const sheet = event.target.name;
+    const isChecked = event.target.checked;
 
     if (isChecked) {
       setSelectedSheets((prev) => [...prev, sheet]);
@@ -89,21 +127,20 @@ function ReportCustomizer(props) {
     }
   };
 
-  const updateTrainingTypes = (e) => {
-    const trainingType = e.target.id;
-    const isChecked = e.target.checked;
+  const updateTrainingTypes = (event) => {
+    const trainingType = event.target.name;
+    const isChecked = event.target.checked;
 
     if (isChecked) {
       setSelectedTrainingTypes((prev) => [...prev, trainingType]);
     } else {
-      setSelectedTrainingTypes((prev) =>
-        prev.filter((t) => t !== trainingType)
-      );
+      setSelectedTrainingTypes((prev) => prev.filter((t) => t !== trainingType));
     }
   };
 
   const downloadFilteredReport = async () => {
     try {
+      // Fetching beneficiary list
       const adjustedStartDate = new Date(startDate);
       adjustedStartDate.setUTCHours(0, 0, 0, 0);
       const adjustedEndDate = new Date(endDate);
@@ -122,9 +159,10 @@ function ReportCustomizer(props) {
           }
         )
       );
-      let promises = await Promise.all(beneficiaryListAPI);
+
+      const responses = await Promise.all(beneficiaryListAPI);
       const finalResult = await Promise.all(
-        promises.map((res) => (res.json ? res.json().catch((err) => err) : res))
+        responses.map((res) => (res.json ? res.json().catch((err) => err) : res))
       );
       const beneficiaryList = finalResult.flat();
 
@@ -161,24 +199,27 @@ function ReportCustomizer(props) {
         selectedHospitalIds.includes(item.id)
       );
 
-      const {
-        visionEnhancementData,
-        lowVisionEvaluationData,
-        comprehensiveLowVisionEvaluationData,
-        electronicDevicesData,
-        trainingData,
-        counsellingEducationData,
-        aggregatedHospitalData,
-      } = getReportData(
+      // Get report data
+      const reportData = getReportData(
         filteredBeneficiaryData,
         filteredSummary,
         numTotalBeneficiaries === numFilteredBeneficiaries
       );
 
+      // Ensure all data variables are arrays
+      const beneficiaryData = reportData.beneficiaryData || [];
+      const visionEnhancementData = reportData.visionEnhancementData || [];
+      const lowVisionEvaluationData = reportData.lowVisionEvaluationData || [];
+      const comprehensiveLowVisionEvaluationData = reportData.comprehensiveLowVisionEvaluationData || [];
+      const electronicDevicesData = reportData.electronicDevicesData || [];
+      const trainingData = reportData.trainingData || [];
+      const counsellingEducationData = reportData.counsellingEducationData || [];
+      const aggregatedHospitalData = reportData.aggregatedHospitalData || [];
+
       const wb = XLSX.utils.book_new();
 
       if (selectedSheets.includes("Beneficiary")) {
-        const wben = XLSX.utils.json_to_sheet(filteredBeneficiaryData);
+        const wben = XLSX.utils.json_to_sheet(beneficiaryData);
         XLSX.utils.book_append_sheet(wb, wben, "Beneficiary Sheet");
       }
 
@@ -191,20 +232,24 @@ function ReportCustomizer(props) {
         const wlved = XLSX.utils.json_to_sheet([]);
         XLSX.utils.book_append_sheet(wb, wlved, "Low Vision Screening");
         setLveHeader(wlved);
-        XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
-          skipHeader: true,
-          origin: -1,
-        });
+        if (Array.isArray(lowVisionEvaluationData) && lowVisionEvaluationData.length > 0) {
+          XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
+            skipHeader: true,
+            origin: -1,
+          });
+        }
       }
 
       if (selectedSheets.includes("Comprehensive Low Vision Evaluation")) {
         const wclve = XLSX.utils.json_to_sheet([]);
         XLSX.utils.book_append_sheet(wb, wclve, "CLVE Sheet");
         setClveHeader(wclve);
-        XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
-          skipHeader: true,
-          origin: -1,
-        });
+        if (Array.isArray(comprehensiveLowVisionEvaluationData) && comprehensiveLowVisionEvaluationData.length > 0) {
+          XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
+            skipHeader: true,
+            origin: -1,
+          });
+        }
       }
 
       if (selectedSheets.includes("Electronic Devices Break Up")) {
@@ -214,9 +259,7 @@ function ReportCustomizer(props) {
 
       if (selectedSheets.includes("Training")) {
         let finalTrainingData = trainingData;
-        // Check if less number of training types are selected compared to the total number of training types
         if (trainingTypes.length > selectedTrainingTypes.length) {
-          // "Type of Training" is a column title in the Training sheet
           finalTrainingData = trainingData.filter((training) =>
             selectedTrainingTypes.includes(training["Type of Training"])
           );
@@ -230,463 +273,260 @@ function ReportCustomizer(props) {
         XLSX.utils.book_append_sheet(wb, wced, "Counselling Education Sheet");
       }
 
-      if (selectedSheets.includes("Aggregated Hospital Data")) {
-        const wahd = XLSX.utils.json_to_sheet([]);
-        XLSX.utils.book_append_sheet(wb, wahd, "Aggregated Hospital Sheet");
+      // Add Summary of Services sheet
+      if (selectedSheets.includes("Summary of Services")) {
+        const wahd = XLSX.utils.aoa_to_sheet([]);
+        XLSX.utils.book_append_sheet(wb, wahd, "Summary of Services");
+
+        // Set headers using setAhdHeader
         setAhdHeader(
           wahd,
           filteredSummary.map((hospital) => hospital.name)
         );
-        XLSX.utils.sheet_add_json(wahd, aggregatedHospitalData, {
-          skipHeader: true,
-          origin: -1,
-        });
+
+        // Validate aggregatedHospitalData before adding
+        if (Array.isArray(aggregatedHospitalData) && aggregatedHospitalData.length > 0) {
+          // Convert aggregatedHospitalData to worksheet format
+          const dataToAdd = aggregatedHospitalData.map((row) => {
+            const rowData = [];
+            for (const key in row) {
+              if (Object.prototype.hasOwnProperty.call(row, key)) {
+                rowData.push(row[key]);
+              }
+            }
+            return rowData;
+          });
+  
+
+          // Find the starting row after headers
+          const startRow = wahd["!ref"] ? XLSX.utils.decode_range(wahd["!ref"]).e.r + 1 : 0;
+
+          // Add data to the sheet
+          XLSX.utils.sheet_add_aoa(wahd, dataToAdd, { origin: { r: startRow, c: 0 } });
+        }
       }
 
-      XLSX.writeFile(wb, "customized_report.xlsx");
+      // Generate the filename based on the filter date range and the selected hospitals
+      let reportHospitalName = "ALL";
+      const selectedHospitalNames = summary
+        .filter((hospital) => selectedHospitals.includes(hospital.name))
+        .map((hospital) => hospital.name);
+
+      if (selectedHospitalNames.length === 1) {
+        reportHospitalName = selectedHospitalNames[0];
+      } else if (selectedHospitalNames.length > 1) {
+        reportHospitalName = "MULTI";
+      }
+
+      const fileNameComponents = [];
+      fileNameComponents.push("Report");
+      fileNameComponents.push(reportHospitalName);
+      fileNameComponents.push(adjustedStartDate.toUTCString().split('T')[0]);
+      fileNameComponents.push(adjustedEndDate.toUTCString().split('T')[0]);
+
+      const filename = fileNameComponents.join("_") + ".xlsx";
+      XLSX.writeFile(wb, filename);
     } catch (error) {
-      console.error('Error fetching beneficiary list:', error);
+      console.error('Error generating report:', error);
     }
   };
 
   return (
-    <div className="content">
-      <div className="container p-4 mb-3">
-        <div className="accordion">
-          {/* Date Range */}
-          <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingDateRange">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseDateRange"
-                aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseDateRange"
-              >
-                <strong>Date Range</strong>
-              </button>
-            </h2>
-            <div
-              id="panelsStayOpen-collapseDateRange"
-              className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingDateRange"
-            >
-              <div className="accordion-body">
-                <div className="row">
-                  <div className="col-md-4 text-align-left">
-                    <label>Start Date: </label>
-                    <input
-                      type="date"
-                      value={moment(startDate).format('YYYY-MM-DD')}
-                      onChange={(e) => setStartDate(moment(e.target.value).toDate())}
-                      className="margin-left"
-                    />
-                  </div>
-                  <div className="col-md-4 text-align-left">
-                    <label>End Date: </label>
-                    <input
-                      type="date"
-                      value={moment(endDate).format('YYYY-MM-DD')}
-                      onChange={(e) => setEndDate(moment(e.target.value).toDate())}
-                      className="margin-left"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div style={{ width: '300px', padding: '16px' }}>
+      {/* Header with title and close button */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <br></br>
+        <Typography variant="h6">All Filters</Typography>
+        <IconButton onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
-          {/* Hospitals */}
-          <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingHospitals">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseHospitals"
-                aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseHospitals"
-              >
-                <strong>Hospitals</strong>
-              </button>
-            </h2>
-            <div
-              id="panelsStayOpen-collapseHospitals"
-              className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingHospitals"
-            >
-              <div className="accordion-body">
-                <div className="row">
-                  {summary.map((hospital) => (
-                    <div className="col-md-6 text-align-left" key={hospital.id}>
-                      <input
-                        type="checkbox"
-                        id={hospital.id}
-                        onChange={(e) => {
-                          const isChecked = e.target.checked;
-                          if (isChecked) {
-                            setSelectedHospitals((prev) => [...prev, hospital.name]);
-                          } else {
-                            setSelectedHospitals((prev) =>
-                              prev.filter((h) => h !== hospital.name)
-                            );
-                          }
-                        }}
-                        checked={selectedHospitals.includes(hospital.name)}
+      {/* Gender */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography><strong>Gender</strong></Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="M"
+                  checked={selectedGenders.includes("M")}
+                  onChange={updateGender}
+                />
+              }
+              label="Male"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="F"
+                  checked={selectedGenders.includes("F")}
+                  onChange={updateGender}
+                />
+              }
+              label="Female"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="Other"
+                  checked={selectedGenders.includes("Other")}
+                  onChange={updateGender}
+                />
+              }
+              label="Other"
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Age */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography><strong>Age</strong></Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <TextField
+              label="Minimum Age"
+              type="number"
+              inputProps={{ min: 0, max: 100 }}
+              value={minAge}
+              onChange={(e) => setMinAge(Number(e.target.value))}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Maximum Age"
+              type="number"
+              inputProps={{ min: 0, max: 100 }}
+              value={maxAge}
+              onChange={(e) => setMaxAge(Number(e.target.value))}
+              fullWidth
+              margin="normal"
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* MDVI */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography><strong>MDVI</strong></Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="Yes"
+                  checked={selectedMdvi.includes("Yes")}
+                  onChange={updateMdvi}
+                />
+              }
+              label="Yes"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="No"
+                  checked={selectedMdvi.includes("No")}
+                  onChange={updateMdvi}
+                />
+              }
+              label="No"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="At Risk"
+                  checked={selectedMdvi.includes("At Risk")}
+                  onChange={updateMdvi}
+                />
+              }
+              label="At Risk"
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Sheets to Include */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography><strong>Sheets To Include</strong></Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            {[
+              'Summary of Services',
+              'Beneficiary',
+              'Vision Enhancement',
+              'Low Vision Screening',
+              'Comprehensive Low Vision Evaluation',
+              'Electronic Devices Break Up',
+              'Training',
+              'Counselling Education',
+            ].map((sheet) => (
+              <FormControlLabel
+                key={sheet}
+                control={
+                  <Checkbox
+                    name={sheet}
+                    checked={selectedSheets.includes(sheet)}
+                    onChange={updateSheets}
+                  />
+                }
+                label={sheet}
+              />
+            ))}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Training Types */}
+      {selectedSheets.includes("Training") && (
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography><strong>Training Types</strong></Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              {trainingTypes && trainingTypes.length > 0 ? (
+                trainingTypes.map((type) => (
+                  <FormControlLabel
+                    key={type}
+                    control={
+                      <Checkbox
+                        name={type}
+                        checked={selectedTrainingTypes.includes(type)}
+                        onChange={updateTrainingTypes}
                       />
-                      <label className="margin-left">{hospital.name}</label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+                    }
+                    label={type}
+                  />
+                ))
+              ) : (
+                <Typography>No training types available</Typography>
+              )}
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+      )}
 
-          {/* Gender */}
-          <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingThree">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseThree"
-                aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseThree"
-              >
-                <strong>Gender</strong>
-              </button>
-            </h2>
-            <div
-              id="panelsStayOpen-collapseThree"
-              className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingThree"
-            >
-              <div className="accordion-body">
-                <div className="row">
-                  <div className="col-md-2 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="M"
-                      onChange={(e) => updateGender(e)}
-                      checked={selectedGenders.includes("M")}
-                    />
-                    <label className="margin-left">Male</label>
-                  </div>
-
-                  <div className="col-md-2 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="F"
-                      onChange={(e) => updateGender(e)}
-                      checked={selectedGenders.includes("F")}
-                    />
-                    <label className="margin-left">Female</label>
-                  </div>
-
-                  <div className="col-md-2 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Other"
-                      onChange={(e) => updateGender(e)}
-                      checked={selectedGenders.includes("Other")}
-                    />
-                    <label className="margin-left">Other</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Age */}
-          <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingFour">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseFour"
-                aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseFour"
-              >
-                <strong>Age</strong>
-              </button>
-            </h2>
-            <div
-              id="panelsStayOpen-collapseFour"
-              className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingFour"
-            >
-              <div className="accordion-body">
-                <div className="row">
-                  <div className="col-md-4 text-align-left">
-                    <label>Minimum Age: </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={minAge}
-                      onChange={(e) => setMinAge(e.target.value)}
-                      className="margin-left"
-                    />
-                  </div>
-
-                  <div className="col-md-4 text-align-left">
-                    <label>Maximum Age: </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={maxAge}
-                      onChange={(e) => setMaxAge(e.target.value)}
-                      className="margin-left"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* MDVI */}
-          <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingFive">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseFive"
-                aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseFive"
-              >
-                <strong>MDVI</strong>
-              </button>
-            </h2>
-            <div
-              id="panelsStayOpen-collapseFive"
-              className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingFive"
-            >
-              <div className="accordion-body">
-                <div className="row">
-                  <div className="col-md-2 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Yes"
-                      onChange={(e) => updateMdvi(e)}
-                      checked={selectedMdvi.includes("Yes")}
-                    />
-                    <label className="margin-left">Yes</label>
-                  </div>
-
-                  <div className="col-md-2 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="No"
-                      onChange={(e) => updateMdvi(e)}
-                      checked={selectedMdvi.includes("No")}
-                    />
-                    <label className="margin-left">No</label>
-                  </div>
-
-                  <div className="col-md-2 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="At Risk"
-                      onChange={(e) => updateMdvi(e)}
-                      checked={selectedMdvi.includes("At Risk")}
-                    />
-                    <label className="margin-left">At Risk</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sheets to Include */}
-          <div className="accordion-item">
-            <h2 className="accordion-header" id="panelsStayOpen-headingSix">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#panelsStayOpen-collapseSix"
-                aria-expanded="false"
-                aria-controls="panelsStayOpen-collapseSix"
-              >
-                <strong>Sheets To Include</strong>
-              </button>
-            </h2>
-            <div
-              id="panelsStayOpen-collapseSix"
-              className="accordion-collapse collapse"
-              aria-labelledby="panelsStayOpen-headingSix"
-            >
-              <div className="accordion-body">
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Beneficiary"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes("Beneficiary")}
-                    />
-                    <label className="margin-left">Beneficiary</label>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Vision Enhancement"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes("Vision Enhancement")}
-                    />
-                    <label className="margin-left">Vision Enhancement</label>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Low Vision Screening"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes("Low Vision Screening")}
-                    />
-                    <label className="margin-left">Low Vision Screening</label>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Comprehensive Low Vision Evaluation"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes(
-                        "Comprehensive Low Vision Evaluation"
-                      )}
-                    />
-                    <label className="margin-left">
-                      Comprehensive Low Vision Evaluation
-                    </label>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Electronic Devices Break Up"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes(
-                        "Electronic Devices Break Up"
-                      )}
-                    />
-                    <label className="margin-left">
-                      Electronic Devices Break Up
-                    </label>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Training"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes("Training")}
-                    />
-                    <label className="margin-left">Training</label>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Counselling Education"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes("Counselling Education")}
-                    />
-                    <label className="margin-left">Counselling Education</label>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6 text-align-left">
-                    <input
-                      type="checkbox"
-                      id="Aggregated Hospital Data"
-                      onChange={(e) => updateSheets(e)}
-                      checked={selectedSheets.includes(
-                        "Aggregated Hospital Data"
-                      )}
-                    />
-                    <label className="margin-left">
-                      Aggregated Hospital Data
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {selectedSheets.includes("Training") && (
-            <div className="accordion-item">
-              <h2 className="accordion-header" id="panelsStayOpen-headingSeven">
-                <button
-                  className="accordion-button collapsed"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#panelsStayOpen-collapseSeven"
-                  aria-expanded="false"
-                  aria-controls="panelsStayOpen-collapseSeven"
-                >
-                  <strong>Training Types</strong>
-                </button>
-              </h2>
-              <div
-                id="panelsStayOpen-collapseSeven"
-                className="accordion-collapse collapse"
-                aria-labelledby="panelsStayOpen-headingSeven"
-              >
-                <div className="accordion-body">
-                  {trainingTypes && trainingTypes.length > 0 ? (
-                    trainingTypes.map((type) => (
-                      <div className="row" key={type}>
-                        <div className="col-md-6 text-align-left">
-                          <input
-                            type="checkbox"
-                            id={type}
-                            onChange={(e) => updateTrainingTypes(e)}
-                            checked={selectedTrainingTypes.includes(type)}
-                          />
-                          <label className="margin-left">{type}</label>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p>No training types available</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <br />
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={() => downloadFilteredReport()}
-        >
-          Download Customized Report
-        </button>
-        <br />
-        <br />
-      </div>
-      <br />
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => {
+          downloadFilteredReport();
+        }}
+        fullWidth
+        style={{ marginTop: '16px' }}
+      >
+        Download Customized Report
+      </Button>
     </div>
   );
 }

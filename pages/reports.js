@@ -11,15 +11,19 @@ import moment from "moment";
 import { useState, useEffect } from "react";
 import GraphCustomizer from "./components/GraphCustomizer";
 import { Tab, Tabs, Paper } from "@mui/material";
-import { isNotNullBlankOrUndefined } from "@/constants/globalFunctions";
-import {
-  filterTrainingSummaryByDateRange,
-} from "@/constants/reportFunctions";
+import { isNotNullBlankOrUndefined} from "@/constants/globalFunctions";
 import ReportCustomizer from './customizedReport';
 import { AgGridReact } from 'ag-grid-react'; 
 import "ag-grid-community/styles/ag-grid.css"; 
 import "ag-grid-community/styles/ag-theme-quartz.css"; 
 import { getTrainingTypes } from './api/trainingType';
+import EditIcon from '@mui/icons-material/Edit';
+import { Drawer, IconButton, Button, Box } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import {
+  filterTrainingSummaryByDateRange,
+  getAggregatedHospitalData,
+} from "@/constants/reportFunctions";
 
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
@@ -106,29 +110,6 @@ const graphOptions = {
   borderWidth: 1,
 };
 
-// Function that builds a bar graph to show number of beneficiaries per hospital
-function buildBeneficiaryGraph(data) {
-  // data is an array of hospital objects
-  const simplifiedData = data.map((hospital) => {
-    return {
-      name: hospital.name,
-      value: hospital.beneficiary.length,
-    };
-  });
-
-  // create a bar graph with graphData
-  const graphData = {
-    labels: simplifiedData.map((hospital) => hospital.name),
-    datasets: [
-      {
-        label: "Beneficiaries",
-        data: simplifiedData.map((hospital) => hospital.value),
-        ...graphOptions,
-      },
-    ],
-  };
-  return graphData;
-}
 
 // Function that builds a bar graph to show all the activities involved
 function buildActivitiesGraph(data) {
@@ -303,6 +284,52 @@ function buildDevicesGraph(data) {
   };
 
   return chartData;
+}
+
+
+function buildSessionsGraph(totalSessions) {
+  return {
+    labels: ["Total Sessions"],
+    datasets: [
+      {
+        label: "Number of Sessions",
+        data: [totalSessions],
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+}
+
+function buildTotalBeneficiariesGraph(totalBeneficiaries) {
+  return {
+    labels: ["Total Beneficiaries"],
+    datasets: [
+      {
+        label: "Number of Beneficiaries",
+        data: [totalBeneficiaries],
+        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        borderColor: "rgba(54, 162, 235, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+}
+
+function buildUniqueBeneficiariesGraph(uniqueBeneficiaries) {
+  return {
+    labels: ["Unique Beneficiaries"],
+    datasets: [
+      {
+        label: "Unique Beneficiaries",
+        data: [uniqueBeneficiaries],
+        backgroundColor: "rgba(153, 102, 255, 0.2)",
+        borderColor: "rgba(153, 102, 255, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
 }
 
 // Function that builds a bar graph to show the number of devices recommended
@@ -531,6 +558,23 @@ function buildAgeGraph(beneficiaries) {
   return chartData;
 }
 
+const EditButtonRenderer = (props) => {
+  const mrn = props.data.mrn;
+  const hospitalId = props.data.hospitalId;
+
+  return (
+    <IconButton
+      color="primary"
+      onClick={() => {
+        const url = `/user?mrn=${encodeURIComponent(mrn)}&hospitalId=${encodeURIComponent(hospitalId)}`;
+        window.location.href = url;
+      }}
+    >
+      <EditIcon />
+    </IconButton>
+  );
+};
+
 export default function Summary({
   user,
   summary,
@@ -542,15 +586,37 @@ export default function Summary({
   );
   const [endDate, setEndDate] = useState(moment().toDate());
   const [masterTabIndex, setMasterTabIndex] = useState(0); // State to manage the master tab (Table/Graph)
+  const [subTabIndex, setSubTabIndex] = useState(0); // State for sub-tabs within Beneficiaries
   const [selectedHospitals, setSelectedHospitals] = useState([]);
   const [selectedHospitalNames, setSelectedHospitalNames] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [totalBeneficiaries, setTotalBeneficiaries] = useState(0);
+  const [uniqueBeneficiaries, setUniqueBeneficiaries] = useState(0);
+
 
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorState, setErrorState] = useState(null);
 
-  // Column Definitions for AgGridReact
+
+const handleDrawerOpen = () => {
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+  };
+
   const [colDefs] = useState([
+    {
+      headerName: "Edit",
+      cellRenderer: EditButtonRenderer,
+      width: 150,
+      filter: false,
+      sortable: false,
+      cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+    },
     { field: "mrn", headerName: "MRN", filter: true, sortable: true },
     { field: "beneficiaryName", headerName: "Beneficiary Name", filter: true, sortable: true },
     { field: "hospitalId", headerName: "Hospital ID", filter: true, sortable: true },
@@ -623,7 +689,7 @@ export default function Summary({
     },
     { field: "extraInformation", headerName: "Extra Information", filter: true, sortable: true },
   ]);
-
+  
   // Fetch Beneficiaries based on selected hospitals and date range
   useEffect(() => {
     async function fetchBeneficiaries() {
@@ -677,7 +743,12 @@ export default function Summary({
     }
 
     fetchBeneficiaries();
-  }, [selectedHospitals, startDate, endDate, errorState]);
+  }, [selectedHospitals, startDate, endDate]);
+
+  const handleSubTabChange = (event, newValue) => {
+    setSubTabIndex(newValue);
+  };
+
 
   useEffect(() => {
     setSelectedHospitals([summary?.[0]?.id]);
@@ -722,8 +793,8 @@ export default function Summary({
     selectedHospitals.includes(item.id)
   );
 
+
   // generate all the data for required graphs
-  const beneficiaryGraphData = buildBeneficiaryGraph(filteredSummary);
   const genderGraphData = buildGenderGraph(beneficiaries);
   const ageGraphData = buildAgeGraph(beneficiaries);
   const activitiesGraphData = buildActivitiesGraph(filteredSummary);
@@ -765,15 +836,31 @@ export default function Summary({
     },
   };
 
+  useEffect(() => {
+    if (filteredSummary.length > 0 && beneficiaries.length > 0 && selectedHospitalNames.length > 0) {
+      const aggregatedData = getAggregatedHospitalData(beneficiaries, filteredSummary, true);
+      if (aggregatedData) {
+        setTotalSessions(aggregatedData.otSessionsTotal);
+        setTotalBeneficiaries(aggregatedData.totalBeneficiariesTotal);
+        setUniqueBeneficiaries(aggregatedData.uniqueBeneficiaries);
+      }
+    }
+  }, [filteredSummary, beneficiaries, selectedHospitalNames]);
+  
   const renderGraph = () => {
     switch (activeGraphTab) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-            return <Bar data={beneficiaryGraphData} options={options} />;
+            // return <Bar data={beneficiaryGraphData} options={options} />;
+            return <Bar data={buildSessionsGraph(totalSessions)} />;
           case 1:
-            return <Bar data={genderGraphData} options={options} />;
+            return <Bar data={buildTotalBeneficiariesGraph(totalBeneficiaries)} />;
           case 2:
+              return <Bar data={buildUniqueBeneficiariesGraph(uniqueBeneficiaries)} />;
+          case 3:
+            return <Bar data={genderGraphData} options={options} />;
+          case 4:
             return <Bar data={ageGraphData} options={options} />;
           default:
             return null;
@@ -829,9 +916,8 @@ export default function Summary({
       <div className="content">
         <Navigation user={user} />
         <Container className="p-3">
-          <h1 className="text-center mt-4 mb-4">Reports</h1>
-          
-          <div className="col-md-3">
+            {/* All Filters button next to Select Quarter */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <GraphCustomizer
               user={user}
               summary={summary}
@@ -845,8 +931,35 @@ export default function Summary({
               setStartDate={setStartDate}
               setEndDate={setEndDate}
             />
-          </div>
-          <br />
+
+            {/* All Filters Button */}
+            <Button
+              variant="contained"
+              startIcon={<MenuIcon />}
+              onClick={handleDrawerOpen}
+              sx={{ marginLeft: 0, width: '160px', height:'55px' }}
+            >
+              All Filters
+            </Button>
+          </Box>
+
+          {/* Drawer component to hold filters */}
+          <Drawer anchor="right" open={drawerOpen} onClose={handleDrawerClose}>
+            <Box
+              sx={{ width: 310 }}
+              role="presentation"
+            >
+              <ReportCustomizer
+                user={user}
+                summary={summary}
+                trainingTypes={trainingTypes}
+                startDate={startDate}
+                endDate={endDate}
+                selectedHospitals={selectedHospitalNames}
+                onClose={handleDrawerClose}
+              />
+            </Box>
+          </Drawer>
 
           {/* Master Tab - Toggle between Table, Graphs, and Download */}
           <Tabs
@@ -858,13 +971,24 @@ export default function Summary({
           >
             <Tab label="Table" />
             <Tab label="Charts" />
-            <Tab label="Download" />
+
           </Tabs>
 
           {/* Render Table, Graphs, or Download based on selected Master Tab */}
           {masterTabIndex === 0 && (
-              <div>
-              <h2 className="text-center mt-4 mb-4">Beneficiaries Table</h2>
+        <div>
+          {/* Sub-Tabs for Beneficiaries */}
+          <Tabs value={subTabIndex} onChange={handleSubTabChange} centered>
+            <Tab label="Beneficiaries" />
+            <Tab label="Vision Enhancement" />
+            <Tab label="Training" />
+            <Tab label="Comprehensive Low Vision Enhancement" />
+            <Tab label="Counselling" />
+          </Tabs>
+
+          {/* Sub-Tabs Content */}
+          {subTabIndex === 0 && (
+            <div>
               {isLoading && <p>Loading beneficiaries...</p>}
               {!isLoading && beneficiaries.length > 0 && (
                 <div className="ag-theme-quartz" style={{ height: '600px', width: '100%' }}>
@@ -872,7 +996,7 @@ export default function Summary({
                     rowData={beneficiaries}
                     columnDefs={colDefs}
                     pagination={true}
-                    paginationPageSize={50} // Adjust page size as needed
+                    paginationPageSize={50} 
                   />
                 </div>
               )}
@@ -881,6 +1005,33 @@ export default function Summary({
               )}
             </div>
           )}
+          {subTabIndex === 1 && (
+            <div className="text-center mt-4">
+              <p>Coming Soon ...</p>
+            </div>
+          )}
+          {subTabIndex === 2 && (
+            <div className="text-center mt-4">
+              <p>Coming Soon ...</p>
+            </div>
+          )}
+            {subTabIndex === 3 && (
+            <div className="text-center mt-4">
+              <p>Coming Soon ...</p>
+            </div>
+          )}
+            {subTabIndex === 4 && (
+            <div className="text-center mt-4">
+              <p>Coming Soon ...</p>
+            </div>
+          )}
+           {subTabIndex === 5 && (
+            <div className="text-center mt-4">
+              <p>Coming Soon ...</p>
+            </div>
+          )}
+        </div>
+      )}
           {masterTabIndex === 1 && (
             <div>
               {/* Graph Customization */}
@@ -899,6 +1050,7 @@ export default function Summary({
                       <Tab label="Activities" />
                       <Tab label="Dispensed Devices" />
                       <Tab label="Recommended Devices" />
+                      <Tab label="Visual Acuity" />
                     </Tabs>
 
                     {/* Beneficiary Graph Sub-Tab */}
@@ -910,7 +1062,9 @@ export default function Summary({
                         textColor="primary"
                         centered
                       >
-                        <Tab label="All Beneficiaries" />
+                        <Tab label="Total Sessions" />
+                        <Tab label="Accurate Beneficiaries" />
+                        <Tab label="Unique Beneficiaries" />
                         <Tab label="Gender Distribution" />
                         <Tab label="Age Distribution" />
                       </Tabs>
@@ -964,7 +1118,13 @@ export default function Summary({
                         <Tab label="Non-Optical" />
                       </Tabs>
                     )}
-
+                    {activeGraphTab === 4 && (
+                    <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
+                    <div className="text-center mt-4">
+              <p>Coming Soon ...</p>
+            </div>
+                  </Box>
+                    )}
                     {/* Render the selected graph */}
                     {renderGraph()}
                   </Paper>
@@ -972,21 +1132,7 @@ export default function Summary({
               </div>
             </div>
           )}
-          {masterTabIndex === 2 && (
-            <div className="text-center mt-4">
-              <div className="mt-4">
-                {/* Customized Report Page */}
-                <ReportCustomizer
-                  user={user}
-                  summary={summary}
-                  trainingTypes={trainingTypes}
-                  startDate={startDate}
-                  endDate={endDate}
-                  selectedHospitals={selectedHospitalNames}
-                />
-              </div>
-            </div>
-          )}
+
         </Container>
         <br />
       </div>

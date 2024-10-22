@@ -366,7 +366,7 @@ function getCeJson(commonData, ceData) {
 }
 
 // Populates data for Aggregated Hospital Data Sheet
-function getAggregatedHospitalData(
+export function getAggregatedHospitalData(
   filteredBeneficiaryData,
   filteredSummary,
   includeAllBeneficiaries
@@ -591,6 +591,8 @@ function getAggregatedHospitalData(
   };
   let totalBeneficiariesTotal = 0;
 
+  let uniqueBeneficiaries = 0;
+
   // If all beneficiaries are not to be included in the report,
   // remove those beneficiaries from filteredSummary which do not meet selected criteria
   if (!includeAllBeneficiaries) {
@@ -771,6 +773,14 @@ function getAggregatedHospitalData(
       )
     );
 
+    uniqueBeneficiaries =
+    screeningsBeneficiaries.size +
+    visionEnhancementBeneficiaries.size +
+    clveBeneficiaries.size +
+    counsellingBeneficiaries.size +
+    trainingBeneficiaries.size;
+
+    
     // Screenings Only
     screeningsOnlyRow[hospital.name + " Sessions"] = "";
     screeningsOnlyRow[hospital.name + " Beneficiaries"] = Array.from(
@@ -1085,7 +1095,7 @@ function getAggregatedHospitalData(
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push(mdviRow);
 
-  return aggregatedHospitalData;
+  return {aggregatedHospitalData, otSessionsTotal, totalBeneficiariesTotal,uniqueBeneficiaries,} 
 }
 
 // Sorting function
@@ -1287,14 +1297,14 @@ export function getReportData(
   filteredSummary,
   includeAllBeneficiaries
 ) {
-  let beneficiaryData = [];
-  let visionEnhancementData = [];
-  let lowVisionEvaluationData = [];
-  let comprehensiveLowVisionEvaluationData = [];
-  let electronicDevicesData = [];
-  let trainingData = [];
-  let counsellingEducationData = [];
-  let aggregatedHospitalData = getAggregatedHospitalData(
+  const beneficiaryData = [];
+  const visionEnhancementData = [];
+  const lowVisionEvaluationData = [];
+  const comprehensiveLowVisionEvaluationData = [];
+  const electronicDevicesData = [];
+  const trainingData = [];
+  const counsellingEducationData = [];
+  const { aggregatedHospitalData, otSessionsTotal, totalBeneficiariesTotal,uniqueBeneficiaries } = getAggregatedHospitalData(
     filteredBeneficiaryData,
     filteredSummary,
     includeAllBeneficiaries
