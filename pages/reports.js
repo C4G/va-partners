@@ -1,9 +1,13 @@
-import { readUser, allHospitalRoles } from "./api/user";
+import { readUser } from "./api/user";
 import { getSession } from "next-auth/react";
 import { Chart as ChartJS } from "chart.js/auto";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bar } from "react-chartjs-2";
-import { getSummaryForAllHospitals } from "@/pages/api/hospital";
+import {
+  getHospitalsSummaries,
+  findAllHospital,
+  getHospitalsSummariesCounts,
+} from "@/pages/api/hospital";
 import { Container } from "react-bootstrap";
 import Navigation from "./navigation/Navigation";
 import Layout from './components/layout';
@@ -42,35 +46,32 @@ export async function getServerSideProps(ctx) {
     };
   }
 
-  const getHospitalIdsByUsers = (id, users) => {
-    let hospitalIds = [];
-    for (const user of users) {
-      if (user.userId === id) {
-        hospitalIds.push(user.hospitalId);
-      }
-    }
-    return hospitalIds;
-  };
-
-  // If it's a non-admin user, we only want to show the summary for their hospital
+  // If it's a non admin user, we only want to show their hospital(s)
   const user = await readUser(session.user.email);
-  const roles = await allHospitalRoles();
+  const isAdmin = Boolean(user.admin);
+  
   let hospitalIds;
-  const isAdmin = user.admin != null;
   if (!isAdmin) {
-    hospitalIds = getHospitalIdsByUsers(user.id, roles);
+    hospitalIds = Array.from(
+      new Set(user.hospitalRoles.map(role => role.hospitalId))
+    );
   }
-
-  // Fetch the summary and other necessary data
-  const summary = await getSummaryForAllHospitals(isAdmin, hospitalIds);
+  else {
+    const hospitals = await findAllHospital();
+    hospitalIds = hospitals.map(hospital => hospital.id);
+  }
 
   // Fetch trainingTypes before returning props
   const trainingTypes = await getTrainingTypes();
+  // We return summary counts and paginated summaries for user hospital(s).
+  const summary = await getHospitalsSummaries(hospitalIds);
+  const summaryCounts = await getHospitalsSummariesCounts(hospitalIds);
 
   return {
     props: {
       user: JSON.parse(JSON.stringify(user)),
       summary: JSON.parse(JSON.stringify(summary)),
+      summaryCounts: JSON.parse(JSON.stringify(summaryCounts)),
       error: null,
       trainingTypes, // Pass trainingTypes to props
     },
