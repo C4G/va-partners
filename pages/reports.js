@@ -29,6 +29,7 @@ import {
   getAggregatedHospitalData,
 } from "@/constants/reportFunctions";
 
+
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
 
@@ -64,7 +65,8 @@ export async function getServerSideProps(ctx) {
   // Fetch trainingTypes before returning props
   const trainingTypes = await getTrainingTypes();
   // We return summary counts and paginated summaries for user hospital(s).
-  const summary = await getHospitalsSummaries(hospitalIds);
+  const summary = await getHospitalsSummaries(hospitalIds) || [];
+  
   const summaryCounts = await getHospitalsSummariesCounts(hospitalIds);
 
   return {
@@ -780,7 +782,7 @@ const handleDrawerOpen = () => {
       setSelectedHospitalNames([]);
     }
   };
-
+  
   // filter summary data based on start and end date of the training
   const dateFilteredSummary = filterTrainingSummaryByDateRange(
     startDate,
@@ -849,16 +851,18 @@ const handleDrawerOpen = () => {
   }, [filteredSummary, beneficiaries, selectedHospitalNames]);
   
   const renderGraph = () => {
+    if (selectedHospitals.length === 0) {
+      return <p><br></br>Please select hospitals to view the graphs.</p>;
+    }
     switch (activeGraphTab) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-            // return <Bar data={beneficiaryGraphData} options={options} />;
-            return <Bar data={buildSessionsGraph(totalSessions)} />;
-          case 1:
             return <Bar data={buildTotalBeneficiariesGraph(totalBeneficiaries)} />;
+          case 1:
+            return <Bar data={buildUniqueBeneficiariesGraph(uniqueBeneficiaries)} />;
           case 2:
-              return <Bar data={buildUniqueBeneficiariesGraph(uniqueBeneficiaries)} />;
+              return <Bar data={buildSessionsGraph(totalSessions)} />;
           case 3:
             return <Bar data={genderGraphData} options={options} />;
           case 4:
@@ -1063,11 +1067,12 @@ const handleDrawerOpen = () => {
                         textColor="primary"
                         centered
                       >
-                        <Tab label="Total Sessions" />
+                        
                         <Tab label="Accurate Beneficiaries" />
                         <Tab label="Unique Beneficiaries" />
-                        <Tab label="Gender Distribution" />
-                        <Tab label="Age Distribution" />
+                        <Tab label="Total Sessions" />
+                        <Tab label="Gender" />
+                        <Tab label="Age" />
                       </Tabs>
                     )}
 

@@ -508,13 +508,13 @@ h2 {
 footer will be floating and page will be too short for styling) */
 .content {
   flex: 1; /* Fill remaining vertical space */
-  min-height: calc(91vh - 36px); /* Adjust for footer height */
+  min-height: calc(91vh - 8px); /* Adjust for footer height */
 }
 
 .footer {
   background-color: #1B5E20;
-  border-bottom: 5px solid #fff;
-  padding: 40px;
+  border-bottom: 1px solid #fff;
+  padding: 8px;
   text-align: center;
   color: #fff;
   flex-shrink: 0; /* Prevent footer from shrinking */

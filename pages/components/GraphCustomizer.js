@@ -76,7 +76,7 @@ function GraphCustomizer({
     if (quarterLabel === '') {
       setSelectedQuarter(''); // Clear selected quarter when empty is selected
       return;
-    } 
+    }
     // Find the correct index in the original quarters array (not the reordered one)
     const selectedIndex = quarters.findIndex((q) => q.label === quarterLabel);
     setQuarter(moment().year(), selectedIndex); // Update the date range when a quarter is selected
@@ -110,6 +110,32 @@ function GraphCustomizer({
         padding: 1, // Add some padding around the content
       }}
     >
+      {/* "Select/Unselect All" option */}
+      <Box>
+        <Checkbox
+          checked={selectedHospitals.length === summary.length}
+          indeterminate={
+            selectedHospitals.length > 0 &&
+            selectedHospitals.length < summary.length
+          }
+          onChange={() => {
+            if (selectedHospitals.length === summary.length) {
+              handleHospitalSelection({ target: { value: [] } });
+            } else {
+              const allHospitals = summary.map((hospital) => hospital.name);
+              handleHospitalSelection({ target: { value: allHospitals } });
+            }
+          }}
+        />
+        <ListItemText
+          primary={
+            selectedHospitals.length === summary.length
+              ? 'Unselect All'
+              : 'Select All'
+          }
+        />
+      </Box>
+
       {/* Hospital Selection */}
       <Box>
         <FormControl fullWidth>
@@ -132,31 +158,6 @@ function GraphCustomizer({
             label="Select Hospitals"
             sx={{ width: 250 }} // Adjust the width of the hospital dropdown
           >
-            {/* Add "Select/Unselect All" option */}
-            <MenuItem>
-              <Checkbox
-                checked={selectedHospitals.length === summary.length}
-                indeterminate={
-                  selectedHospitals.length > 0 &&
-                  selectedHospitals.length < summary.length
-                }
-                onChange={() => {
-                  if (selectedHospitals.length === summary.length) {
-                    handleHospitalSelection({ target: { value: [] } });
-                  } else {
-                    const allHospitals = summary.map((hospital) => hospital.name);
-                    handleHospitalSelection({ target: { value: allHospitals } });
-                  }
-                }}
-              />
-              <ListItemText
-                primary={
-                  selectedHospitals.length === summary.length
-                    ? 'Unselect All'
-                    : 'Select All'
-                }
-              />
-            </MenuItem>
             {/* Hospital options */}
             {summary.map((hospital) => (
               <MenuItem key={hospital.id} value={hospital.name}>
@@ -195,8 +196,16 @@ function GraphCustomizer({
       </Box>
 
       {/* Quarter Selection */}
-      <FormControl>
-        <InputLabel id="quarter-select-label">Select Quarter</InputLabel>
+      <FormControl >
+        <InputLabel id="quarter-select-label"
+            sx={{
+              backgroundColor: 'white', // Give the label a white background
+              px: 1, // Add padding on the x-axis to provide spacing around the text
+              transform: 'translate(14px, -9px) scale(0.75)', // Adjust positioning and scaling
+              pointerEvents: 'none', // Prevent clicking on the label itself
+            }}
+          
+        >Select Quarter</InputLabel>
         <Select
           labelId="quarter-select-label"
           value={selectedQuarter}
@@ -218,3 +227,4 @@ function GraphCustomizer({
 }
 
 export default GraphCustomizer;
+
