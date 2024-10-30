@@ -1,6 +1,6 @@
 
 // feedback.js api
-import prisma from "client";
+import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import { updateUserLastModified } from "@/global/update-user-last-modified";

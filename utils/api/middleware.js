@@ -1,5 +1,5 @@
 // middleware.js
-import prisma from "client";
+import prisma from "@/utils/api/client";
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from 'next/server';
 import { updateUserLastModified } from "@/global/update-user-last-modified";

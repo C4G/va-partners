@@ -4,7 +4,7 @@
 * Uses Next.js Dynamic Routes to consolodate into one module.
 */
 
-import prisma from "client";
+import prisma from "@/utils/api/client";
 
 export default async function handler(req, res) {
   const { type } = req.query;
