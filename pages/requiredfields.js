@@ -6,7 +6,7 @@ import { readBeneficiaryMirror } from "@/pages/api/beneficiaryMirror";
 import { v4 as uuidv4 } from "uuid";
 import Router from "next/router";
 import Navigation from "./navigation/Navigation";
-import { findAllHospitalsHistory } from "@/pages/api/hospital";
+import { findAllHospital } from "@/pages/api/hospital";
 import { readMobileTrainingMirror } from "@/pages/api/mobileTrainingMirror";
 import { readComputerTrainingMirror } from "@/pages/api/computerTrainingMirror";
 import { readOrientationMobilityTrainingMirror } from "@/pages/api/orientationMobilityTrainingMirror";
@@ -55,7 +55,7 @@ export async function getServerSideProps(ctx) {
       requiredComprehensiveLowVisionEvaluation:
         await readComprehensiveLowVisionEvaluationMirror(),
       requiredCounsellingEducation: await readCounsellingEducationMirror(),
-      hospitals: await findAllHospitalsHistory(),
+      hospitals: await findAllHospital(),
       counselingTypeList: await getCounsellingType(),
       trainingTypeList: await getTrainingTypes(),
       trainingSubTypeList: await getTrainingSubTypes(),
