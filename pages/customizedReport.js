@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import moment from 'moment';
 import XLSX from 'xlsx-js-style';
-import { calculateAge } from "@/global/calculate-age";
+import { calculateAge } from "@/utils/global/calculate-age";
 import {
   setAhdHeader,
   setClveHeader,

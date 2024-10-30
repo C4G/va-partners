@@ -746,7 +746,7 @@ const handleDrawerOpen = () => {
     }
 
     fetchBeneficiaries();
-  }, [selectedHospitals, startDate, endDate]);
+  }, [selectedHospitals, startDate, endDate, errorState]);
 
   const handleSubTabChange = (event, newValue) => {
     setSubTabIndex(newValue);

@@ -1,16 +1,15 @@
 import prisma from "@/utils/api/client";
-//import { getServerSession } from "next-auth";
-//import { authOptions } from "../../auth/[...nextauth]";
-//import { updateUserLastModified } from "@/global/update-user-last-modified";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
-  // const session = await getServerSession(req, res, authOptions);
-  // if (!session) {
-  //   return res.status(401).json({ message: "Unauthorized" });
-  // }
+  const session = await getServerSession(req, res, authOptions);
+  if (!session) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
-  // await updateUserLastModified(prisma, "dashboard/count", req.method,
-  //   session.user.email);
+  await updateUserLastModified("dashboard/count", req.method, session.user.email);
 
   if (req.method == "GET") {
     return await readData(req, res);

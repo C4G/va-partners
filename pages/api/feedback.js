@@ -3,7 +3,7 @@
 import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import { updateUserLastModified } from "@/global/update-user-last-modified";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions)
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     res.status(401).json({ message: "You must be logged in." })
     return
   }
-  await updateUserLastModified(prisma, 'feedback', req.method, session.user.email);
+  await updateUserLastModified('feedback', req.method, session.user.email);
   if (req.method === 'POST') {
     const { rating, comments, email } = req.body;
 

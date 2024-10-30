@@ -1,7 +1,7 @@
 import XLSX from "xlsx-js-style";
 import { isNotNullEmptyOrUndefined, union, difference, intersect } from "./globalFunctions";
 import moment from "moment";
-import { calculateAge } from "@/global/calculate-age";
+import { calculateAge } from "@/utils/global/calculate-age";
 
 function getFormattedDate(date) {
   const day = date.getDate();
@@ -1304,7 +1304,7 @@ export function getReportData(
   const electronicDevicesData = [];
   const trainingData = [];
   const counsellingEducationData = [];
-  const { aggregatedHospitalData, otSessionsTotal, totalBeneficiariesTotal,uniqueBeneficiaries } = getAggregatedHospitalData(
+  const { aggregatedHospitalData } = getAggregatedHospitalData(
     filteredBeneficiaryData,
     filteredSummary,
     includeAllBeneficiaries

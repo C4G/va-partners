@@ -1,8 +1,7 @@
 // middleware.js
-import prisma from "@/utils/api/client";
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from 'next/server';
-import { updateUserLastModified } from "@/global/update-user-last-modified";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 
 export async function middleware(request) {
@@ -21,7 +20,7 @@ export async function middleware(request) {
 
     if (pathname.startsWith('/api/v2/')) {
         const endpointName = pathname.split('/').pop() || 'default';
-        await updateUserLastModified(prisma, endpointName, request.method,
+        await updateUserLastModified(endpointName, request.method,
             token.email);
     }
 

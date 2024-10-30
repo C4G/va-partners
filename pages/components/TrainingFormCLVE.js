@@ -33,7 +33,7 @@ import {
 import { comma, diagnosisValues } from "@/constants/generalConstants";
 import { jsonToCSV } from "react-papaparse";
 import moment from "moment";
-import { required } from "../../global/required";
+import { required } from "../../comps/required";
 
 const TrainingFormCLVE = ({
   addNewTraining,
