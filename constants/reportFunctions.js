@@ -1,7 +1,7 @@
 import XLSX from "xlsx-js-style";
 import { isNotNullEmptyOrUndefined, union, difference, intersect } from "./globalFunctions";
 import moment from "moment";
-import { calculateAge } from "@/utils/global/calculate-age";
+import { calculateAge } from "utils/global/calculate-age";
 
 function getFormattedDate(date) {
   const day = date.getDate();
@@ -369,8 +369,22 @@ function getCeJson(commonData, ceData) {
 export function getAggregatedHospitalData(
   filteredBeneficiaryData,
   filteredSummary,
-  includeAllBeneficiaries
+  includeAllBeneficiaries,
+  // selectedGenders,
+  // selectedMdvi,
+  // minAge,
+  // maxAge,
+  // selectedTrainingTypes,
+  // selectedTrainingSubTypes
 ) {
+  // filteredBeneficiaryData = filteredBeneficiaryData.filter(
+  //   (item) =>
+  //     selectedGenders.includes(item.gender) &&
+  //     selectedMdvi.includes(item.mDVI) &&
+  //     minAge <= calculateAge(item.dateOfBirth) &&
+  //     calculateAge(item.dateOfBirth) <= maxAge
+  // );
+
   let aggregatedHospitalData = [];
 
   // Blank row
@@ -422,11 +436,9 @@ export function getAggregatedHospitalData(
     new Set(
       filteredBeneficiaryData
         .map((beneficiary) => {
-          return (
-            beneficiary.training
-              // .filter((training) => isNotNullEmptyOrUndefined(training.type))
-              .map((training) => training.type)
-          );
+          return beneficiary.training 
+            ? beneficiary.training.map((training) => training.type) 
+            : []; // Return an empty array if training is undefined
         })
         .flat(Infinity)
     )
@@ -602,7 +614,7 @@ export function getAggregatedHospitalData(
     filteredSummary = filteredSummary.map((hospital) => {
       return {
         ...hospital,
-        beneficiary: hospital.beneficiary.filter((beneficiary) =>
+        beneficiary: hospital.beneficiary?.filter((beneficiary) =>
           filteredBeneficiaryIds.includes(beneficiary.mrn)
         ),
         comprehensiveLowVisionEvaluation:
@@ -626,6 +638,7 @@ export function getAggregatedHospitalData(
     });
   }
 
+  
   // Add checks for empty arrays
   for (let hospital of filteredSummary) {
     // Low Vision Screening data
@@ -642,7 +655,7 @@ export function getAggregatedHospitalData(
 
     // MDVI data
     mdviRow[hospital.name + " Sessions"] = "";
-    mdviRow[hospital.name + " Beneficiaries"] = hospital.beneficiary.filter(
+    mdviRow[hospital.name + " Beneficiaries"] = hospital.beneficiary?.filter(
       (beneficiary) =>
         beneficiary.mDVI === "Yes" || beneficiary.mDVI === "At Risk"
     ).length;
@@ -1138,43 +1151,43 @@ export function filterTrainingSummaryByDateRange(
   summary,
   summaryType
 ) {
+  if (!Array.isArray(summary)) {
+    console.error(`Expected an array for ${summaryType} data, but received`, summary);
+    return []; // Return an empty array if summary is not an array
+  }
+
   const filteredSummary = summary.map((element) => {
-    const visionEnhancement = element.visionEnhancement.filter((training) => {
+    const visionEnhancement = (element.visionEnhancement || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const training = element.training.filter((training) => {
+    const training = (element.training || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const computerTraining = element.computerTraining.filter((training) => {
+    const computerTraining = (element.computerTraining || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const mobileTraining = element.mobileTraining.filter((training) => {
+    const mobileTraining = (element.mobileTraining || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const orientationMobilityTraining = element.orientationMobilityTraining.filter((training) => {
+    const orientationMobilityTraining = (element.orientationMobilityTraining || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const counsellingEducation = element.counsellingEducation.filter(
-      (training) => {
-        return filterByDate(training, startDate, endDate);
-      }
-    );
+    const counsellingEducation = (element.counsellingEducation || []).filter((training) => {
+      return filterByDate(training, startDate, endDate);
+    });
 
-    const comprehensiveLowVisionEvaluation =
-      element.comprehensiveLowVisionEvaluation.filter((training) => {
-        return filterByDate(training, startDate, endDate);
-      });
+    const comprehensiveLowVisionEvaluation = (element.comprehensiveLowVisionEvaluation || []).filter((training) => {
+      return filterByDate(training, startDate, endDate);
+    });
 
-    const lowVisionEvaluation = element.lowVisionEvaluation.filter(
-      (training) => {
-        return filterByDate(training, startDate, endDate);
-      }
-    );
+    const lowVisionEvaluation = (element.lowVisionEvaluation || []).filter((training) => {
+      return filterByDate(training, startDate, endDate);
+    });
 
     let filteredElement = {
       ...element,
@@ -1295,7 +1308,7 @@ export function setAhdHeader(wahd, hospitals) {
 export function getReportData(
   filteredBeneficiaryData,
   filteredSummary,
-  includeAllBeneficiaries
+  includeAllBeneficiaries,
 ) {
   const beneficiaryData = [];
   const visionEnhancementData = [];
@@ -1304,10 +1317,10 @@ export function getReportData(
   const electronicDevicesData = [];
   const trainingData = [];
   const counsellingEducationData = [];
-  const { aggregatedHospitalData } = getAggregatedHospitalData(
+  const { aggregatedHospitalData, trainingTypes, trainingSubType, otSessionsTotal, totalBeneficiariesTotal,uniqueBeneficiaries } = getAggregatedHospitalData(
     filteredBeneficiaryData,
     filteredSummary,
-    includeAllBeneficiaries
+    includeAllBeneficiaries,
   );
 
 
@@ -1323,7 +1336,7 @@ export function getReportData(
     beneficiaryData.push(beneficiaryJson);
 
     // CLVE sheet and electronic devices sheet:
-    let beneficiaryCLVE = beneficiary["comprehensiveLowVisionEvaluation"];
+    let beneficiaryCLVE = beneficiary["Comprehensive_Low_Vision_Evaluation"];
     for (let clveData of beneficiaryCLVE) {
       // CLVE row addition
       let clveJson = getClveJson(commonData, clveData);
@@ -1347,28 +1360,28 @@ export function getReportData(
     }
 
     // Vision Enhancement Sheet
-    let beneficiaryVE = beneficiary["visionEnhancement"];
+    let beneficiaryVE = beneficiary["Vision_Enhancement"];
     for (let veData of beneficiaryVE) {
       let veJson = getVeJson(commonData, veData);
       visionEnhancementData.push(veJson);
     }
 
     // Low Vision Enhancement Sheet
-    let beneficiaryLVE = beneficiary["lowVisionEvaluation"];
+    let beneficiaryLVE = beneficiary["Low_Vision_Evaluation"];
     for (let lveData of beneficiaryLVE) {
       let lveJson = getLveJson(commonData, lveData);
       lowVisionEvaluationData.push(lveJson);
     }
 
     // Training Sheet
-    let beneficiaryT = beneficiary["training"];
+    let beneficiaryT = beneficiary["Training"];
     for (let tData of beneficiaryT) {
       let tJson = getTrainingJson(commonData, tData);
       trainingData.push(tJson);
     }
 
     // Counseling Education Sheet
-    let beneficiaryCE = beneficiary["counsellingEducation"];
+    let beneficiaryCE = beneficiary["Counselling_Education"];
     for (let ceData of beneficiaryCE) {
       let ceJson = getCeJson(commonData, ceData);
       counsellingEducationData.push(ceJson);

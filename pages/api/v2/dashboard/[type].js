@@ -1,8 +1,8 @@
-/** 
-* API Endpoints for Dashboard "beneficiary", "vision-enhancement", "training", 
-* "comprehensive-low-vision-evaluation", and "counseling" functionality.
-* Uses Next.js Dynamic Routes to consolodate into one module.
-*/
+// /** 
+// * API Endpoints for Dashboard "beneficiary", "vision-enhancement", "training", 
+// * "comprehensive-low-vision-evaluation", and "counseling" functionality.
+// * Uses Next.js Dynamic Routes to consolodate into one module.
+// */
 
 import prisma from "@/utils/api/client";
 
@@ -21,12 +21,12 @@ export default async function handler(req, res) {
   }
 }
 
-/** Offset-Pagination */
 export async function readData(req, res) {
   try {
     const { type } = req.query;
-    const { hospitalIds, offset, limit, startDate, endDate } = req.query;
+    const { hospitalIds, offset, limit, startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
     
+    // Parse hospitalIds
     let parsedHospitalIds;
     if (Array.isArray(hospitalIds)) {
       parsedHospitalIds = hospitalIds.map(id => parseInt(id, 10)) 
@@ -37,18 +37,76 @@ export async function readData(req, res) {
     else {
       parsedHospitalIds = undefined;
     }
-    const parsedOffset = offset ? parseInt(offset, 10) : 0;
-    const parsedLimit = limit ? parseInt(limit, 10) : 100;
+
+    // Parse other query parameters
+    const parsedOffset = offset ? parseInt(offset, 10) : undefined;
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
     const parsedStartDate = startDate ? new Date(startDate) : undefined;
     const parsedEndDate = endDate ? new Date(endDate) : undefined;
     parsedStartDate?.setUTCHours(0, 0, 0, 0);  
     parsedEndDate?.setUTCHours(23, 59, 59, 999); 
+
+    const parsedMinAge = min_age ? parseInt(min_age, 10) : undefined;
+    const parsedMaxAge = max_age ? parseInt(max_age, 10) : undefined;
+
+    // Parse genders
+    let parsedGenders = [];
+    if (Array.isArray(genders)) {
+      parsedGenders = genders;
+    } else if (typeof genders === 'string') {
+      parsedGenders = [genders];
+    }
+
+    // Expand genders: 'Male' to ['Male', 'M'], 'Female' to ['Female', 'F'], 'Other' remains as ['Other']
+    parsedGenders = parsedGenders.flatMap(gender => {
+      if (gender === 'Male') return ['Male', 'M'];
+      if (gender === 'Female') return ['Female', 'F'];
+      if (gender === 'Other') return ['Other'];
+      return [gender]; // default case
+    });
+
+    // Parse mdvis
+    let parsedMdvis = [];
+    if (Array.isArray(mdvis)) {
+      parsedMdvis = mdvis;
+    } else if (typeof mdvis === 'string') {
+      parsedMdvis = [mdvis];
+    }
+
+    // Calculate date of birth range based on age
+    let dobFilter = undefined;
+    if (parsedMinAge !== undefined || parsedMaxAge !== undefined) {
+      const currentDate = new Date();
+      let minDOB = undefined;
+      let maxDOB = undefined;
+
+      if (parsedMinAge !== undefined) {
+        minDOB = new Date(
+          currentDate.getFullYear() - parsedMinAge,
+          currentDate.getMonth(),
+          currentDate.getDate() + 1 // Adjust date to include today
+        );
+      }
+      if (parsedMaxAge !== undefined) {
+        maxDOB = new Date(
+          currentDate.getFullYear() - parsedMaxAge,
+          currentDate.getMonth(),
+          currentDate.getDate()
+        );
+      }
+
+      dobFilter = {
+        ...(minDOB && { gte: maxDOB }), // Note the swap of minDOB and maxDOB
+        ...(maxDOB && { lte: minDOB }),
+      };
+    }
+
     const range = (parsedStartDate || parsedEndDate) ? { 
       gte: parsedStartDate,
       lte: parsedEndDate,
     } : undefined;
 
-    let records;
+    let records, totalRecords;
     if (type === "Beneficiary") {
       const subtypes = [
         'Training',
@@ -65,15 +123,35 @@ export async function readData(req, res) {
         where: {
           deleted: false,
           hospitalId: { in: parsedHospitalIds },
+          ...(parsedGenders.length > 0 && { gender: { in: parsedGenders } }),
+          ...(parsedMdvis.length > 0 && { mDVI: { in: parsedMdvis } }),
+          ...(dobFilter && { dateOfBirth: dobFilter }),
           ...(range && {
             OR: subtypes.map(subtype => ({
               [subtype]: { some: { date: range } }
             }))
           })
         },
+        include: {
+          hospital: true
+        },
         skip: parsedOffset,
         take: parsedLimit,
-      })
+      });
+      totalRecords = await prisma.Beneficiary.count({
+        where: {
+          deleted: false,
+          hospitalId: { in: parsedHospitalIds },
+          ...(parsedGenders.length > 0 && { gender: { in: parsedGenders } }),
+          ...(parsedMdvis.length > 0 && { mDVI: { in: parsedMdvis } }),
+          ...(dobFilter && { dateOfBirth: dobFilter }),
+          ...(range && {
+            OR: subtypes.map(subtype => ({
+              [subtype]: { some: { date: range } }
+            }))
+          })
+        },
+      });
     }
     else {
       records = await prisma[type].findMany({
@@ -81,42 +159,42 @@ export async function readData(req, res) {
           beneficiary: {
             deleted: false,
             hospitalId: { in: parsedHospitalIds },
+            ...(parsedGenders.length > 0 && { gender: { in: parsedGenders } }),
+            ...(parsedMdvis.length > 0 && { mDVI: { in: parsedMdvis } }),
+            ...(dobFilter && { dateOfBirth: dobFilter }),
           },
           date: range,
+        },
+        include: {
+          beneficiary: {
+            include: {
+              hospital: true,
+            },
+          },
         },
         skip: parsedOffset,
         take: parsedLimit,
       });
-    }
-
-    // If called by index.js return as is or throw error VS return response
-    if (req.query.indexHelper === "true") {
-      return {
-        records,
-        type,
-        parsedHospitalIds,
-        parsedStartDate,
-        parsedEndDate,
-        parsedOffset,
-        parsedLimit,
-      }
-    } else {
-      return res.status(200).json({ 
-        records,
-        type,
-        parsedHospitalIds,
-        parsedStartDate,
-        parsedEndDate,
-        parsedOffset,
-        parsedLimit,
+      totalRecords = await prisma[type].count({
+        where: {
+          beneficiary: {
+            deleted: false,
+            hospitalId: { in: parsedHospitalIds },
+            ...(parsedGenders.length > 0 && { gender: { in: parsedGenders } }),
+            ...(parsedMdvis.length > 0 && { mDVI: { in: parsedMdvis } }),
+            ...(dobFilter && { dateOfBirth: dobFilter }),
+          },
+          date: range,
+        },
       });
     }
+
+    return res.status(200).json({ 
+      records,
+      totalRecords,
+    });
   } catch (error) {
     console.error(error);
-    if (req.query.indexHelper == "true") {
-      throw error;
-    } else {
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }
