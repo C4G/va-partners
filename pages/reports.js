@@ -40,6 +40,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { Drawer, IconButton, Button, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useDebounce } from "utils/global/useDebounce";
+import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
 
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
@@ -706,34 +707,24 @@ const handleDrawerOpen = () => {
           startDateUTC.setUTCHours(0, 0, 0, 0);
           const endDateUTC = new Date(endDate);
           endDateUTC.setUTCHours(23, 59, 59, 999);
-  
-          const baseQueryParams = {
+
+          const params = {
             offset: 0,
             limit: 100,
             startDate: startDateUTC.toISOString(),
             endDate: endDateUTC.toISOString(),
             min_age: minAge,
             max_age: maxAge,
-          };
-  
-          const buildQueryString = (type) => {
-            const query = new URLSearchParams({
-              ...baseQueryParams,
-              type,
-            });
-            selectedHospitals.forEach((id) => query.append("hospitalIds", id));
-            selectedGenders.forEach((gender) => query.append("genders", gender));
-            selectedMdvi.forEach((mdvi) => query.append("mdvis", mdvi));
-            if (minAge !== undefined) query.append("min_age", minAge);
-            if (maxAge !== undefined) query.append("max_age", maxAge);
-            return query.toString();
-          };
+            hospitalIds: selectedHospitals,
+            genders: selectedGenders,
+            mdvis: selectedMdvi,
+          }
   
           // Fetch data based on the active subTabIndex
           switch (subTabIndex) {
             case 0: // Beneficiaries
               if (!hasFetchedBeneficiaries) {
-                const response = await fetch(`/api/v2/dashboard/Beneficiary?${buildQueryString('Beneficiary')}`);
+                const response = await fetch(`/api/v2/dashboard/Beneficiary?${buildDashboardQueryParams(params)}`);
                 const data = await response.json();
                 if (response.ok) {
                   setBeneficiaries(data.records || []);
@@ -745,7 +736,7 @@ const handleDrawerOpen = () => {
               break;
             case 1: // Vision Enhancements
               if (!hasFetchedVisionEnhancements) {
-                const response = await fetch(`/api/v2/dashboard/Vision_Enhancement?${buildQueryString('Vision_Enhancement')}`);
+                const response = await fetch(`/api/v2/dashboard/Vision_Enhancement?${buildDashboardQueryParams(params)}`);
                 const data = await response.json();
                 if (response.ok) {
                   setVisionEnhancements(data.records || []);
@@ -757,7 +748,7 @@ const handleDrawerOpen = () => {
               break;
             case 2: // Trainings
               if (!hasFetchedTrainings) {
-                const response = await fetch(`/api/v2/dashboard/Training?${buildQueryString('Training')}`);
+                const response = await fetch(`/api/v2/dashboard/Training?${buildDashboardQueryParams(params)}`);
                 const data = await response.json();
                 if (response.ok) {
                   setTrainings(data.records || []);
@@ -769,7 +760,7 @@ const handleDrawerOpen = () => {
               break;
             case 3: // Comprehensive Low Vision Evaluations
               if (!hasFetchedComprehensiveLowVisionEvaluations) {
-                const response = await fetch(`/api/v2/dashboard/Comprehensive_Low_Vision_Evaluation?${buildQueryString('Comprehensive_Low_Vision_Evaluation')}`);
+                const response = await fetch(`/api/v2/dashboard/Comprehensive_Low_Vision_Evaluation?${buildDashboardQueryParams(params)}`);
                 const data = await response.json();
                 if (response.ok) {
                   setComprehensiveLowVisionEvaluations(data.records || []);
@@ -781,7 +772,7 @@ const handleDrawerOpen = () => {
               break;
             case 4: // Counselling Educations
               if (!hasFetchedCounsellingEducations) {
-                const response = await fetch(`/api/v2/dashboard/Counselling_Education?${buildQueryString('Counselling_Education')}`);
+                const response = await fetch(`/api/v2/dashboard/Counselling_Education?${buildDashboardQueryParams(params)}`);
                 const data = await response.json();
                 if (response.ok) {
                   setCounsellingEducations(data.records || []);
@@ -1505,6 +1496,10 @@ const handleDrawerOpen = () => {
               handleAllSelect={handleAllSelect}
               setStartDate={setStartDate}
               setEndDate={setEndDate}
+              minAge={minAge}
+              maxAge={maxAge}
+              genders={selectedGenders}
+              mdvis={selectedMdvi}
             />
 
             {/* All Filters Button */}

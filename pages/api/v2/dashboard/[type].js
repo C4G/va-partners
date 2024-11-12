@@ -9,7 +9,7 @@ import prisma from "@/utils/api/client";
 export default async function handler(req, res) {
   const { type } = req.query;
   const validTypes = ["Beneficiary", "Vision_Enhancement", "Training", 
-      "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"];
+      "Comprehensive_Low_Vision_Evaluation", "Counselling_Education", "Low_Vision_Evaluation"];
   if (!validTypes.includes(type)) {
     return res.status(400).json({ error: "Bad request" });
   }

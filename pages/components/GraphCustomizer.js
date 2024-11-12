@@ -15,16 +15,51 @@ import moment from 'moment';
 
 // Add the following imports
 import XLSX from 'xlsx-js-style';
-import { calculateAge } from 'utils/global/calculate-age';
 import {
+  getReportData,
   setAhdHeader,
   setClveHeader,
   setLveHeader,
-  getReportData,
-  filterTrainingSummaryByDateRange,
 } from '@/constants/reportFunctions';
+import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
 
-function GraphCustomizer({
+
+const refData = `S.no\tPrograms\tTypes\tDescription
+1\tScreening /Out reach activities/ Camp\tLow Vision Screening\tLow vision screening of the school of the blind and Identification of the visually impaired for assistive technology
+2\t\tIdentification of MDVI\tBeneficiaries come under Multiple disabilities and vision impairment.
+3\tFunctional Vision/Early Intervention/ Vision enhancement\t\tAge group less than 7 years. Training of infants,children and parents to improve the brain’s ability to use and interpret visual information especially in kids with Cortical visual impairment (CVI)
+4\tLVD beneficiairies/Comprehensive Low Vision Evaluation - CLVE\t\tLow vision assessment / Functional vision assessment done by a Professional - Optometrist / Low vision care specialist / Rehabilitation Specialist
+5\tAssistive devices and aids\tAssistive devices/aids/RLF tactile books/ Optical/ Non Optical/ Electronic\tDevices for individuals with low vision and total blindness
+6\tLow vision device training\tTraining is given after dispensing devices\t
+7\tCounseling & referrals/ Counseling and education\tEducation and counseling\tList of referrals
+8\tOrientation & Mobility training (O and M)\t\tTraining to help the visually impaired orient to the environment around and navigate safely
+9\tComputer training\t\tTraining programs are conducted to build proficiency in computer skills using assistive technology like screen readers, magnification and contrast modifcations
+10\tMobile technologies \t\tEducating on various mobile app for navigation and other functions
+11\tVisual skills training\tAll subtypes under it as a whole\tVisual skills training greater than 7 years and adults
+12\tOther training\tCorporate skill development\tComputer Programming, Digital accessibility testing DAT
+13\t\tBraille Training & resources and Training with Braille reader / ORBIT reader\tTraining on Braille devices for education and Braille literacy
+14\t\tTraining for Life skills/ Money identification/ Home management / Kitchen skills\t
+15\t\tJob Coaching /IBPS\tIntegrated training program for Institute of Banking Personnel Selection and other job coaching
+16\t\tSpoken english training\tTraining to speak in English for both beginners and Intermediate.`;
+const refRows = refData.split('\n').map(row => row.split('\t'));
+
+const hospitalAbbr = {
+  "Aravind Eye Hospital, Madurai": "AEH, MDU",
+  "Aravind Eye Hospital, Coimbatore": "AEH, CBE",
+  "Aravind Eye Hospital, Pondicherry": "AEH, PY",
+  "Aravind Eye Hospital, Tirupati": "AEH, TPTY",
+  "Aravind Eye Hospital, Tirunelveli": "AEH, TVL",
+  "Sankara Nethralaya, Chennai": "SN, CHE",
+  "Sankara Nethralaya, Kolkata": "SN, KOL",
+  "Dr. Shroff's Charity Eye Hospital": "SCEH, DL",
+  "Narayana Nethralaya, Rajajinagar, Bangalore": "NN, BLR",
+  "Dr. Jawahar Lal Rohatgi Eye Hospital, Kanpur": "JLR, UP",
+  "Sitapur Eye Hospital, Sitapur, UP": "SEH, UP",
+  "Voluntary Health Services": "VHS, CHE",
+  "Community Eye Care Foundation": "CECF, PUN"
+};
+
+const GraphCustomizer = ({
   summary = [], // Add default value to ensure it's an array
   selectedHospitals = [], // Add default value to ensure it's an array
   handleHospitalSelection,
@@ -34,7 +69,11 @@ function GraphCustomizer({
   handleEndDateChange,
   setStartDate,
   setEndDate,
-}) {
+  minAge,
+  maxAge,
+  genders,
+  mdvis,
+}) => {
   // Define quarters covering 3 months each
   const quarters = [
     { label: 'Q1', startMonth: 0, endMonth: 2 }, // Jan - Mar
@@ -71,82 +110,60 @@ function GraphCustomizer({
 
   const downloadFilteredReport = async () => {
     try {
-      // Set default filters
-      const selectedGenders = ['M', 'F', 'Other'];
-      const selectedMdvi = ['Yes', 'No', 'At Risk'];
-
-      const minAge = 0;
-      const maxAge = 100;
-
       // Adjust the start and end dates
       const adjustedStartDate = new Date(startDate);
       adjustedStartDate.setUTCHours(0, 0, 0, 0);
       const adjustedEndDate = new Date(endDate);
       adjustedEndDate.setUTCHours(23, 59, 59, 999);
 
-      // Get selected hospital IDs
-      const selectedHospitalIds = summary
+      const hospitalIds = summary
         .filter((hospital) => selectedHospitals.includes(hospital.name))
         .map((hospital) => hospital.id);
 
-      // Fetch beneficiary data
-      const beneficiaryListAPI = selectedHospitalIds.map((id) =>
-        fetch(
-          `/api/v2/dashboard/beneficiaryWithDetails?hospitalIds=${id}&startDate=${adjustedStartDate.toISOString()}&endDate=${adjustedEndDate.toISOString()}`,
-          {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          }
-        )
-      );
+      const params = {
+        hospitalIds,
+        startDate: adjustedStartDate.toISOString(),
+        endDate: adjustedEndDate.toISOString(),
+        min_age: minAge,
+        max_age: maxAge,
+        genders,
+        mdvis,
+      };
 
-      const responses = await Promise.all(beneficiaryListAPI);
+      const types = ["Beneficiary", "Vision_Enhancement", "Training", "Low_Vision_Evaluation", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"];
+
+      const apiCalls = types.map((type) => fetch(`/api/v2/dashboard/${type}?${buildDashboardQueryParams(params)}`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }));
+
+      const responses = await Promise.all(apiCalls);
       const finalResult = await Promise.all(
         responses.map((res) => (res.json ? res.json().catch((err) => err) : res))
       );
-      // const beneficiaryList = finalResult.flat();
-      const beneficiaryList = finalResult.flatMap(result => result.records || []);
 
-      // Filter beneficiary data by date range
-      const dateFilteredBeneficiaryData = filterTrainingSummaryByDateRange(
-        adjustedStartDate,
-        adjustedEndDate,
-        beneficiaryList || [], // Fallback to empty array if undefined
-  'beneficiary'
-      );
+      const allBeneficiaryData = finalResult[0].records.map((record) => ({
+        ...record,
+        'Comprehensive_Low_Vision_Evaluation': finalResult[4].records.filter((clve) => clve.beneficiaryId === record.mrn),
+        'Counselling_Education': finalResult[5].records.filter((ce) => ce.beneficiaryId === record.mrn),
+        'Vision_Enhancement': finalResult[1].records.filter((ve) => ve.beneficiaryId === record.mrn),
+        'Training': finalResult[2].records.filter((t) => t.beneficiaryId === record.mrn),
+        'Low_Vision_Evaluation': finalResult[3].records.filter((lve) => lve.beneficiaryId === record.mrn),
+      }));
 
-      const numTotalBeneficiaries = dateFilteredBeneficiaryData.length;
-
-      // Further filter data based on default filters
-      const filteredBeneficiaryData = dateFilteredBeneficiaryData.filter(
-        (item) =>
-          selectedHospitalIds.includes(item.hospital.id) &&
-          selectedGenders.includes(item.gender) &&
-          selectedMdvi.includes(item.mDVI) &&
-          minAge <= calculateAge(item.dateOfBirth) &&
-          calculateAge(item.dateOfBirth) <= maxAge
-      );
-
-      const numFilteredBeneficiaries = filteredBeneficiaryData.length;
-
-      // Filter summary data
-      const dateFilteredSummary = filterTrainingSummaryByDateRange(
-        adjustedStartDate,
-        adjustedEndDate,
-        summary,
-        'hospital'
-      );
-
-      const filteredSummary = dateFilteredSummary.filter((item) =>
-        selectedHospitalIds.includes(item.id)
-      );
+      const hospitalSummary = summary.map((hospital) => ({
+        ...hospital,
+        beneficiary: finalResult[0].records.filter((b) => b.hospitalId === hospital.id),
+        visionEnhancement: finalResult[1].records.filter((ve) => ve.hospitalId === hospital.id),
+        training: finalResult[2].records.filter((t) => t.hospitalId === hospital.id),
+        lowVisionEvaluation: finalResult[3].records.filter((lve) => lve.hospitalId === hospital.id),
+        comprehensiveLowVisionEvaluation: finalResult[4].records.filter((clve) => clve.hospitalId === hospital.id),
+        counsellingEducation: finalResult[5].records.filter((ce) => ce.hospitalId === hospital.id),
+      }));
 
       // Generate report data
-      const reportData = getReportData(
-        filteredBeneficiaryData,
-        filteredSummary,
-        numTotalBeneficiaries === numFilteredBeneficiaries
-      );
+      const reportData = getReportData(allBeneficiaryData,hospitalSummary,true);
+
 
       // Destructure report data
       const {
@@ -161,116 +178,78 @@ function GraphCustomizer({
       } = reportData;
 
       const wb = XLSX.utils.book_new();
-      let sheetsAdded = false;
 
-      // Append sheets based on available data
-      if (beneficiaryData.length > 0) {
-        const wben = XLSX.utils.json_to_sheet(beneficiaryData);
-        XLSX.utils.book_append_sheet(wb, wben, 'Beneficiary Sheet');
-        sheetsAdded = true;
+      const wref = XLSX.utils.aoa_to_sheet(refRows);
+      const wben = XLSX.utils.json_to_sheet(beneficiaryData);
+      const wved = XLSX.utils.json_to_sheet(visionEnhancementData);
+  
+      const wlved = XLSX.utils.json_to_sheet([]);
+      const wclve = XLSX.utils.json_to_sheet([]);
+  
+      const wed = XLSX.utils.json_to_sheet(electronicDevicesData);
+      const wtd = XLSX.utils.json_to_sheet(trainingData);
+      const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
+  
+      const wahd = XLSX.utils.json_to_sheet([]);
+  
+      XLSX.utils.book_append_sheet(wb, [], "Summary");
+      XLSX.utils.book_append_sheet(wb, [], "Summary of Finances");
+      XLSX.utils.book_append_sheet(wb, wahd, "Summary of Services");
+      XLSX.utils.book_append_sheet(wb, wref, "Reference");
+      XLSX.utils.book_append_sheet(wb, wclve, "CLVE_LVD Beneficiaries");
+      XLSX.utils.book_append_sheet(wb, wved, "Vision Enhancement Sheet");
+      XLSX.utils.book_append_sheet(wb, wtd, "Training Sheet");
+      XLSX.utils.book_append_sheet(wb, wced, "Counselling Education Sheet");
+      XLSX.utils.book_append_sheet(wb, wlved, "Camp_Low Vision Screening");
+      XLSX.utils.book_append_sheet(wb, wben, "Overall Beneficiary Sheet");
+      XLSX.utils.book_append_sheet(wb, wed, "Electronic Devices Break Up");
+      XLSX.utils.book_append_sheet(wb, [], "Action items from prev quarter");
+  
+      setClveHeader(wclve);
+      XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
+        skipHeader: true,
+        origin: -1,
+      });
+  
+      setLveHeader(wlved);
+      XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
+        skipHeader: true,
+        origin: -1,
+      });
+  
+      setAhdHeader(
+        wahd,
+        selectedHospitals,
+      );
+      XLSX.utils.sheet_add_json(wahd, aggregatedHospitalData, {
+        skipHeader: true,
+        origin: -1,
+      });
+  
+      // Change the column width for the reference sheet
+      const wscols = [];
+      const wrefcols = [4, 53, 66, 84]; // values obtained from manually adjusting the downloaded excel sheet
+      for (let i = 0; i < refRows[0].length; i++) {
+          wscols.push({wch: wrefcols[i]}); // Set the initial width for each column
       }
-
-      if (visionEnhancementData.length > 0) {
-        const wved = XLSX.utils.json_to_sheet(visionEnhancementData);
-        XLSX.utils.book_append_sheet(wb, wved, 'Vision Enhancement Sheet');
-        sheetsAdded = true;
+      wref['!cols'] = wscols;
+  
+      // generate the filename based on the filter date range and the selected hospitals
+      let reportHospitalName = hospitalAbbr[selectedHospitals[0]];
+      if (selectedHospitals.length === summary.length) {
+        reportHospitalName = "ALL";
+      } else if (selectedHospitals.length > 1) {
+        reportHospitalName = "MULTI";
+      } else if (reportHospitalName === undefined) {
+        reportHospitalName = selectedHospitals[0];
       }
-
-      if (lowVisionEvaluationData.length > 0) {
-        const wlved = XLSX.utils.json_to_sheet([]);
-        XLSX.utils.book_append_sheet(wb, wlved, 'Low Vision Screening');
-        setLveHeader(wlved);
-        XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
-          skipHeader: true,
-          origin: -1,
-        });
-        sheetsAdded = true;
-      }
-
-      if (comprehensiveLowVisionEvaluationData.length > 0) {
-        const wclve = XLSX.utils.json_to_sheet([]);
-        XLSX.utils.book_append_sheet(wb, wclve, 'CLVE Sheet');
-        setClveHeader(wclve);
-        XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
-          skipHeader: true,
-          origin: -1,
-        });
-        sheetsAdded = true;
-      }
-
-      if (electronicDevicesData.length > 0) {
-        const wed = XLSX.utils.json_to_sheet(electronicDevicesData);
-        XLSX.utils.book_append_sheet(wb, wed, 'Electronic Devices Break Up');
-        sheetsAdded = true;
-      }
-
-      if (trainingData.length > 0) {
-        const wtd = XLSX.utils.json_to_sheet(trainingData);
-        XLSX.utils.book_append_sheet(wb, wtd, 'Training Sheet');
-        sheetsAdded = true;
-      }
-
-      if (counsellingEducationData.length > 0) {
-        const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
-        XLSX.utils.book_append_sheet(wb, wced, 'Counselling Education Sheet');
-        sheetsAdded = true;
-      }
-
-      if (aggregatedHospitalData.length > 0) {
-        const wahd = XLSX.utils.aoa_to_sheet([]);
-        XLSX.utils.book_append_sheet(wb, wahd, 'Summary of Services');
-
-        // Set headers using setAhdHeader
-        setAhdHeader(
-          wahd,
-          filteredSummary.map((hospital) => hospital.name)
-        );
-
-        // Convert aggregatedHospitalData to worksheet format
-        const dataToAdd = aggregatedHospitalData.map((row) => {
-          const rowData = [];
-          for (const key in row) {
-            if (Object.prototype.hasOwnProperty.call(row, key)) {
-              rowData.push(row[key]);
-            }
-          }
-          return rowData;
-        });
-
-        // Find the starting row after headers
-        const startRow = wahd['!ref']
-          ? XLSX.utils.decode_range(wahd['!ref']).e.r + 1
-          : 0;
-
-        // Add data to the sheet
-        XLSX.utils.sheet_add_aoa(wahd, dataToAdd, { origin: { r: startRow, c: 0 } });
-        sheetsAdded = true;
-      }
-
-      if (!sheetsAdded) {
-        alert('No data available for the selected filters.');
-        return;
-      }
-
-      // Generate the filename
-      let reportHospitalName = 'ALL';
-      const selectedHospitalNames = summary
-        .filter((hospital) => selectedHospitals.includes(hospital.name))
-        .map((hospital) => hospital.name);
-
-      if (selectedHospitalNames.length === 1) {
-        reportHospitalName = selectedHospitalNames[0];
-      } else if (selectedHospitalNames.length > 1) {
-        reportHospitalName = 'MULTI';
-      }
-
-      const fileNameComponents = [];
-      fileNameComponents.push('Report');
+      let fileNameComponents = [];
+      fileNameComponents.push("Report");
       fileNameComponents.push(reportHospitalName);
-      fileNameComponents.push(adjustedStartDate.toISOString().split('T')[0]);
-      fileNameComponents.push(adjustedEndDate.toISOString().split('T')[0]);
-
-      const filename = fileNameComponents.join('_') + '.xlsx';
+      fileNameComponents.push(startDate.toISOString().split('T')[0]);
+      fileNameComponents.push(endDate.toISOString().split('T')[0]);
+      const filename = fileNameComponents.join("_") + ".xlsx";
+  
       XLSX.writeFile(wb, filename);
     } catch (error) {
       console.error('Error generating report:', error);

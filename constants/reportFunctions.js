@@ -223,7 +223,7 @@ function getBeneficiaryJson(commonData, beneficiary) {
 
   // Sort beneficiary CLVE data in descending order of session numbers so that latest devices can be extracted
   const sortedBeneficiaryClve = beneficiary[
-    "comprehensiveLowVisionEvaluation"
+    "Comprehensive_Low_Vision_Evaluation"
   ].sort((a, b) => b.sessionNumber - a.sessionNumber);
 
   beneficiaryJson["Dispensed Spectacle"] = getLatestDispensedDevice(
@@ -737,9 +737,6 @@ export function getAggregatedHospitalData(
 
     // Total # of Sessions
     const hospitalTotalSessions = hospital.training.length
-                                + hospital.computerTraining.length
-                                + hospital.mobileTraining.length
-                                + hospital.orientationMobilityTraining.length
                                 + hospital.counsellingEducation.length
                                 + hospital.visionEnhancement.length
                                 + hospital.lowVisionEvaluation.length
@@ -942,6 +939,7 @@ export function getAggregatedHospitalData(
     trainingDevicesCounselingOnlyTotal += trainingDevicesCounselingOnlyRow[hospital.name + " Beneficiaries"];
 
     // Total Beneficiaries
+    totalBeneficiariesRow[hospital.name + " Sessions"] = "";
     totalBeneficiariesRow[hospital.name + " Beneficiaries"] =
       + screeningsOnlyRow[hospital.name + " Beneficiaries"]
       + screeningsAndCLVERow[hospital.name + " Beneficiaries"]
@@ -1165,18 +1163,6 @@ export function filterTrainingSummaryByDateRange(
       return filterByDate(training, startDate, endDate);
     });
 
-    const computerTraining = (element.computerTraining || []).filter((training) => {
-      return filterByDate(training, startDate, endDate);
-    });
-
-    const mobileTraining = (element.mobileTraining || []).filter((training) => {
-      return filterByDate(training, startDate, endDate);
-    });
-
-    const orientationMobilityTraining = (element.orientationMobilityTraining || []).filter((training) => {
-      return filterByDate(training, startDate, endDate);
-    });
-
     const counsellingEducation = (element.counsellingEducation || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
@@ -1192,9 +1178,6 @@ export function filterTrainingSummaryByDateRange(
     let filteredElement = {
       ...element,
       training,
-      orientationMobilityTraining,
-      mobileTraining,
-      computerTraining,
       visionEnhancement,
       counsellingEducation,
       comprehensiveLowVisionEvaluation,
@@ -1317,7 +1300,7 @@ export function getReportData(
   const electronicDevicesData = [];
   const trainingData = [];
   const counsellingEducationData = [];
-  const { aggregatedHospitalData, trainingTypes, trainingSubType, otSessionsTotal, totalBeneficiariesTotal,uniqueBeneficiaries } = getAggregatedHospitalData(
+  const { aggregatedHospitalData } = getAggregatedHospitalData(
     filteredBeneficiaryData,
     filteredSummary,
     includeAllBeneficiaries,
