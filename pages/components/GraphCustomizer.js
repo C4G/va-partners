@@ -9,7 +9,10 @@ import {
   TextField,
   Box,
   ListItemText,
-  Button, // Add Button import
+  Grid,
+  FormControlLabel,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import moment from 'moment';
 
@@ -246,8 +249,8 @@ const GraphCustomizer = ({
       let fileNameComponents = [];
       fileNameComponents.push("Report");
       fileNameComponents.push(reportHospitalName);
-      fileNameComponents.push(startDate.toISOString().split('T')[0]);
-      fileNameComponents.push(endDate.toISOString().split('T')[0]);
+      fileNameComponents.push(adjustedStartDate.toISOString().split('T')[0]);
+      fileNameComponents.push(adjustedEndDate.toISOString().split('T')[0]);
       const filename = fileNameComponents.join("_") + ".xlsx";
   
       XLSX.writeFile(wb, filename);
@@ -325,140 +328,142 @@ const GraphCustomizer = ({
   }, [startDate, endDate]);
 
   return (
-    <Box
+    <Box sx={{ flexGrow: 1, padding: 2 }}>
+      <Grid container spacing={2} alignItems="center">
+        {/* Select/Unselect All */}
+        <Grid item xs={12} sm={6} md={2}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={selectedHospitals.length === summary.length && summary.length > 0}
+                indeterminate={
+                  selectedHospitals.length > 0 &&
+                  selectedHospitals.length < summary.length
+                }
+                onChange={() => {
+                  if (selectedHospitals.length === summary.length) {
+                    handleHospitalSelection({ target: { value: [] } });
+                  } else {
+                    const allHospitals = summary.map((hospital) => hospital.name);
+                    handleHospitalSelection({ target: { value: allHospitals } });
+                  }
+                }}
+              />
+            }
+            label={
+              selectedHospitals.length === summary.length
+                ? 'Unselect All'
+                : 'Select All'
+            }
+          />
+        </Grid>
+
+        {/* Hospital Selection */}
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel id="hospital-select-label">Select Hospitals</InputLabel>
+            <Select
+              labelId="hospital-select-label"
+              id="hospital-select"
+              multiple
+              value={selectedHospitals}
+              onChange={handleHospitalSelection}
+              renderValue={(selected) => {
+                if (!selected || selected.length === 0) {
+                  return 'Select Hospitals';
+                } else if (selected.length === 1) {
+                  return selected[0];
+                } else {
+                  return `${selected[0]}, (${selected.length - 1} more selected)`;
+                }
+              }}
+              label="Select Hospitals"
+            >
+              {/* Hospital options */}
+              {summary.map((hospital) => (
+                <MenuItem key={hospital.id} value={hospital.name}>
+                  <Checkbox
+                    checked={selectedHospitals.indexOf(hospital.name) > -1}
+                  />
+                  <ListItemText primary={hospital.name} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Start Date */}
+        <Grid item xs={12} sm={6} md={2}>
+          <TextField
+            label="Start Date"
+            type="date"
+            value={moment(startDate).format('YYYY-MM-DD')}
+            onChange={handleStartDateChange}
+            InputLabelProps={{
+              shrink: true,
+            }}
+            fullWidth
+          />
+        </Grid>
+
+        {/* End Date */}
+        <Grid item xs={12} sm={6} md={2}>
+          <TextField
+            label="End Date"
+            type="date"
+            value={moment(endDate).format('YYYY-MM-DD')}
+            onChange={handleEndDateChange}
+            InputLabelProps={{
+              shrink: true,
+            }}
+            fullWidth
+          />
+        </Grid>
+
+        {/* Quarter Selection */}
+        <Grid item xs={12} sm={6} md={2}>
+          <FormControl fullWidth>
+            <InputLabel id="quarter-select-label">Select Quarter</InputLabel>
+            <Select
+              labelId="quarter-select-label"
+              value={selectedQuarter}
+              onChange={handleQuarterSelection}
+              label="Select Quarter"
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {updatedAvailableQuarters.map((quarter) => (
+                <MenuItem key={quarter.label} value={quarter.label}>
+                  {quarter.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Download Report Button */}
+        <Grid item xs={12} sm={6} md={1}>
+  <Tooltip title="Download Report">
+    <IconButton
+      onClick={downloadFilteredReport}
+      aria-label="download report"
       sx={{
-        display: 'flex',
-        justifyContent: 'center', // Center align the whole row horizontally
-        alignItems: 'center', // Align items vertically in the middle
-        gap: 4, // Add space between elements
-        width: '75vw', // Ensure it spans the full width of the viewport
-        padding: 1, // Add some padding around the content
+        height: '55px',          // Reduced height for a smaller button
+        width: '55px',           // Reduced width for a smaller button
+        borderRadius: '5px',     // Rounded corners
+        backgroundColor: '#2074d4', // Blue background
+        color: 'white',          // White icon color for contrast
+        '&:hover': {
+          backgroundColor: '#1864c4', // Darker blue on hover
+        },
       }}
     >
-      {/* "Select/Unselect All" option */}
-      <Box>
-        <Checkbox
-          checked={selectedHospitals.length === summary.length}
-          indeterminate={
-            selectedHospitals.length > 0 &&
-            selectedHospitals.length < summary.length
-          }
-          onChange={() => {
-            if (selectedHospitals.length === summary.length) {
-              handleHospitalSelection({ target: { value: [] } });
-            } else {
-              const allHospitals = summary.map((hospital) => hospital.name);
-              handleHospitalSelection({ target: { value: allHospitals } });
-            }
-          }}
-        />
-        <ListItemText
-          primary={
-            selectedHospitals.length === summary.length
-              ? 'Unselect All'
-              : 'Select All'
-          }
-        />
-      </Box>
-
-      {/* Hospital Selection */}
-      <Box>
-        <FormControl fullWidth>
-          <InputLabel id="hospital-select-label">Select Hospitals</InputLabel>
-          <Select
-            labelId="hospital-select-label"
-            id="hospital-select"
-            multiple
-            value={selectedHospitals}
-            onChange={handleHospitalSelection}
-            renderValue={(selected) => {
-              if (!selected || selected.length === 0) {
-                return 'Select Hospitals';
-              } else if (selected.length === 1) {
-                return selected[0];
-              } else {
-                return `${selected[0]}, (${selected.length - 1} more selected)`;
-              }
-            }}
-            label="Select Hospitals"
-            sx={{ width: 250 }} // Adjust the width of the hospital dropdown
-          >
-            {/* Hospital options */}
-            {summary.map((hospital) => (
-              <MenuItem key={hospital.id} value={hospital.name}>
-                <Checkbox
-                  checked={selectedHospitals.indexOf(hospital.name) > -1}
-                />
-                <ListItemText primary={hospital.name} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
-      {/* Date Pickers */}
-      <Box sx={{ display: 'flex', gap: 4 }}>
-        <TextField
-          label="Start Date"
-          type="date"
-          value={moment(startDate).format('YYYY-MM-DD')}
-          onChange={handleStartDateChange}
-          InputLabelProps={{
-            shrink: true,
-          }}
-          sx={{ width: 150 }}
-        />
-        <TextField
-          label="End Date"
-          type="date"
-          value={moment(endDate).format('YYYY-MM-DD')}
-          onChange={handleEndDateChange}
-          InputLabelProps={{
-            shrink: true,
-          }}
-          sx={{ width: 150 }}
-        />
-      </Box>
-
-      {/* Quarter Selection */}
-      <FormControl>
-        <InputLabel
-          id="quarter-select-label"
-          sx={{
-            backgroundColor: 'white', // Give the label a white background
-            px: 1, // Add padding on the x-axis to provide spacing around the text
-            transform: 'translate(14px, -9px) scale(0.75)', // Adjust positioning and scaling
-            pointerEvents: 'none', // Prevent clicking on the label itself
-          }}
-        >
-          Select Quarter
-        </InputLabel>
-        <Select
-          labelId="quarter-select-label"
-          value={selectedQuarter}
-          onChange={handleQuarterSelection}
-          sx={{ width: 150 }}
-        >
-          <MenuItem value="">
-            <em>None</em>
-          </MenuItem>
-          {updatedAvailableQuarters.map((quarter) => (
-            <MenuItem key={quarter.label} value={quarter.label}>
-              {quarter.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-          {/* Download Customized Report Button */}
-    <Button
-      variant="contained"
-      color="primary"
-      onClick={downloadFilteredReport}
-      startIcon={<DownloadIcon />}
-      sx={{ height: '56px' }} 
-    >
-      Download Report
-    </Button>
+      <DownloadIcon />
+    </IconButton>
+  </Tooltip>
+</Grid>
+      </Grid>
     </Box>
   );
 }

@@ -1,7 +1,66 @@
+// Import necessary modules and initialize Prisma Client
 import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
+import moment from 'moment';
+
+// Define the mapping for distanceBinocularVisionBE
+const distanceBinocularVisionMapping = {
+  '1 N-scale': 'Other',
+  '6/60 6m': 'Moderate visual impairment',
+  'PL- 6m': 'Blindness',
+  'Unable To Assess': 'Other',
+  '6/126 6m': 'Severe visual impairment',
+  '6/9.5 6m': 'Visual Acuity normal',
+  '6/48 6m': 'Moderate visual impairment',
+  '6/24 6m': 'Moderate visual impairment',
+  '1.0 LogMAR': 'Moderate visual impairment',
+  '6/600 6m': 'Blindness',
+  '6/38 6m': 'Moderate visual impairment',
+  'HMCF 6m': 'Blindness',
+  '6/15 6m': 'Mild visual impairment',
+  '6/190 6m': 'Blindness',
+  '0.8 LogMAR': 'Moderate visual impairment',
+  '0.4 LogMAR': 'Mild visual impairment',
+  'PL+, PR unaccurate 6m': 'Blindness',
+  '0.0 LogMAR': 'Visual Acuity normal',
+  '20/100 20ft': 'Other',
+  '1 Metric': 'Other',
+  '4 LogMAR': 'Blindness',
+  'Not assessible': 'Other',
+  '2.0 LogMAR': 'Blindness',
+  '20/320 20ft': 'Severe visual impairment',
+  '20/125 20ft': 'Moderate visual impairment',
+  '20/160 20ft': 'Moderate visual impairment',
+  '6/75 6m': 'Severe visual impairment',
+  '6/6.0 6m': 'Other',
+  '6/300 6m': 'Blindness',
+  '6/19 6m': 'Mild visual impairment',
+  '6/480 6m': 'Blindness',
+  '0.5 LogMAR': 'Mild visual impairment',
+  '6/30 6m': 'Moderate visual impairment',
+  '0.3 LogMAR': 'Visual Acuity normal',
+  '6/240 6m': 'Blindness',
+  '0.22 LogMAR': 'Visual Acuity normal',
+  '20 6m': 'Other',
+  '6m': 'Other',
+  'PL+, PR accurate 6m': 'Blindness',
+  '4.0 LogMAR': 'Blindness',
+  '6/380 6m': 'Blindness',
+  '2.3 LogMAR': 'Blindness',
+  '20/250 20ft': 'Severe visual impairment',
+  'PL+, PR inaccurate 6m': 'Blindness',
+  'CFCF 6m': 'Blindness',
+  '6/12 6m': 'Visual Acuity normal',
+  '6/150 6m': 'Blindness',
+  '0.92 LogMAR': 'Moderate visual impairment',
+  '6/95 6m': 'Severe visual impairment',
+  '1.1 LogMAR': 'Severe visual impairment',
+  'LogMAR': 'Other',
+  '0.6 LogMAR': 'Moderate visual impairment',
+  '20ft': 'Other',
+};
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -22,8 +81,6 @@ export async function readData(req, res) {
   try {
     const { hospitalIds, startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
 
-    console.log('req.query:', req.query);
-
     // Parse hospital IDs
     let parsedHospitalIds = [];
     if (hospitalIds) {
@@ -39,18 +96,23 @@ export async function readData(req, res) {
       return res.status(400).json({ error: 'hospitalIds is required and must be valid integers' });
     }
 
-    // Parse date range
-    let parsedStartDate = startDate ? new Date(startDate) : null;
-    let parsedEndDate = endDate ? new Date(endDate) : null;
+    // Parse date range with improved validation
+    let parsedStartDate = null;
+    let parsedEndDate = null;
 
-    console.log('Parsed Start Date:', parsedStartDate);
-    console.log('Parsed End Date:', parsedEndDate);
-
-    if (parsedStartDate && isNaN(parsedStartDate.getTime())) parsedStartDate = null;
-    if (parsedEndDate && isNaN(parsedEndDate.getTime())) parsedEndDate = null;
-
-    if (parsedStartDate) parsedStartDate.setUTCHours(0, 0, 0, 0);
-    if (parsedEndDate) parsedEndDate.setUTCHours(23, 59, 59, 999);
+    if (startDate) {
+      const tempStartDate = moment.utc(startDate).startOf('day').toDate();
+      parsedStartDate = tempStartDate;
+    } else {
+      console.warn('Invalid startDate:', startDate);
+    }
+    
+    if (endDate) {
+      const tempEndDate = moment.utc(endDate).endOf('day').toDate();
+      parsedEndDate = tempEndDate;
+    } else {
+      console.warn('Invalid endDate:', endDate);
+    }
 
     // Build date range condition
     const dateRangeCondition = parsedStartDate && parsedEndDate ? {
@@ -68,7 +130,7 @@ export async function readData(req, res) {
       }
     }
 
-    // // Parse MDVI filters
+    // Parse MDVI filters
     let mdviFilters  = [];
     if (Array.isArray(mdvis)) {
       mdviFilters  = mdvis;
@@ -82,7 +144,7 @@ export async function readData(req, res) {
 
     // Build beneficiary filters
     const beneficiaryFilters = {
-      deleted: false,
+      // deleted: false,
       hospitalId: { in: parsedHospitalIds },
       ...(genderFilters.length > 0 && { gender: { in: genderFilters } }),
       ...(mdviFilters.length > 0 && { mDVI: { in: mdviFilters } }),
@@ -215,7 +277,7 @@ export async function readData(req, res) {
       NonOptical: {},
     };
 
-    // Get counts of Devices Dispensed and Recommended
+    // Get counts of Devices Dispensed and Recommended from Comprehensive_Low_Vision_Evaluation
     const clveRecords = await prisma.Comprehensive_Low_Vision_Evaluation.findMany({
       where: {
         beneficiary: beneficiaryFilters,
@@ -266,13 +328,51 @@ export async function readData(req, res) {
     formattedCounts["Devices_Dispensed"] = devicesDispensedCounts;
     formattedCounts["Devices_Recommended"] = devicesRecommendedCounts;
 
+    // **Updated Addition: GroupBy for distanceBinocularVisionBE on Comprehensive_Low_Vision_Evaluation**
+    const distanceBinocularCounts = await prisma.Comprehensive_Low_Vision_Evaluation.groupBy({
+      by: ['distanceBinocularVisionBE'],
+      where: {
+        ...beneficiaryFilters,
+        ...(dateRangeCondition && { date: dateRangeCondition }),
+      },
+      _count: {
+        distanceBinocularVisionBE: true,
+      },
+    });
+
+    const distanceBinocularVisionBE_counts = {
+      'Other': 0,
+      'Moderate visual impairment': 0,
+      'Blindness': 0,
+      'Severe visual impairment': 0,
+      'Visual Acuity normal': 0,
+      'Mild visual impairment': 0,
+    };
+
+    // Map each `distanceBinocularVisionBE` value to its category and aggregate
+    distanceBinocularCounts.forEach((record) => {
+      const rawValue = record.distanceBinocularVisionBE;
+      const category = distanceBinocularVisionMapping[rawValue] || 'Other'; // Default to 'Other' if not mapped
+    
+      if (Object.prototype.hasOwnProperty.call(distanceBinocularVisionBE_counts, category)) {
+        distanceBinocularVisionBE_counts[category] += record._count.distanceBinocularVisionBE;
+      } else {
+        // If category is not predefined, categorize it as 'Other'
+        distanceBinocularVisionBE_counts['Other'] += record._count.distanceBinocularVisionBE;
+      }
+    });
+
+    // Add the aggregated category counts to formattedCounts
+    formattedCounts["distanceBinocularVisionBE_counts"] = distanceBinocularVisionBE_counts;
+
     // Add detailed device counts
     formattedCounts["Devices_Dispensed_Details"] = devicesDispensedDetails;
     formattedCounts["Devices_Recommended_Details"] = devicesRecommendedDetails;
 
-    // Return the response
+    // Return the response including the new counts
     return res.status(200).json({
       ...formattedCounts,
+      distanceBinocularVisionBE_counts,
       parsedHospitalIds,
       parsedStartDate,
       parsedEndDate,

@@ -5,6 +5,7 @@
 // */
 
 import prisma from "@/utils/api/client";
+import moment from 'moment';
 
 export default async function handler(req, res) {
   const { type } = req.query;
@@ -41,10 +42,10 @@ export async function readData(req, res) {
     // Parse other query parameters
     const parsedOffset = offset ? parseInt(offset, 10) : undefined;
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
-    const parsedStartDate = startDate ? new Date(startDate) : undefined;
-    const parsedEndDate = endDate ? new Date(endDate) : undefined;
-    parsedStartDate?.setUTCHours(0, 0, 0, 0);  
-    parsedEndDate?.setUTCHours(23, 59, 59, 999); 
+
+    // **Updated Date Parsing Using moment.utc**
+    const parsedStartDate = startDate ? moment.utc(startDate).startOf('day').toDate() : undefined;
+    const parsedEndDate = endDate ? moment.utc(endDate).endOf('day').toDate() : undefined;
 
     const parsedMinAge = min_age ? parseInt(min_age, 10) : undefined;
     const parsedMaxAge = max_age ? parseInt(max_age, 10) : undefined;

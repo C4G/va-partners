@@ -26,9 +26,6 @@ function ReportCustomizer(props) {
     onClose,
   } = props;
 
-  console.log('selectedGenders:', selectedGenders);
-  console.log('selectedMdvi:', selectedMdvi);
-
   const updateGender = (event) => {
     const gender = event.target.name;
     const isChecked = event.target.checked;
