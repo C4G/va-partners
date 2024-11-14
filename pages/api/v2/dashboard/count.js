@@ -5,62 +5,105 @@ import { authOptions } from "../../auth/[...nextauth]";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 import moment from 'moment';
 
-// Define the mapping for distanceBinocularVisionBE
+// Mapping for distanceBinocularVisionBE values to categories
 const distanceBinocularVisionMapping = {
-  '1 N-scale': 'Other',
-  '6/60 6m': 'Moderate visual impairment',
-  'PL- 6m': 'Blindness',
-  'Unable To Assess': 'Other',
-  '6/126 6m': 'Severe visual impairment',
-  '6/9.5 6m': 'Visual Acuity normal',
-  '6/48 6m': 'Moderate visual impairment',
-  '6/24 6m': 'Moderate visual impairment',
-  '1.0 LogMAR': 'Moderate visual impairment',
-  '6/600 6m': 'Blindness',
-  '6/38 6m': 'Moderate visual impairment',
-  'HMCF 6m': 'Blindness',
-  '6/15 6m': 'Mild visual impairment',
-  '6/190 6m': 'Blindness',
-  '0.8 LogMAR': 'Moderate visual impairment',
-  '0.4 LogMAR': 'Mild visual impairment',
-  'PL+, PR unaccurate 6m': 'Blindness',
-  '0.0 LogMAR': 'Visual Acuity normal',
-  '20/100 20ft': 'Other',
-  '1 Metric': 'Other',
-  '4 LogMAR': 'Blindness',
-  'Not assessible': 'Other',
-  '2.0 LogMAR': 'Blindness',
-  '20/320 20ft': 'Severe visual impairment',
-  '20/125 20ft': 'Moderate visual impairment',
-  '20/160 20ft': 'Moderate visual impairment',
-  '6/75 6m': 'Severe visual impairment',
-  '6/6.0 6m': 'Other',
-  '6/300 6m': 'Blindness',
-  '6/19 6m': 'Mild visual impairment',
-  '6/480 6m': 'Blindness',
-  '0.5 LogMAR': 'Mild visual impairment',
-  '6/30 6m': 'Moderate visual impairment',
-  '0.3 LogMAR': 'Visual Acuity normal',
-  '6/240 6m': 'Blindness',
-  '0.22 LogMAR': 'Visual Acuity normal',
-  '20 6m': 'Other',
-  '6m': 'Other',
-  'PL+, PR accurate 6m': 'Blindness',
   '4.0 LogMAR': 'Blindness',
-  '6/380 6m': 'Blindness',
+  '3.5 LogMAR': 'Blindness',
+  '2.7 LogMAR': 'Blindness',
   '2.3 LogMAR': 'Blindness',
-  '20/250 20ft': 'Severe visual impairment',
-  'PL+, PR inaccurate 6m': 'Blindness',
-  'CFCF 6m': 'Blindness',
-  '6/12 6m': 'Visual Acuity normal',
-  '6/150 6m': 'Blindness',
-  '0.92 LogMAR': 'Moderate visual impairment',
-  '6/95 6m': 'Severe visual impairment',
+  '2.0 LogMAR': 'Blindness',
+  '1.92 LogMAR': 'Blindness',
+  '1.8 LogMAR': 'Blindness',
+  '1.7 LogMAR': 'Blindness',
+  '1.6 LogMAR': 'Blindness',
+  '1.52 LogMAR': 'Blindness',
+  '1.4 LogMAR': 'Blindness',
+  '1.3 LogMAR': 'Severe visual impairment',
+  '1.22 LogMAR': 'Severe visual impairment',
   '1.1 LogMAR': 'Severe visual impairment',
-  'LogMAR': 'Other',
+  '1.0 LogMAR': 'Moderate visual impairment',
+  '0.92 LogMAR': 'Moderate visual impairment',
+  '0.8 LogMAR': 'Moderate visual impairment',
+  '0.7 LogMAR': 'Moderate visual impairment',
   '0.6 LogMAR': 'Moderate visual impairment',
-  '20ft': 'Other',
+  '0.5 LogMAR': 'Mild visual impairment',
+  '0.4 LogMAR': 'Mild visual impairment',
+  '0.3 LogMAR': 'Visual Acuity normal',
+  '0.22 LogMAR': 'Visual Acuity normal',
+  '0.1 LogMAR': 'Visual Acuity normal',
+  '0.0 LogMAR': 'Visual Acuity normal',
+  'PL- 6m': 'Blindness',
+  'PL+: PR inaccurate 6m': 'Blindness',
+  'PL+: PR accurate 6m': 'Blindness',
+  'HMCF 6m': 'Blindness',
+  'CFCF 6m': 'Blindness',
+  '6/600 6m': 'Blindness',
+  '6/480 6m': 'Blindness',
+  '6/380 6m': 'Blindness',
+  '6/300 6m': 'Blindness',
+  '6/240 6m': 'Blindness',
+  '6/190 6m': 'Blindness',
+  '6/150 6m': 'Blindness',
+  '6/126 6m': 'Severe visual impairment',
+  '6/95 6m': 'Severe visual impairment',
+  '6/75 6m': 'Severe visual impairment',
+  '6/60 6m': 'Moderate visual impairment',
+  '6/48 6m': 'Moderate visual impairment',
+  '6/38 6m': 'Moderate visual impairment',
+  '6/30 6m': 'Moderate visual impairment',
+  '6/24 6m': 'Moderate visual impairment',
+  '6/19 6m': 'Mild visual impairment',
+  '6/15 6m': 'Mild visual impairment',
+  '6/12 6m': 'Visual Acuity normal',
+  '6/9.5 6m': 'Visual Acuity normal',
+  '6/7.5 6m': 'Visual Acuity normal',
+  '6/6.0 6m': 'Visual Acuity normal',
+  'PL- 20ft': 'Blindness',
+  'PL+: PR inaccurate 20ft': 'Blindness',
+  'PL+: PR accurate 20ft': 'Blindness',
+  'HMCF 20ft': 'Blindness',
+  'CFCF 20ft': 'Blindness',
+  '20/2000 20ft': 'Blindness',
+  '20/1600 20ft': 'Blindness',
+  '20/1250 20ft': 'Blindness',
+  '20/1000 20ft': 'Blindness',
+  '20/800 20ft': 'Blindness',
+  '20/630 20ft': 'Blindness',
+  '20/500 20ft': 'Blindness',
+  '20/400 20ft': 'Severe visual impairment',
+  '20/320 20ft': 'Severe visual impairment',
+  '20/250 20ft': 'Severe visual impairment',
+  '20/200 20ft': 'Moderate visual impairment',
+  '20/160 20ft': 'Moderate visual impairment',
+  '20/125 20ft': 'Moderate visual impairment',
+  '20/100 20ft': 'Moderate visual impairment',
+  '20/80 20ft': 'Moderate visual impairment',
+  '20/63 20ft': 'Mild visual impairment',
+  '20/50 20ft': 'Mild visual impairment',
+  '20/40 20ft': 'Visual Acuity normal',
+  '20/32 20ft': 'Visual Acuity normal',
+  '20/25 20ft': 'Visual Acuity normal',
+  '20/20 20ft': 'Visual Acuity normal',
 };
+
+// Define specific counseling categories
+const specificCounselingCategories = [
+  'Counseled and Shortlisted for Smart vision glasses',
+  'Counseled and Shortlisted for Smartphone',
+  'Educational guidance',
+  'Life skills training/ Home management / Kitchen skills',
+  'Referral to computer applications & technology training',
+  'Referral to mobile technology training',
+  'Referral to orientation and mobility – training',
+  'Referral to Vision-Aid online training programs',
+  'Referral to vocational training',
+  'Self-care and Activities of daily living',
+  'Counseling to the parents/ family/caretaker',
+  'Other',
+  'Referral to a special school',
+  'Referral to Genetic Counseling',
+  'Referral to Vision-Aid for Job Placement',
+];
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -85,7 +128,9 @@ export async function readData(req, res) {
     let parsedHospitalIds = [];
     if (hospitalIds) {
       if (Array.isArray(hospitalIds)) {
-        parsedHospitalIds = hospitalIds.map((id) => parseInt(id, 10)).filter((id) => !isNaN(id));
+        parsedHospitalIds = hospitalIds
+          .map((id) => parseInt(id, 10))
+          .filter((id) => !isNaN(id));
       } else if (typeof hospitalIds === "string") {
         const id = parseInt(hospitalIds, 10);
         if (!isNaN(id)) parsedHospitalIds.push(id);
@@ -96,22 +141,18 @@ export async function readData(req, res) {
       return res.status(400).json({ error: 'hospitalIds is required and must be valid integers' });
     }
 
-    // Parse date range with improved validation
+    // Parse date range
     let parsedStartDate = null;
     let parsedEndDate = null;
 
     if (startDate) {
       const tempStartDate = moment.utc(startDate).startOf('day').toDate();
       parsedStartDate = tempStartDate;
-    } else {
-      console.warn('Invalid startDate:', startDate);
     }
-    
+
     if (endDate) {
       const tempEndDate = moment.utc(endDate).endOf('day').toDate();
       parsedEndDate = tempEndDate;
-    } else {
-      console.warn('Invalid endDate:', endDate);
     }
 
     // Build date range condition
@@ -124,9 +165,9 @@ export async function readData(req, res) {
     let genderFilters = [];
     if (genders) {
       if (Array.isArray(genders)) {
-        genderFilters = genders.map((g) => g.toLowerCase());
-      } else {
-        genderFilters.push(genders.toLowerCase());
+        genderFilters = genders;
+      } else if (typeof genders === 'string') {
+        genderFilters = [genders];
       }
     }
 
@@ -142,17 +183,25 @@ export async function readData(req, res) {
     const minAge = min_age ? parseInt(min_age, 10) : undefined;
     const maxAge = max_age ? parseInt(max_age, 10) : undefined;
 
+    // Calculate dateOfBirth range based on minAge and maxAge
+    let dateOfBirthFilter = {};
+    const today = new Date();
+    if (minAge !== undefined) {
+      const maxDateOfBirth = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate() + 1);
+      dateOfBirthFilter.lte = maxDateOfBirth;
+    }
+    if (maxAge !== undefined) {
+      const minDateOfBirth = new Date(today.getFullYear() - maxAge - 1, today.getMonth(), today.getDate() + 1);
+      dateOfBirthFilter.gte = minDateOfBirth;
+    }
+
     // Build beneficiary filters
     const beneficiaryFilters = {
-      // deleted: false,
       hospitalId: { in: parsedHospitalIds },
       ...(genderFilters.length > 0 && { gender: { in: genderFilters } }),
       ...(mdviFilters.length > 0 && { mDVI: { in: mdviFilters } }),
       ...(minAge !== undefined || maxAge !== undefined) && {
-        dateOfBirth: {
-          ...(minAge !== undefined && { lte: new Date(new Date().setFullYear(new Date().getFullYear() - minAge)) }),
-          ...(maxAge !== undefined && { gte: new Date(new Date().setFullYear(new Date().getFullYear() - maxAge)) }),
-        },
+        dateOfBirth: dateOfBirthFilter,
       },
     };
 
@@ -179,8 +228,14 @@ export async function readData(req, res) {
       Low_Vision_Evaluation: prisma.Low_Vision_Evaluation,
     };
 
-    // Get counts for main activities
+    // Get total number of beneficiaries matching the filters (regardless of activities)
+    const totalBeneficiariesCount = await prisma.Beneficiary.count({
+      where: beneficiaryFilters,
+    });
+
+    // Get counts for main activities and unique beneficiaries
     const counts = await Promise.all([
+      // Unique beneficiaries who participated in any activity
       prisma.Beneficiary.count({
         where: {
           ...beneficiaryFilters,
@@ -195,6 +250,7 @@ export async function readData(req, res) {
           }),
         },
       }),
+      // Counts for each activity subtype
       ...subtypes.map((subtype) =>
         modelMap[subtype].count({
           where: {
@@ -206,14 +262,17 @@ export async function readData(req, res) {
     ]);
 
     const formattedCounts = {};
-    formattedCounts["Beneficiary"] = counts[0];
+    formattedCounts["Total_Beneficiaries"] = totalBeneficiariesCount;
+    formattedCounts["Unique_Beneficiaries"] = counts[0]; // Unique beneficiaries across all activities
+
+    // Assign counts to each subtype
     for (let i = 0; i < subtypes.length; i++) {
       formattedCounts[subtypes[i]] = counts[i + 1];
     }
 
-    // Get counts of Training subtypes
-    const trainingSubTypeCountsArray = await prisma.Training.groupBy({
-      by: ["subType"],
+    // **Updated Section: Get counts of Training types and subtypes**
+    const trainingGrouped = await prisma.Training.groupBy({
+      by: ["type", "subType"],
       where: {
         beneficiary: beneficiaryFilters,
         ...(dateRangeCondition && { date: dateRangeCondition }),
@@ -223,13 +282,29 @@ export async function readData(req, res) {
       },
     });
 
+    const trainingTypeCounts = {};
     const trainingSubTypeCounts = {};
-    trainingSubTypeCountsArray.forEach((item) => {
-      const key = item.subType || "Unknown";
-      trainingSubTypeCounts[key] = (trainingSubTypeCounts[key] || 0) + item._count._all;
+
+    trainingGrouped.forEach((item) => {
+      const type = item.type ? item.type.trim() : "Other";
+      const subType = item.subType ? item.subType.trim() : "Other";
+      const count = item._count._all;
+
+      // Aggregate type counts
+      trainingTypeCounts[type] = (trainingTypeCounts[type] || 0) + count;
+
+      // Aggregate subtypes under each type
+      if (!trainingSubTypeCounts[type]) {
+        trainingSubTypeCounts[type] = {};
+      }
+      trainingSubTypeCounts[type][subType] = (trainingSubTypeCounts[type][subType] || 0) + count;
     });
 
-    // Get counts of Counselling types
+    // Add Training types and subtypes to formattedCounts
+    formattedCounts["Training_Types"] = trainingTypeCounts || {};
+    formattedCounts["Training_Subtypes"] = trainingSubTypeCounts || {};
+
+    // **Get counts of Counselling types with specific categories**
     const counsellingTypeCountsArray = await prisma.Counselling_Education.groupBy({
       by: ["type"],
       where: {
@@ -243,8 +318,10 @@ export async function readData(req, res) {
 
     const counsellingTypeCounts = {};
     counsellingTypeCountsArray.forEach((item) => {
-      const key = item.type || "Unknown";
-      counsellingTypeCounts[key] = item._count._all;
+      // Trim and normalize the type string
+      const type = item.type ? item.type.trim() : "Other";
+      const key = specificCounselingCategories.includes(type) ? type : "Other";
+      counsellingTypeCounts[key] = (counsellingTypeCounts[key] || 0) + item._count._all;
     });
 
     // Initialize devices counts
@@ -303,7 +380,10 @@ export async function readData(req, res) {
 
           // Process dispensed devices
           if (record[dispensedField]) {
-            const devices = record[dispensedField].split(";").map((d) => d.trim()).filter(Boolean);
+            const devices = record[dispensedField]
+              .split(";")
+              .map((d) => d.trim())
+              .filter(Boolean);
             devicesDispensedCounts[type] += devices.length;
             devices.forEach((device) => {
               devicesDispensedDetails[type][device] = (devicesDispensedDetails[type][device] || 0) + 1;
@@ -312,7 +392,10 @@ export async function readData(req, res) {
 
           // Process recommended devices
           if (record[recommendedField]) {
-            const devices = record[recommendedField].split(",").map((d) => d.trim()).filter(Boolean);
+            const devices = record[recommendedField]
+              .split(",")
+              .map((d) => d.trim())
+              .filter(Boolean);
             devicesRecommendedCounts[type] += devices.length;
             devices.forEach((device) => {
               devicesRecommendedDetails[type][device] = (devicesRecommendedDetails[type][device] || 0) + 1;
@@ -323,12 +406,13 @@ export async function readData(req, res) {
     }
 
     // Add the new counts to formattedCounts
+    formattedCounts["Training_Types"] = trainingTypeCounts;
     formattedCounts["Training_Subtypes"] = trainingSubTypeCounts;
     formattedCounts["Counselling_Types"] = counsellingTypeCounts;
     formattedCounts["Devices_Dispensed"] = devicesDispensedCounts;
     formattedCounts["Devices_Recommended"] = devicesRecommendedCounts;
 
-    // **Updated Addition: GroupBy for distanceBinocularVisionBE on Comprehensive_Low_Vision_Evaluation**
+    // **GroupBy for distanceBinocularVisionBE on Comprehensive_Low_Vision_Evaluation**
     const distanceBinocularCounts = await prisma.Comprehensive_Low_Vision_Evaluation.groupBy({
       by: ['distanceBinocularVisionBE'],
       where: {
@@ -341,19 +425,19 @@ export async function readData(req, res) {
     });
 
     const distanceBinocularVisionBE_counts = {
-      'Other': 0,
-      'Moderate visual impairment': 0,
       'Blindness': 0,
       'Severe visual impairment': 0,
-      'Visual Acuity normal': 0,
+      'Moderate visual impairment': 0,
       'Mild visual impairment': 0,
+      'Visual Acuity normal': 0,
+      'Other': 0, // Added 'Other' to capture unmapped categories
     };
 
     // Map each `distanceBinocularVisionBE` value to its category and aggregate
     distanceBinocularCounts.forEach((record) => {
       const rawValue = record.distanceBinocularVisionBE;
       const category = distanceBinocularVisionMapping[rawValue] || 'Other'; // Default to 'Other' if not mapped
-    
+
       if (Object.prototype.hasOwnProperty.call(distanceBinocularVisionBE_counts, category)) {
         distanceBinocularVisionBE_counts[category] += record._count.distanceBinocularVisionBE;
       } else {
@@ -369,10 +453,134 @@ export async function readData(req, res) {
     formattedCounts["Devices_Dispensed_Details"] = devicesDispensedDetails;
     formattedCounts["Devices_Recommended_Details"] = devicesRecommendedDetails;
 
+    // **Compute unique beneficiaries for each activity**
+
+    // Screenings
+    const screeningsBeneficiaries = await prisma.Low_Vision_Evaluation.findMany({
+      where: {
+        beneficiary: beneficiaryFilters,
+        ...(dateRangeCondition && { date: dateRangeCondition }),
+      },
+      select: {
+        beneficiaryId: true,
+      },
+    });
+    const screeningsBeneficiaryIds = new Set(screeningsBeneficiaries.map(item => item.beneficiaryId));
+
+    // Vision Enhancement
+    const visionEnhancementBeneficiaries = await prisma.Vision_Enhancement.findMany({
+      where: {
+        beneficiary: beneficiaryFilters,
+        ...(dateRangeCondition && { date: dateRangeCondition }),
+      },
+      select: {
+        beneficiaryId: true,
+      },
+    });
+    const visionEnhancementBeneficiaryIds = new Set(visionEnhancementBeneficiaries.map(item => item.beneficiaryId));
+
+    // CLVE
+    const clveBeneficiaries = await prisma.Comprehensive_Low_Vision_Evaluation.findMany({
+      where: {
+        beneficiary: beneficiaryFilters,
+        ...(dateRangeCondition && { date: dateRangeCondition }),
+      },
+      select: {
+        beneficiaryId: true,
+      },
+    });
+    const clveBeneficiaryIds = new Set(clveBeneficiaries.map(item => item.beneficiaryId));
+
+    // Counselling
+    const counsellingBeneficiaries = await prisma.Counselling_Education.findMany({
+      where: {
+        beneficiary: beneficiaryFilters,
+        ...(dateRangeCondition && { date: dateRangeCondition }),
+      },
+      select: {
+        beneficiaryId: true,
+      },
+    });
+    const counsellingBeneficiaryIds = new Set(counsellingBeneficiaries.map(item => item.beneficiaryId));
+
+    // Training (including subtypes)
+    const trainingBeneficiariesList = await Promise.all([
+      prisma.Training.findMany({
+        where: {
+          beneficiary: beneficiaryFilters,
+          ...(dateRangeCondition && { date: dateRangeCondition }),
+        },
+        select: {
+          beneficiaryId: true,
+        },
+      }),
+      prisma.Mobile_Training.findMany({
+        where: {
+          beneficiary: beneficiaryFilters,
+          ...(dateRangeCondition && { date: dateRangeCondition }),
+        },
+        select: {
+          beneficiaryId: true,
+        },
+      }),
+      prisma.Computer_Training.findMany({
+        where: {
+          beneficiary: beneficiaryFilters,
+          ...(dateRangeCondition && { date: dateRangeCondition }),
+        },
+        select: {
+          beneficiaryId: true,
+        },
+      }),
+      prisma.Orientation_Mobility_Training.findMany({
+        where: {
+          beneficiary: beneficiaryFilters,
+          ...(dateRangeCondition && { date: dateRangeCondition }),
+        },
+        select: {
+          beneficiaryId: true,
+        },
+      }),
+    ]);
+    const trainingBeneficiaryIds = new Set();
+    trainingBeneficiariesList.forEach(beneficiaries => {
+      beneficiaries.forEach(item => trainingBeneficiaryIds.add(item.beneficiaryId));
+    });
+
+    // Now compute counts
+    const uniqueBeneficiariesCounts = {
+      Screenings: screeningsBeneficiaryIds.size,
+      Vision_Enhancement: visionEnhancementBeneficiaryIds.size,
+      CLVE: clveBeneficiaryIds.size,
+      Counselling: counsellingBeneficiaryIds.size,
+      Training: trainingBeneficiaryIds.size,
+    };
+
+    // Add to formattedCounts
+    formattedCounts["Unique_Beneficiaries_By_Activity"] = uniqueBeneficiariesCounts;
+
+    // Optionally, compute the sum of these counts
+    const totalUniqueBeneficiariesByActivity = Object.values(uniqueBeneficiariesCounts).reduce((a, b) => a + b, 0);
+    formattedCounts["Total_Unique_Beneficiaries_By_Activity"] = totalUniqueBeneficiariesByActivity;
+
+    // **Compute total unique beneficiaries across all activities**
+
+    // Combine all beneficiary IDs from all activities into a single set
+    const allActivityBeneficiaryIds = new Set([
+      ...screeningsBeneficiaryIds,
+      ...visionEnhancementBeneficiaryIds,
+      ...clveBeneficiaryIds,
+      ...counsellingBeneficiaryIds,
+      ...trainingBeneficiaryIds,
+    ]);
+
+    // Total unique beneficiaries across all activities
+    const totalUniqueBeneficiaries = allActivityBeneficiaryIds.size;
+    formattedCounts["Total_Unique_Beneficiaries"] = totalUniqueBeneficiaries;
+
     // Return the response including the new counts
     return res.status(200).json({
       ...formattedCounts,
-      distanceBinocularVisionBE_counts,
       parsedHospitalIds,
       parsedStartDate,
       parsedEndDate,

@@ -20,13 +20,13 @@ import Layout from './components/layout';
 import moment from "moment";
 import { useState, useEffect } from "react";
 import GraphCustomizer from "./components/GraphCustomizer";
-import { Tab, Tabs, Paper } from "@mui/material";
+import { Tab, Tabs, Paper, Button, Box } from "@mui/material";
 import ReportCustomizer from './customizedReport';
 import { AgGridReact } from 'ag-grid-react'; 
 import "ag-grid-community/styles/ag-grid.css"; 
 import "ag-grid-community/styles/ag-theme-quartz.css"; 
 import EditIcon from '@mui/icons-material/Edit';
-import { Drawer, IconButton, Button, Box } from '@mui/material';
+import { Drawer, IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useDebounce } from "utils/global/useDebounce";
 import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
@@ -91,6 +91,8 @@ function computeTotalSessions(countsData) {
   const totalSessions = activityCounts.reduce((sum, count) => sum + count, 0);
   return totalSessions;
 }
+
+// Placeholder for existing graph building functions
 
 // Function to build Activities Graph using countsData
 function buildActivitiesGraph(countsData) {
@@ -350,23 +352,131 @@ const visualAcuityOptions = {
       display: true,
       text: 'Visual Acuity Distribution',
     },
+    tooltip: {
+      enabled: true,
+    },
   },
 };
 
+// Function to build Training Types Graph
+function buildTrainingTypesGraph(countsData) {
+  if (!countsData || !countsData["Training_Types"]) {
+    return {
+      labels: [],
+      datasets: [
+        {
+          label: "Training Types",
+          data: [],
+          ...graphOptions,
+        },
+      ],
+    };
+  }
 
-function buildUniqueBeneficiariesGraph(uniqueBeneficiaries) {
+  const trainingTypes = countsData["Training_Types"];
+  const labels = Object.keys(trainingTypes);
+  const dataPoints = Object.values(trainingTypes);
+
   return {
-    labels: ["Unique Beneficiaries"],
+    labels: labels,
     datasets: [
       {
-        label: "Unique Beneficiaries",
-        data: [uniqueBeneficiaries],
-        backgroundColor: "rgba(153, 102, 255, 0.2)",
-        borderColor: "rgba(153, 102, 255, 1)",
+        label: "Training Types",
+        data: dataPoints,
+        backgroundColor: labels.map(() => "rgba(54, 162, 235, 0.2)"),
+        borderColor: labels.map(() => "rgba(54, 162, 235, 1)"),
         borderWidth: 1,
       },
     ],
   };
+}
+
+// Function to build Training Subtypes Graph
+function buildTrainingSubtypesGraph(countsData, selectedType) {
+  if (
+    !countsData ||
+    !countsData["Training_Subtypes"] ||
+    !countsData["Training_Subtypes"][selectedType]
+  ) {
+    return {
+      labels: [],
+      datasets: [],
+    };
+  }
+
+  const trainingSubtypes = countsData["Training_Subtypes"][selectedType];
+  const labels = Object.keys(trainingSubtypes);
+  const dataPoints = Object.values(trainingSubtypes);
+
+  return {
+    labels: labels,
+    datasets: [
+      {
+        label: `Subtypes of ${selectedType}`,
+        data: dataPoints,
+        backgroundColor: labels.map(() => "rgba(255, 99, 132, 0.2)"),
+        borderColor: labels.map(() => "rgba(255, 99, 132, 1)"),
+        borderWidth: 1,
+      },
+    ],
+  };
+}
+
+// Function to build Unique Beneficiaries by Activity Graph with Drilldown
+function buildUniqueBeneficiariesGraph(countsData, drilledDown) {
+  if (!countsData) return null;
+
+  if (!drilledDown) {
+    // Calculate the total unique beneficiaries
+    const total = Object.values(countsData["Unique_Beneficiaries_By_Activity"]).reduce((sum, val) => sum + val, 0);
+    return {
+      labels: ["Total Unique Beneficiaries"],
+      datasets: [
+        {
+          label: 'Total',
+          data: [total],
+          backgroundColor: ["rgba(75, 192, 192, 0.6)"],
+          borderColor: ["rgba(75, 192, 192, 1)"],
+          borderWidth: 1,
+        },
+      ],
+    };
+  } else {
+    // Provide the detailed breakdown
+    const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"];
+
+    const labels = Object.keys(uniqueBeneficiariesByActivity).map(
+      (key) => `${key} (${uniqueBeneficiariesByActivity[key]})`
+    );
+    const dataPoints = Object.values(uniqueBeneficiariesByActivity);
+
+    const chartData = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Unique Beneficiaries by Activity',
+          data: dataPoints,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+            "rgba(255, 206, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(153, 102, 255, 0.2)",
+          ],
+          borderColor: [
+            "rgba(255, 99, 132, 1)",
+            "rgba(54, 162, 235, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(75, 192, 192, 1)",
+            "rgba(153, 102, 255, 1)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+
+    return chartData;
+  }
 }
 
 // Function to calculate age from date of birth
@@ -380,61 +490,6 @@ function calculateAge(dateOfBirth) {
     age--;
   }
   return age;
-}
-
-// Function to build Gender Graph
-function buildGenderGraph(beneficiaries) {
-  const maleCount = beneficiaries.filter(user => user.gender && (user.gender.toLowerCase() === 'male' || user.gender.toLowerCase() === 'm')).length;
-
-  const femaleCount = beneficiaries.filter(user => user.gender && (user.gender.toLowerCase() === 'female' || user.gender.toLowerCase() === 'f')).length;
-
-  const chartData = {
-    labels: ["Male", "Female"],
-    datasets: [
-      {
-        label: "Gender Distribution",
-        data: [maleCount, femaleCount],
-        ...graphOptions,
-      },
-    ],
-  };
-
-  return chartData;
-}
-
-// Function to build Age Graph
-function buildAgeGraph(beneficiaries) {
-  const ageGroups = {
-    "0-18": 0,
-    "19-35": 0,
-    "36-50": 0,
-    "51-65": 0,
-    "66+": 0
-  };
-
-  beneficiaries.forEach(user => {
-    const age = calculateAge(user.dateOfBirth);
-    if (age !== null) {
-      if (age <= 18) ageGroups["0-18"]++;
-      else if (age <= 35) ageGroups["19-35"]++;
-      else if (age <= 50) ageGroups["36-50"]++;
-      else if (age <= 65) ageGroups["51-65"]++;
-      else ageGroups["66+"]++;
-    }
-  });
-
-  const chartData = {
-    labels: Object.keys(ageGroups),
-    datasets: [
-      {
-        label: "Age Distribution",
-        data: Object.values(ageGroups),
-        ...graphOptions,
-      },
-    ],
-  };
-
-  return chartData;
 }
 
 // Edit Button Renderer for AgGrid
@@ -593,7 +648,6 @@ function PaginatedTable({
   );
 }
 
-
 // Main Summary Component
 export default function Summary({
   user,
@@ -643,7 +697,6 @@ export default function Summary({
   const [isLoading, setIsLoading] = useState(false);
   const [totalSessions, setTotalSessions] = useState(0);
   const [totalBeneficiaries, setTotalBeneficiaries] = useState(0);
-  const [uniqueBeneficiaries, setUniqueBeneficiaries] = useState(0);
   const [totalVisionEnhancements, setTotalVisionEnhancements] = useState(0);
   const [totalTrainings, setTotalTrainings] = useState(0);
   const [totalComprehensiveEvaluations, setTotalComprehensiveEvaluations] = useState(0);
@@ -664,6 +717,13 @@ export default function Summary({
   const [activeDevicesGraphTab, setActiveDevicesGraphTab] = useState(0);
   const [activeRecDevicesGraphTab, setActiveRecDevicesGraphTab] = useState(0);
   const [activeActivitiesGraphTab, setActiveActivitiesGraphTab] = useState(0);
+
+  // New state variable for drilldown
+  const [uniqueBeneficiariesDrilledDown, setUniqueBeneficiariesDrilledDown] = useState(false);
+  const [trainingDrillDown, setTrainingDrillDown] = useState({
+    active: false,
+    type: null, // Holds the currently selected Training type for drill-down
+  });
 
   // Graph options
   const options={
@@ -697,7 +757,6 @@ export default function Summary({
     setTotalComprehensiveEvaluations(0);
     setTotalCounselingRecords(0);
     setTotalSessions(0);
-    setUniqueBeneficiaries(0);
   }, [selectedHospitals, startDate, endDate, selectedGenders, selectedMdvi, minAge, maxAge]);
 
   // Fetch counts data when graph is active and filters change
@@ -742,12 +801,10 @@ export default function Summary({
   // Update totals when countsData changes
   useEffect(() => {
     if (countsData) {
-      console.log('countsData in state:', countsData);
-      console.log('Visual Acuity Counts:', countsData.distanceBinocularVisionBE_counts);
       const totalSessions = computeTotalSessions(countsData);
       setTotalSessions(totalSessions);
-      setUniqueBeneficiaries(countsData["Beneficiary"] || 0);
-      setTotalBeneficiaries(countsData["Beneficiary"] || 0);
+  
+      setTotalBeneficiaries(countsData["Total_Beneficiaries"] || 0);
     }
   }, [countsData]);
 
@@ -1423,8 +1480,6 @@ const counselingEducationColDefs =[
     { field: "extraInformation", headerName: "Extra Information", filter: true, sortable: true },
   ];
   
-
-
   // Handle sub-tab changes
   const handleSubTabChange = (event, newValue) => {
     setSubTabIndex(newValue);
@@ -1471,32 +1526,177 @@ const counselingEducationColDefs =[
   const spectacleRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Spectacle') : null;
   const opticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Optical') : null;
   const nonOpticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'NonOptical') : null;
+  
+  const visualAcuityCategories = [
+    'Blindness',
+    'Severe visual impairment',
+    'Moderate visual impairment',
+    'Mild visual impairment',
+    'Visual Acuity normal',
+    // 'Other',
+  ];
+
   const visualAcuityChartData = countsData && countsData.distanceBinocularVisionBE_counts ? {
     labels: Object.keys(countsData.distanceBinocularVisionBE_counts),
     datasets: [
       {
         label: 'Number of Cases',
-        data: Object.values(countsData.distanceBinocularVisionBE_counts),
+        data: visualAcuityCategories.map(category => countsData.distanceBinocularVisionBE_counts[category] || 0),
         backgroundColor: [
-          'rgba(75, 192, 192, 0.6)', // Other
-          'rgba(54, 162, 235, 0.6)', // Moderate visual impairment
-          'rgba(255, 99, 132, 0.6)', // Blindness
-          'rgba(255, 206, 86, 0.6)', // Severe visual impairment
-          'rgba(153, 102, 255, 0.6)', // Visual Acuity normal
-          'rgba(255, 159, 64, 0.6)', // Mild visual impairment
+          'rgba(255, 99, 132, 0.6)',      // Blindness
+          'rgba(255, 206, 86, 0.6)',      // Severe visual impairment
+          'rgba(54, 162, 235, 0.6)',      // Moderate visual impairment
+          'rgba(255, 159, 64, 0.6)',      // Mild visual impairment
+          'rgba(153, 102, 255, 0.6)',     // Visual Acuity normal
+          // 'rgba(75, 192, 192, 0.6)',      // Other
         ],
         borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
+          'rgba(255, 99, 132, 1)',        // Blindness
+          'rgba(255, 206, 86, 1)',        // Severe visual impairment
+          'rgba(54, 162, 235, 1)',        // Moderate visual impairment
+          'rgba(255, 159, 64, 1)',        // Mild visual impairment
+          'rgba(153, 102, 255, 1)',       // Visual Acuity normal
+          // 'rgba(75, 192, 192, 1)',        // Other
         ],
         borderWidth: 1,
       },
     ],
   } : null;
+
+  // Generate Unique Beneficiaries Graph Data with Drilldown
+  const uniqueBeneficiariesGraphData = buildUniqueBeneficiariesGraph(countsData, uniqueBeneficiariesDrilledDown);
+
+
+// Define options with an onClick handler for Training Types chart
+const trainingTypesOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+    },
+    title: {
+      display: true,
+      text: 'Training Types Distribution',
+    },
+    tooltip: {
+      enabled: true,
+    },
+  },
+  onClick: (event, elements) => {
+    if (elements.length > 0) {
+      const chartElement = elements[0];
+      const index = chartElement.index;
+
+      const trainingGraphData = buildTrainingTypesGraph(countsData);
+
+      // Ensure labels exist and index is valid
+      if (
+        trainingGraphData.labels &&
+        trainingGraphData.labels.length > index
+      ) {
+        const selectedType = trainingGraphData.labels[index];
+        setTrainingDrillDown({ active: true, type: selectedType });
+      } else {
+        console.error("Selected type is undefined or out of bounds.");
+      }
+    }
+  },
+};
+
+// Define options for Training Subtypes chart
+const trainingSubtypesOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+    },
+    title: {
+      display: true,
+      text: `Training Subtypes Distribution for ${trainingDrillDown.type}`,
+    },
+    tooltip: {
+      enabled: true,
+    },
+  },
+};
+  // Define options with an onClick handler for Unique Beneficiaries chart
+  const uniqueBeneficiariesOptions = {
+    ...options,
+    onClick: (event, elements) => {
+      if (elements.length > 0 && !uniqueBeneficiariesDrilledDown) {
+        const chartElement = elements[0];
+        const index = chartElement.index;
+
+        // Check if the clicked bar is the 'Total Unique Beneficiaries' bar
+        if (uniqueBeneficiariesGraphData.labels[index] === "Total Unique Beneficiaries") {
+          setUniqueBeneficiariesDrilledDown(true);
+        }
+      }
+    },
+  };
+
+  // Back button to return from drilldown
+  const backButton = uniqueBeneficiariesDrilledDown ? (
+    <Button variant="outlined" onClick={() => setUniqueBeneficiariesDrilledDown(false)} style={{ marginBottom: '10px' }}>
+      Back to Total
+    </Button>
+  ) : null;
+
+  
+// Function to build Gender Graph
+function buildGenderGraph(beneficiaries) {
+  const maleCount = beneficiaries.filter(user => user.gender && (user.gender.toLowerCase() === 'male' || user.gender.toLowerCase() === 'm')).length;
+
+  const femaleCount = beneficiaries.filter(user => user.gender && (user.gender.toLowerCase() === 'female' || user.gender.toLowerCase() === 'f')).length;
+
+  const chartData = {
+    labels: ["Male", "Female"],
+    datasets: [
+      {
+        label: "Gender Distribution",
+        data: [maleCount, femaleCount],
+        ...graphOptions,
+      },
+    ],
+  };
+
+  return chartData;
+}
+
+// Function to build Age Graph
+function buildAgeGraph(beneficiaries) {
+  const ageGroups = {
+    "0-18": 0,
+    "19-35": 0,
+    "36-50": 0,
+    "51-65": 0,
+    "66+": 0
+  };
+
+  beneficiaries.forEach(user => {
+    const age = calculateAge(user.dateOfBirth);
+    if (age !== null) {
+      if (age <= 18) ageGroups["0-18"]++;
+      else if (age <= 35) ageGroups["19-35"]++;
+      else if (age <= 50) ageGroups["36-50"]++;
+      else if (age <= 65) ageGroups["51-65"]++;
+      else ageGroups["66+"]++;
+    }
+  });
+
+  const chartData = {
+    labels: Object.keys(ageGroups),
+    datasets: [
+      {
+        label: "Age Distribution",
+        data: Object.values(ageGroups),
+        ...graphOptions,
+      },
+    ],
+  };
+
+  return chartData;
+}
 
   // Handle graph tabs
   const renderGraph = () => {
@@ -1509,9 +1709,19 @@ const counselingEducationColDefs =[
           case 0:
             return <Bar data={buildTotalBeneficiariesGraph(totalBeneficiaries)} />;
           case 1:
-            return <Bar data={buildUniqueBeneficiariesGraph(uniqueBeneficiaries)} />;
+            return countsData ? (
+              <div>
+                {backButton}
+                <Bar 
+                  data={uniqueBeneficiariesGraphData} 
+                  options={uniqueBeneficiariesOptions} 
+                />
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           case 2:
-              return <Bar data={buildSessionsGraph(totalSessions)} />;
+            return <Bar data={buildSessionsGraph(totalSessions)} />;
           case 3:
             return <Bar data={genderGraphData} options={options} />;
           case 4:
@@ -1521,15 +1731,46 @@ const counselingEducationColDefs =[
         }
       case 1:
         switch (activeActivitiesGraphTab) {
-          case 0:
-            return countsData ? (
-              <Bar data={buildActivitiesGraph(countsData)} options={options} />
-            ) : (
-              <p>Loading...</p>
-            );
+          case 0: {
+            if (!countsData) {
+              return <p>Loading...</p>;
+            }
+            const activitiesChartData = buildActivitiesGraph(countsData);
+            if (activitiesChartData.labels.length === 0) {
+              return <p>No Activities data available for the selected filters.</p>;
+            }
+            return <Bar data={activitiesChartData} options={options} />;
+          }
           case 1:
             return countsData ? (
-              <Bar data={buildBreakdownGraph(countsData, 'training')} options={options} />
+              <div>
+                {trainingDrillDown.active && (
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      setTrainingDrillDown({ active: false, type: null })
+                    }
+                    style={{ marginBottom: '10px' }}
+                  >
+                    Back to Training Types
+                  </Button>
+                )}
+                {trainingDrillDown.active ? (
+                  buildTrainingSubtypesGraph(countsData, trainingDrillDown.type).labels.length > 0 ? (
+                    <Bar
+                      data={buildTrainingSubtypesGraph(countsData, trainingDrillDown.type)}
+                      options={trainingSubtypesOptions}
+                    />
+                  ) : (
+                    <p>No sub-type data available for {trainingDrillDown.type}.</p>
+                  )
+                ) : (
+                  <Bar
+                    data={buildTrainingTypesGraph(countsData)}
+                    options={trainingTypesOptions}
+                  />
+                )}
+              </div>
             ) : (
               <p>Loading...</p>
             );
@@ -1592,6 +1833,14 @@ const counselingEducationColDefs =[
           default:
             return null;
         }
+      case 4:
+        return visualAcuityChartData ? (
+          <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
+            <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
+          </Box>
+        ) : (
+          <p>No Visual Acuity data available.</p>
+        );
       default:
         return null;
     }
@@ -1687,7 +1936,7 @@ const counselingEducationColDefs =[
                 ) : beneficiaries.length > 0 ? (
                   <PaginatedTable
                     data={beneficiaries}
-                    columnDefs={beneficiaryColDefs}
+                    columnDefs={beneficiaryColDefs} // Placeholder for Beneficiary column definitions
                     page={beneficiaryPage}
                     totalRecords={totalBeneficiaries}
                     pageSize={pageSize} 
@@ -1706,7 +1955,7 @@ const counselingEducationColDefs =[
                 ) : visionEnhancements.length > 0 ? (
                   <PaginatedTable
                     data={visionEnhancements}
-                    columnDefs={visionEnhancementColDefs}
+                    columnDefs={visionEnhancementColDefs} // Placeholder for Vision Enhancement column definitions
                     page={visionEnhancementPage}
                     totalRecords={totalVisionEnhancements}
                     pageSize={pageSize} 
@@ -1725,7 +1974,7 @@ const counselingEducationColDefs =[
                 ) : trainings.length > 0 ? (
                   <PaginatedTable
                     data={trainings}
-                    columnDefs={trainingColDefs}
+                    columnDefs={trainingColDefs} // Placeholder for Training column definitions
                     page={trainingPage}
                     totalRecords={totalTrainings}
                     pageSize={pageSize} 
@@ -1744,7 +1993,7 @@ const counselingEducationColDefs =[
                 ) : comprehensiveEvaluations.length > 0 ? (
                   <PaginatedTable
                     data={comprehensiveEvaluations}
-                    columnDefs={comprehensiveLowVisionEvaluationColDefs}
+                    columnDefs={comprehensiveLowVisionEvaluationColDefs} // Placeholder for Comprehensive Low Vision Evaluation column definitions
                     page={comprehensivePage}
                     totalRecords={totalComprehensiveEvaluations}
                     pageSize={pageSize} 
@@ -1763,7 +2012,7 @@ const counselingEducationColDefs =[
                 ) : counselingRecords.length > 0 ? (
                   <PaginatedTable
                     data={counselingRecords}
-                    columnDefs={counselingEducationColDefs}
+                    columnDefs={counselingEducationColDefs} // Placeholder for Counseling Education column definitions
                     page={counselingPage}
                     totalRecords={totalCounselingRecords}
                     pageSize={pageSize} 
@@ -1798,7 +2047,7 @@ const counselingEducationColDefs =[
                       <Tab label="Visual Acuity" />
                     </Tabs>
 
-                    {/* Beneficiary Graph Sub-Tab */}
+                    {/* Beneficiary Graph Sub-Tabs */}
                     {activeGraphTab === 0 && (
                       <Tabs
                         value={activeBeneficiaryGraphTab}
@@ -1807,7 +2056,7 @@ const counselingEducationColDefs =[
                         textColor="primary"
                         centered
                       >
-                        <Tab label="Accurate Beneficiaries" />
+                        <Tab label="Total Beneficiaries" />
                         <Tab label="Unique Beneficiaries" />
                         <Tab label="Total Sessions" />
                         <Tab label="Gender" />
@@ -1815,7 +2064,7 @@ const counselingEducationColDefs =[
                       </Tabs>
                     )}
 
-                    {/* Activities Graph Sub-Tab */}
+                    {/* Activities Graph Sub-Tabs */}
                     {activeGraphTab === 1 && (
                       <Tabs
                         value={activeActivitiesGraphTab}
@@ -1830,7 +2079,7 @@ const counselingEducationColDefs =[
                       </Tabs>
                     )}
 
-                    {/* Dispensed Devices Graph Sub-Tab */}
+                    {/* Dispensed Devices Graph Sub-Tabs */}
                     {activeGraphTab === 2 && (
                       <Tabs
                         value={activeDevicesGraphTab}
@@ -1847,7 +2096,7 @@ const counselingEducationColDefs =[
                       </Tabs>
                     )}
 
-                    {/* Recommended Devices Graph Sub-Tab */}
+                    {/* Recommended Devices Graph Sub-Tabs */}
                     {activeGraphTab === 3 && (
                       <Tabs
                         value={activeRecDevicesGraphTab}
@@ -1866,20 +2115,21 @@ const counselingEducationColDefs =[
 
                     {/* Visual Acuity Graph Sub-Tab */}
                     {activeGraphTab === 4 && (
-                    isLoading ? (
-                      <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
-                      </Box>
-                    ) : visualAcuityChartData ? (
-                      <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
-                        <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
-                      </Box>
-                    ) : (
-                      <p>No Visual Acuity data available.</p>
-                    )
-                  )}
+                      isLoading ? (
+                        <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
+                          <p>Loading...</p>
+                        </Box>
+                      ) : visualAcuityChartData ? (
+                        <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
+                          <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
+                        </Box>
+                      ) : (
+                        <p>No Visual Acuity data available.</p>
+                      )
+                    )}
 
                     {/* Render the selected graph */}
-                    {renderGraph()}
+                    {activeGraphTab !== 4 && renderGraph()}
                   </Paper>
                 </div>
               </div>
