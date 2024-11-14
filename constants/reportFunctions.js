@@ -1061,6 +1061,11 @@ export function getAggregatedHospitalData(
     totalBeneficiariesRow["Number of Beneficiaries"] = totalBeneficiariesTotal;
 
   }
+
+  const evaluationsTotal = screeningsOnlyBeneficiariesTotal + visionEnhancementOnlyBeneficiariesTotal + clveOnlyBeneficiariesTotal + screeningsAndCLVETotal
+                          + visionCLVETotal + screeningsVisionEnhancementBeneficiariesTotal + screeningsCLVEVisionTotal;
+  const servicesTotal = trainingOnlyTotal + counselingOnlyTotal + devicesOnlyTotal + trainingCounselingOnlyTotal + trainingDevicesOnlyTotal + counselingDevicesOnlyTotal + trainingDevicesCounselingOnlyTotal;
+  const evalAndServicesTotal = screeningsCLVEVisionDevicesTotal + screeningsCLVEVisionCounselingTotal + screeningsCLVEVisionTrainingTotal + screeningsCLVEVisionDevicesCounselingTotal + screeningsCLVEVisionDevicesTrainingTotal + screeningsCLVEVisionCounselingTrainingTotal + screeningsCLVEVisionDevicesCounselingTrainingTotal;
   // Add rows to the aggregated hospital data
   aggregatedHospitalData.push(lveRow);
   aggregatedHospitalData.push(veRow);
@@ -1071,36 +1076,42 @@ export function getAggregatedHospitalData(
   aggregatedHospitalData.push(devicesRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push({ Programs1: "Accurate Beneficiary Count (no double counting)", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push({ Programs1: "Evaluations Only: ", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(screeningsOnlyRow);
-  aggregatedHospitalData.push(visionEnhancementOnlyRow);
-  aggregatedHospitalData.push(clveOnlyRow);
-  aggregatedHospitalData.push(screeningsAndCLVERow);
-  aggregatedHospitalData.push(visionCLVERow);
-  aggregatedHospitalData.push(screeningsVisionEnhancementRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionRow);
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push({ Programs1: "Services Only: ", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(trainingOnlyRow);
-  aggregatedHospitalData.push(counselingOnlyRow);
-  aggregatedHospitalData.push(devicesOnlyRow);
-  aggregatedHospitalData.push(trainingCounselingOnlyRow);
-  aggregatedHospitalData.push(trainingDevicesOnlyRow);
-  aggregatedHospitalData.push(counselingDevicesOnlyRow);
-  aggregatedHospitalData.push(trainingDevicesCounselingOnlyRow);
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push({ Programs1: "Evaluation(s) + Services: ", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionCounselingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionTrainingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesTrainingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionCounselingTrainingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingTrainingRow);
+  if (filteredSummary.length !== 1 || evaluationsTotal !== 0) {
+    aggregatedHospitalData.push(blankRow);
+    aggregatedHospitalData.push({ Programs1: "Evaluations Only: ", Programs2: "" });
+    aggregatedHospitalData.push(blankRow);
+  }
+  if (filteredSummary.length !== 1 || screeningsOnlyBeneficiariesTotal !== 0) aggregatedHospitalData.push(screeningsOnlyRow);
+  if (filteredSummary.length !== 1 || visionEnhancementOnlyBeneficiariesTotal !== 0) aggregatedHospitalData.push(visionEnhancementOnlyRow);
+  if (filteredSummary.length !== 1 || clveOnlyBeneficiariesTotal !== 0) aggregatedHospitalData.push(clveOnlyRow);
+  if (filteredSummary.length !== 1 || screeningsAndCLVETotal !== 0) aggregatedHospitalData.push(screeningsAndCLVERow);
+  if (filteredSummary.length !== 1 || visionCLVETotal !== 0) aggregatedHospitalData.push(visionCLVERow);
+  if (filteredSummary.length !== 1 || screeningsVisionEnhancementBeneficiariesTotal !== 0) aggregatedHospitalData.push(screeningsVisionEnhancementRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionRow);
+  if (filteredSummary.length !== 1 || servicesTotal !== 0) {
+    aggregatedHospitalData.push(blankRow);
+    aggregatedHospitalData.push({ Programs1: "Services Only: ", Programs2: "" });
+    aggregatedHospitalData.push(blankRow);
+  }
+  if (filteredSummary.length !== 1 || trainingOnlyTotal !== 0) aggregatedHospitalData.push(trainingOnlyRow);
+  if (filteredSummary.length !== 1 || counselingOnlyTotal !== 0) aggregatedHospitalData.push(counselingOnlyRow);
+  if (filteredSummary.length !== 1 || devicesOnlyTotal !== 0) aggregatedHospitalData.push(devicesOnlyRow);
+  if (filteredSummary.length !== 1 || trainingCounselingOnlyTotal !== 0) aggregatedHospitalData.push(trainingCounselingOnlyRow);
+  if (filteredSummary.length !== 1 || trainingDevicesOnlyTotal !== 0) aggregatedHospitalData.push(trainingDevicesOnlyRow);
+  if (filteredSummary.length !== 1 || counselingDevicesOnlyTotal !== 0) aggregatedHospitalData.push(counselingDevicesOnlyRow);
+  if (filteredSummary.length !== 1 || trainingDevicesCounselingOnlyTotal !== 0) aggregatedHospitalData.push(trainingDevicesCounselingOnlyRow);
+  if (filteredSummary.length !== 1 || evalAndServicesTotal !== 0) {
+    aggregatedHospitalData.push(blankRow);
+    aggregatedHospitalData.push({ Programs1: "Evaluation(s) + Services: ", Programs2: "" });
+    aggregatedHospitalData.push(blankRow);
+  }
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionCounselingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionCounselingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionTrainingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesCounselingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesTrainingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionCounselingTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionCounselingTrainingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesCounselingTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingTrainingRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push(totalBeneficiariesRow);
   aggregatedHospitalData.push(blankRow);

@@ -154,7 +154,7 @@ const GraphCustomizer = ({
         'Low_Vision_Evaluation': finalResult[3].records.filter((lve) => lve.beneficiaryId === record.mrn),
       }));
 
-      const hospitalSummary = summary.map((hospital) => ({
+      const hospitalSummary = summary.filter((hospital) => selectedHospitals.includes(hospital.name)).map((hospital) => ({
         ...hospital,
         beneficiary: finalResult[0].records.filter((b) => b.hospitalId === hospital.id),
         visionEnhancement: finalResult[1].records.filter((ve) => ve.hospitalId === hospital.id),
