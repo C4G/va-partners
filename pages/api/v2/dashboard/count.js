@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 import moment from 'moment';
+import { difference, intersect, union } from "@/constants/globalFunctions";
 
 // Mapping for distanceBinocularVisionBE values to categories
 const distanceBinocularVisionMapping = {
@@ -85,6 +86,31 @@ const distanceBinocularVisionMapping = {
   '20/25 20ft': 'Visual Acuity normal',
   '20/20 20ft': 'Visual Acuity normal',
 };
+
+const trainingCategories = [
+  "Braille training",
+  "Corporate skill development",
+  "Job Coaching / IBPS",
+  "Spoken English Programme - Beginner",
+  "Spoken English Programme - Intermediate",
+  "Training for Life skills/ Money identification/ Home management / Kitchen skills",
+  "Training with Braille reader / ORBIT reader",
+  "Vocational Training",
+  "Assistive technology training",
+  "Certificate course in Computer Applications – CCA",
+  "Certificate course in Mobile technology - MT",
+  "Digital Accessibility Testing",
+  "Microsoft Excel -MS EXCEL",
+  "Python Programming",
+  "SQL training",
+  "Mobile applications training",
+  "Behavioral modification/management",
+  "Functional academic skills or remedial education, vocabulary development",
+  "Prevocational skills training",
+  "Social skills /life skills / to manage Activities of Daily living",
+  "Special education",
+  "Training for Eye-hand coordination",
+];
 
 // Define specific counseling categories
 const specificCounselingCategories = [
@@ -173,10 +199,12 @@ export async function readData(req, res) {
 
     // Parse MDVI filters
     let mdviFilters  = [];
-    if (Array.isArray(mdvis)) {
-      mdviFilters  = mdvis;
-    } else if (typeof mdvis === 'string') {
-      mdviFilters  = [mdvis];
+    if (mdvis) {
+      if (Array.isArray(mdvis)) {
+        mdviFilters  = mdvis;
+      } else if (typeof mdvis === 'string') {
+        mdviFilters  = [mdvis];
+      }
     }
 
     // Parse age filters
@@ -234,7 +262,7 @@ export async function readData(req, res) {
     });
 
     // Get counts for main activities and unique beneficiaries
-    const counts = await Promise.all([
+    const activityCounts = await Promise.all([
       // Unique beneficiaries who participated in any activity
       prisma.Beneficiary.count({
         where: {
@@ -263,14 +291,15 @@ export async function readData(req, res) {
 
     const formattedCounts = {};
     formattedCounts["Total_Beneficiaries"] = totalBeneficiariesCount;
-    formattedCounts["Unique_Beneficiaries"] = counts[0]; // Unique beneficiaries across all activities
+    formattedCounts["Unique_Beneficiaries"] = activityCounts[0]; // Unique beneficiaries across all activities
 
     // Assign counts to each subtype
     for (let i = 0; i < subtypes.length; i++) {
-      formattedCounts[subtypes[i]] = counts[i + 1];
+      formattedCounts[subtypes[i]] = activityCounts[i + 1];
     }
 
-    // **Updated Section: Get counts of Training types and subtypes**
+    // **Training Types and Subtypes**
+
     const trainingGrouped = await prisma.Training.groupBy({
       by: ["type", "subType"],
       where: {
@@ -286,25 +315,24 @@ export async function readData(req, res) {
     const trainingSubTypeCounts = {};
 
     trainingGrouped.forEach((item) => {
-      const type = item.type ? item.type.trim() : "Other";
-      const subType = item.subType ? item.subType.trim() : "Other";
+      const rawSubType = item.subType ? item.subType.trim() : "Other";
+      const mappedSubType = trainingCategories.includes(rawSubType) ? rawSubType : "Other";
       const count = item._count._all;
 
-      // Aggregate type counts
-      trainingTypeCounts[type] = (trainingTypeCounts[type] || 0) + count;
+      // Aggregate type counts (Assuming 'Training' is the main type)
+      trainingTypeCounts["Training"] = (trainingTypeCounts["Training"] || 0) + count;
 
-      // Aggregate subtypes under each type
-      if (!trainingSubTypeCounts[type]) {
-        trainingSubTypeCounts[type] = {};
+      // Initialize subType counts for 'Training'
+      if (!trainingSubTypeCounts["Training"]) {
+        trainingSubTypeCounts["Training"] = {};
       }
-      trainingSubTypeCounts[type][subType] = (trainingSubTypeCounts[type][subType] || 0) + count;
+
+      // Aggregate subtype counts, mapping to 'Other' if not in trainingCategories
+      trainingSubTypeCounts["Training"][mappedSubType] = (trainingSubTypeCounts["Training"][mappedSubType] || 0) + count;
     });
 
-    // Add Training types and subtypes to formattedCounts
-    formattedCounts["Training_Types"] = trainingTypeCounts || {};
-    formattedCounts["Training_Subtypes"] = trainingSubTypeCounts || {};
+    // **Counselling Types**
 
-    // **Get counts of Counselling types with specific categories**
     const counsellingTypeCountsArray = await prisma.Counselling_Education.groupBy({
       by: ["type"],
       where: {
@@ -318,11 +346,12 @@ export async function readData(req, res) {
 
     const counsellingTypeCounts = {};
     counsellingTypeCountsArray.forEach((item) => {
-      // Trim and normalize the type string
-      const type = item.type ? item.type.trim() : "Other";
-      const key = specificCounselingCategories.includes(type) ? type : "Other";
-      counsellingTypeCounts[key] = (counsellingTypeCounts[key] || 0) + item._count._all;
+      const rawType = item.type ? item.type.trim() : "Other";
+      const mappedType = specificCounselingCategories.includes(rawType) ? rawType : "Other";
+      counsellingTypeCounts[mappedType] = (counsellingTypeCounts[mappedType] || 0) + item._count._all;
     });
+
+    // **Devices Counts**
 
     // Initialize devices counts
     const devicesDispensedCounts = {
@@ -354,13 +383,14 @@ export async function readData(req, res) {
       NonOptical: {},
     };
 
-    // Get counts of Devices Dispensed and Recommended from Comprehensive_Low_Vision_Evaluation
+    // Get counts of Devices Dispensed and Recommended from CLVE
     const clveRecords = await prisma.Comprehensive_Low_Vision_Evaluation.findMany({
       where: {
         beneficiary: beneficiaryFilters,
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       select: {
+        beneficiaryId: true,
         dispensedSpectacle: true,
         dispensedElectronic: true,
         dispensedOptical: true,
@@ -371,6 +401,9 @@ export async function readData(req, res) {
         recommendationNonOptical: true,
       },
     });
+
+    // Initialize devicesBeneficiaryIds as empty Set
+    const devicesBeneficiaryIds = new Set();
 
     if (clveRecords && clveRecords.length > 0) {
       clveRecords.forEach((record) => {
@@ -388,6 +421,8 @@ export async function readData(req, res) {
             devices.forEach((device) => {
               devicesDispensedDetails[type][device] = (devicesDispensedDetails[type][device] || 0) + 1;
             });
+            // Add beneficiaryId to devicesBeneficiaryIds
+            devicesBeneficiaryIds.add(record.beneficiaryId);
           }
 
           // Process recommended devices
@@ -405,14 +440,15 @@ export async function readData(req, res) {
       });
     }
 
-    // Add the new counts to formattedCounts
+    // Add counts to formattedCounts
     formattedCounts["Training_Types"] = trainingTypeCounts;
     formattedCounts["Training_Subtypes"] = trainingSubTypeCounts;
     formattedCounts["Counselling_Types"] = counsellingTypeCounts;
     formattedCounts["Devices_Dispensed"] = devicesDispensedCounts;
     formattedCounts["Devices_Recommended"] = devicesRecommendedCounts;
 
-    // **GroupBy for distanceBinocularVisionBE on Comprehensive_Low_Vision_Evaluation**
+    // **Visual Acuity Counts**
+
     const distanceBinocularCounts = await prisma.Comprehensive_Low_Vision_Evaluation.groupBy({
       by: ['distanceBinocularVisionBE'],
       where: {
@@ -430,7 +466,7 @@ export async function readData(req, res) {
       'Moderate visual impairment': 0,
       'Mild visual impairment': 0,
       'Visual Acuity normal': 0,
-      'Other': 0, // Added 'Other' to capture unmapped categories
+      // 'Other': 0, // Uncomment if you wish to include 'Other' category
     };
 
     // Map each `distanceBinocularVisionBE` value to its category and aggregate
@@ -441,8 +477,8 @@ export async function readData(req, res) {
       if (Object.prototype.hasOwnProperty.call(distanceBinocularVisionBE_counts, category)) {
         distanceBinocularVisionBE_counts[category] += record._count.distanceBinocularVisionBE;
       } else {
-        // If category is not predefined, categorize it as 'Other'
-        distanceBinocularVisionBE_counts['Other'] += record._count.distanceBinocularVisionBE;
+        // If category is not predefined, you can choose to handle 'Other' category
+        // distanceBinocularVisionBE_counts['Other'] += record._count.distanceBinocularVisionBE;
       }
     });
 
@@ -453,7 +489,7 @@ export async function readData(req, res) {
     formattedCounts["Devices_Dispensed_Details"] = devicesDispensedDetails;
     formattedCounts["Devices_Recommended_Details"] = devicesRecommendedDetails;
 
-    // **Compute unique beneficiaries for each activity**
+    // **Compute Unique Beneficiaries for Each Activity**
 
     // Screenings
     const screeningsBeneficiaries = await prisma.Low_Vision_Evaluation.findMany({
@@ -480,16 +516,7 @@ export async function readData(req, res) {
     const visionEnhancementBeneficiaryIds = new Set(visionEnhancementBeneficiaries.map(item => item.beneficiaryId));
 
     // CLVE
-    const clveBeneficiaries = await prisma.Comprehensive_Low_Vision_Evaluation.findMany({
-      where: {
-        beneficiary: beneficiaryFilters,
-        ...(dateRangeCondition && { date: dateRangeCondition }),
-      },
-      select: {
-        beneficiaryId: true,
-      },
-    });
-    const clveBeneficiaryIds = new Set(clveBeneficiaries.map(item => item.beneficiaryId));
+    const clveBeneficiaryIds = new Set(clveRecords.map(item => item.beneficiaryId));
 
     // Counselling
     const counsellingBeneficiaries = await prisma.Counselling_Education.findMany({
@@ -547,38 +574,159 @@ export async function readData(req, res) {
       beneficiaries.forEach(item => trainingBeneficiaryIds.add(item.beneficiaryId));
     });
 
-    // Now compute counts
+    // Now compute unique beneficiaries counts per activity
     const uniqueBeneficiariesCounts = {
       Screenings: screeningsBeneficiaryIds.size,
       Vision_Enhancement: visionEnhancementBeneficiaryIds.size,
       CLVE: clveBeneficiaryIds.size,
       Counselling: counsellingBeneficiaryIds.size,
       Training: trainingBeneficiaryIds.size,
+      Devices_Dispensed: devicesBeneficiaryIds.size,
     };
 
     // Add to formattedCounts
     formattedCounts["Unique_Beneficiaries_By_Activity"] = uniqueBeneficiariesCounts;
 
-    // Optionally, compute the sum of these counts
-    const totalUniqueBeneficiariesByActivity = Object.values(uniqueBeneficiariesCounts).reduce((a, b) => a + b, 0);
-    formattedCounts["Total_Unique_Beneficiaries_By_Activity"] = totalUniqueBeneficiariesByActivity;
 
-    // **Compute total unique beneficiaries across all activities**
+    // **Initialize Counts for Mutually Exclusive Categories**
+    const mutuallyExclusiveCounts = {
+      screeningsOnlyCount: 0,
+      screeningsAndCLVECount: 0,
+      screeningsCLVEVisionCount: 0,
+      visionCLVECount: 0,
+      screeningsCLVEVisionDevicesCount: 0,
+      screeningsCLVEVisionCounsellingCount: 0,
+      screeningsCLVEVisionTrainingCount: 0,
+      screeningsCLVEVisionDevicesCounsellingCount: 0,
+      screeningsCLVEVisionDevicesTrainingCount: 0,
+      screeningsCLVEVisionCounsellingTrainingCount: 0,
+      screeningsCLVEVisionDevicesCounsellingTrainingCount: 0,
+      visionEnhancementOnlyCount: 0,
+      screeningsVisionEnhancementCount: 0,
+      clveOnlyCount: 0,
+      trainingOnlyCount: 0,
+      counsellingOnlyCount: 0,
+      devicesOnlyCount: 0,
+      trainingCounsellingOnlyCount: 0,
+      trainingDevicesOnlyCount: 0,
+      counsellingDevicesOnlyCount: 0,
+      trainingDevicesCounsellingOnlyCount: 0,
+    };
 
-    // Combine all beneficiary IDs from all activities into a single set
-    const allActivityBeneficiaryIds = new Set([
-      ...screeningsBeneficiaryIds,
-      ...visionEnhancementBeneficiaryIds,
-      ...clveBeneficiaryIds,
-      ...counsellingBeneficiaryIds,
-      ...trainingBeneficiaryIds,
-    ]);
+    // **Compute the counts**
 
-    // Total unique beneficiaries across all activities
-    const totalUniqueBeneficiaries = allActivityBeneficiaryIds.size;
-    formattedCounts["Total_Unique_Beneficiaries"] = totalUniqueBeneficiaries;
+    // Screenings Only
+    const screeningsOnlySet = difference(screeningsBeneficiaryIds, union(clveBeneficiaryIds, visionEnhancementBeneficiaryIds, trainingBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.screeningsOnlyCount = screeningsOnlySet.size;
 
-    // Return the response including the new counts
+    // Low vision screening at centre/screening camps + CLVE
+    const screeningsAndCLVESet = difference(intersect(screeningsBeneficiaryIds, clveBeneficiaryIds), union(trainingBeneficiaryIds, visionEnhancementBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.screeningsAndCLVECount = screeningsAndCLVESet.size;
+
+    // Functional Vision/Early Intervention/ Vision enhancement + CLVE only
+    const visionCLVESet = difference(intersect(clveBeneficiaryIds, visionEnhancementBeneficiaryIds), union(screeningsBeneficiaryIds, trainingBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.visionCLVECount = visionCLVESet.size;
+
+    // Low vision screening at centre/screening camps + CLVE + Functional Vision/Early Intervention/ Vision enhancement
+    const screeningsCLVEVisionSet = difference(intersect(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), union(trainingBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.screeningsCLVEVisionCount = screeningsCLVEVisionSet.size;
+
+    // Evaluation(s) + Dispensed Devices only
+    const screeningsCLVEVisionDevicesSet = difference(intersect(union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), devicesBeneficiaryIds), union(trainingBeneficiaryIds, counsellingBeneficiaryIds));
+    mutuallyExclusiveCounts.screeningsCLVEVisionDevicesCount = screeningsCLVEVisionDevicesSet.size;
+
+    // Evaluation(s) + Counselling only
+    const screeningsCLVEVisionCounsellingSet = difference(intersect(union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), counsellingBeneficiaryIds), union(trainingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.screeningsCLVEVisionCounsellingCount = screeningsCLVEVisionCounsellingSet.size;
+
+    // Evaluation(s) + Training only
+    const screeningsCLVEVisionTrainingSet = difference(intersect(union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), trainingBeneficiaryIds), union(counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.screeningsCLVEVisionTrainingCount = screeningsCLVEVisionTrainingSet.size;
+
+    // Evaluation(s) + Dispensed Devices + Counselling only
+    const screeningsCLVEVisionDevicesCounsellingSet = difference(intersect(union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), devicesBeneficiaryIds, counsellingBeneficiaryIds), trainingBeneficiaryIds);
+    mutuallyExclusiveCounts.screeningsCLVEVisionDevicesCounsellingCount = screeningsCLVEVisionDevicesCounsellingSet.size;
+
+    // Evaluation(s) + Dispensed Devices + Training only
+    const screeningsCLVEVisionDevicesTrainingSet = difference(intersect(union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), devicesBeneficiaryIds, trainingBeneficiaryIds), counsellingBeneficiaryIds);
+    mutuallyExclusiveCounts.screeningsCLVEVisionDevicesTrainingCount = screeningsCLVEVisionDevicesTrainingSet.size;
+
+    // Evaluation(s) + Counselling + Training only
+    const screeningsCLVEVisionCounsellingTrainingSet = difference(intersect(union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), counsellingBeneficiaryIds, trainingBeneficiaryIds), devicesBeneficiaryIds);
+    mutuallyExclusiveCounts.screeningsCLVEVisionCounsellingTrainingCount = screeningsCLVEVisionCounsellingTrainingSet.size;
+
+    // Evaluation(s) + Dispensed Devices + Counselling + Training
+    const screeningsCLVEVisionDevicesCounsellingTrainingSet = intersect(union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds), devicesBeneficiaryIds, counsellingBeneficiaryIds, trainingBeneficiaryIds);
+    mutuallyExclusiveCounts.screeningsCLVEVisionDevicesCounsellingTrainingCount = screeningsCLVEVisionDevicesCounsellingTrainingSet.size;
+
+    // Functional Vision/Early Intervention only
+    const visionEnhancementOnlySet = difference(visionEnhancementBeneficiaryIds, union(screeningsBeneficiaryIds, clveBeneficiaryIds, trainingBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.visionEnhancementOnlyCount = visionEnhancementOnlySet.size;
+
+    // Screenings + Functional Vision/Early Intervention
+    const screeningsVisionEnhancementSet = difference(intersect(screeningsBeneficiaryIds, visionEnhancementBeneficiaryIds), union(clveBeneficiaryIds, trainingBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.screeningsVisionEnhancementCount = screeningsVisionEnhancementSet.size;
+
+    // CLVE Only
+    const clveOnlySet = difference(clveBeneficiaryIds, union(screeningsBeneficiaryIds, visionEnhancementBeneficiaryIds, trainingBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.clveOnlyCount = clveOnlySet.size;
+
+    // Training Only
+    const trainingOnlySet = difference(trainingBeneficiaryIds, union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds, counsellingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.trainingOnlyCount = trainingOnlySet.size;
+
+    // Counselling Only
+    const counsellingOnlySet = difference(counsellingBeneficiaryIds, union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds, trainingBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.counsellingOnlyCount = counsellingOnlySet.size;
+
+    // Devices Only
+    const devicesOnlySet = difference(devicesBeneficiaryIds, union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds, trainingBeneficiaryIds, counsellingBeneficiaryIds));
+    mutuallyExclusiveCounts.devicesOnlyCount = devicesOnlySet.size;
+
+    // Training and Counselling Only
+    const trainingCounsellingOnlySet = difference(intersect(trainingBeneficiaryIds, counsellingBeneficiaryIds), union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds, devicesBeneficiaryIds));
+    mutuallyExclusiveCounts.trainingCounsellingOnlyCount = trainingCounsellingOnlySet.size;
+
+    // Training and Devices Only
+    const trainingDevicesOnlySet = difference(intersect(trainingBeneficiaryIds, devicesBeneficiaryIds), union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds, counsellingBeneficiaryIds));
+    mutuallyExclusiveCounts.trainingDevicesOnlyCount = trainingDevicesOnlySet.size;
+
+    // Counselling and Devices Only
+    const counsellingDevicesOnlySet = difference(intersect(counsellingBeneficiaryIds, devicesBeneficiaryIds), union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds, trainingBeneficiaryIds));
+    mutuallyExclusiveCounts.counsellingDevicesOnlyCount = counsellingDevicesOnlySet.size;
+
+    // Training, Devices, and Counselling Only
+    const trainingDevicesCounsellingOnlySet = difference(intersect(trainingBeneficiaryIds, devicesBeneficiaryIds, counsellingBeneficiaryIds), union(screeningsBeneficiaryIds, clveBeneficiaryIds, visionEnhancementBeneficiaryIds));
+    mutuallyExclusiveCounts.trainingDevicesCounsellingOnlyCount = trainingDevicesCounsellingOnlySet.size;
+
+    // **Compute Total Beneficiaries Calculated**
+    const totalBeneficiariesCalculated =
+      mutuallyExclusiveCounts.screeningsOnlyCount +
+      mutuallyExclusiveCounts.screeningsAndCLVECount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionCount +
+      mutuallyExclusiveCounts.visionCLVECount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionDevicesCount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionCounsellingCount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionTrainingCount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionDevicesCounsellingCount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionDevicesTrainingCount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionCounsellingTrainingCount +
+      mutuallyExclusiveCounts.screeningsCLVEVisionDevicesCounsellingTrainingCount +
+      mutuallyExclusiveCounts.visionEnhancementOnlyCount +
+      mutuallyExclusiveCounts.screeningsVisionEnhancementCount +
+      mutuallyExclusiveCounts.clveOnlyCount +
+      mutuallyExclusiveCounts.trainingOnlyCount +
+      mutuallyExclusiveCounts.counsellingOnlyCount +
+      mutuallyExclusiveCounts.devicesOnlyCount +
+      mutuallyExclusiveCounts.trainingCounsellingOnlyCount +
+      mutuallyExclusiveCounts.trainingDevicesOnlyCount +
+      mutuallyExclusiveCounts.counsellingDevicesOnlyCount +
+      mutuallyExclusiveCounts.trainingDevicesCounsellingOnlyCount;
+
+    formattedCounts["Total_Beneficiaries_Calculated"] = totalBeneficiariesCalculated;
+    formattedCounts["Mutually_Exclusive_Categories"] = mutuallyExclusiveCounts;
+
+    // **Return the Response Including the New Counts**
     return res.status(200).json({
       ...formattedCounts,
       parsedHospitalIds,

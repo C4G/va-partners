@@ -256,6 +256,7 @@ function buildRecDevicesGraph(countsData) {
   return chartData;
 }
 
+
 // Function to build Devices Breakdown Graph
 function buildDevicesBreakdownGraph(countsData, breakdownType) {
   if (!countsData['Devices_Dispensed']) {
@@ -313,7 +314,7 @@ function buildRecDevicesBreakdownGraph(countsData, breakdownType) {
 
 function buildTotalBeneficiariesGraph(totalBeneficiaries) {
   return {
-    labels: ["Total Beneficiaries"],
+    labels: ["Accurate Beneficiaries"],
     datasets: [
       {
         label: "Number of Beneficiaries",
@@ -354,6 +355,23 @@ const visualAcuityOptions = {
     },
     tooltip: {
       enabled: true,
+    },
+    datalabels: {
+      // Custom formatter to display count and percentage
+      formatter: (value, context) => {
+        const dataset = context.chart.data.datasets[context.datasetIndex];
+        const total = dataset.data.reduce((acc, val) => acc + val, 0);
+        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+        return `${value} (${percentage}%)`;
+      },
+      color: '#000', // Set text color for better readability
+      anchor: 'end',
+      align: 'start',
+      offset: 10,
+      font: {
+        weight: 'bold',
+        size: 14,
+      },
     },
   },
 };
@@ -1537,7 +1555,7 @@ const counselingEducationColDefs =[
   ];
 
   const visualAcuityChartData = countsData && countsData.distanceBinocularVisionBE_counts ? {
-    labels: Object.keys(countsData.distanceBinocularVisionBE_counts),
+    labels: visualAcuityCategories, // Use predefined categories
     datasets: [
       {
         label: 'Number of Cases',
@@ -1548,7 +1566,7 @@ const counselingEducationColDefs =[
           'rgba(54, 162, 235, 0.6)',      // Moderate visual impairment
           'rgba(255, 159, 64, 0.6)',      // Mild visual impairment
           'rgba(153, 102, 255, 0.6)',     // Visual Acuity normal
-          // 'rgba(75, 192, 192, 0.6)',      // Other
+          // 'rgba(75, 192, 192, 0.6)',    // Other (excluded)
         ],
         borderColor: [
           'rgba(255, 99, 132, 1)',        // Blindness
@@ -1556,7 +1574,7 @@ const counselingEducationColDefs =[
           'rgba(54, 162, 235, 1)',        // Moderate visual impairment
           'rgba(255, 159, 64, 1)',        // Mild visual impairment
           'rgba(153, 102, 255, 1)',       // Visual Acuity normal
-          // 'rgba(75, 192, 192, 1)',        // Other
+          // 'rgba(75, 192, 192, 1)',      // Other (excluded)
         ],
         borderWidth: 1,
       },
@@ -2056,7 +2074,7 @@ function buildAgeGraph(beneficiaries) {
                         textColor="primary"
                         centered
                       >
-                        <Tab label="Total Beneficiaries" />
+                        <Tab label="Accurate Beneficiaries" />
                         <Tab label="Unique Beneficiaries" />
                         <Tab label="Total Sessions" />
                         <Tab label="Gender" />

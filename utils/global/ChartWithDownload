@@ -1,0 +1,72 @@
+// components/ChartWithDownload.js
+
+import React from 'react';
+import { Bar } from 'react-chartjs-2';
+import { Button } from '@mui/material';
+
+// Reusable component for Chart with Download Button
+const ChartWithDownload = ({ data, options, filename, title, hospitalNames, startDate, endDate }) => {
+  // Utility function to convert chart data to CSV and trigger download
+  const downloadChartData = () => {
+    if (!data || !data.labels || !data.datasets) {
+      console.error("Invalid chart data");
+      return;
+    }
+
+    const { labels, datasets } = data;
+    const csvRows = [];
+
+    // Add headers
+    csvRows.push(['Label', ...datasets.map(ds => ds.label)]);
+
+    // Add data rows
+    labels.forEach((label, index) => {
+      const row = [label];
+      datasets.forEach(ds => {
+        row.push(ds.data[index]);
+      });
+      csvRows.push(row);
+    });
+
+    // Convert to CSV string
+    const csvContent = csvRows.map(e => e.join(",")).join("\n");
+
+    // Create a Blob from the CSV string
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // Create a link to download the Blob
+    const link = document.createElement("a");
+
+    // Sanitize hospital names: replace spaces with underscores
+    const sanitizedHospitalNames = hospitalNames.length > 0 
+      ? hospitalNames.map(name => name.replace(/\s+/g, '_')).join('_') 
+      : 'All_Hospitals';
+
+    // Construct the filename
+    const completeFilename = `${filename}_${sanitizedHospitalNames}_${startDate}_${endDate}.csv`;
+
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", completeFilename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div style={{ marginBottom: '20px' }}>
+      {title && <h3>{title}</h3>}
+      <Bar data={data} options={options} />
+      <Button
+        variant="outlined"
+        onClick={downloadChartData}
+        style={{ marginTop: '10px' }}
+      >
+        Download Data
+      </Button>
+    </div>
+  );
+};
+
+export default ChartWithDownload;
