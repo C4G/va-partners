@@ -64,38 +64,42 @@ const TrainingFormCLVE = ({
   if (mdvi === null || mdvi === undefined || mdvi === "") {
     mdvi = "No";
   }
-  const [isFormValid, setIsFormValid] = useState(false);
   const [mdviValue, setMdviValue] = useState(mdvi);
-  const [section, setSection] = useState("vision_evaluation");
+  const [section, setSection] = useState("visionEvaluation");
   const [diagnosis, setDiagnosis] = useState([]);
   const today = new Date();
   const [formData, setFormData] = useState({
     unitDistance: "LogMAR",
     unitNear: "LogMAR",
-    date: today,
-    dispensedDateSpectacle: today,
-    dispensedDateOptical: today,
-    dispensedDateNonOptical: today,
-    dispensedDateElectronic: today,
   });
 
   const validateForm = () => {
-    // diagnosis notes is required
-    if (formData["diagnosisOther"] === null) {
-      setIsFormValid(false);
-      return;
+    const form = document.getElementById("clve_form");
+    let isValid = true;
+
+    // Loop through all form elements
+    for (const input of form.elements) {
+        // Check if the input field is required
+        if (input.required) {
+            // Check if the field has a value
+            if (!input.value.trim()) {
+                isValid = false;
+                // Optionally, display an error message or style the field
+                input.style.borderColor = "red";
+            } else {
+                // Reset the field style if it's valid
+                input.style.borderColor = "";
+            }
+        }
     }
-    // diagnosis is required
-    if (!diagnosis.length) {
-      setIsFormValid(false);
-      return;
-    }
-    setIsFormValid(true);
+
+    return isValid
   }
 
   const handleSubmit = (e) => {
+    const isValid = validateForm();
     e.preventDefault();
-    if (!isFormValid) {
+    if (!isValid) {
       alert('Please complete all required fields!');
       return;
     }
@@ -169,10 +173,14 @@ const TrainingFormCLVE = ({
     const newTraining = {
       diagnosis: allDiagnosis,
       mdvi: mdviValue,
-      date: formData["date"] ? formData["date"] : null,
-      sessionNumber: formData["sessionNumber"]
-        ? formData["sessionNumber"]
-        : null,
+      date: formData["date"] ?? null,
+      sessionNumber: formData["sessionNumber"] ?? null,
+      distanceVisualAcuityRE: formData["distanceVisualAcuityRE"] ?? null,
+      distanceVisualAcuityLE: formData["distanceVisualAcuityLE"] ?? null,
+      distanceBinocularVisionBE: formData["distanceBinocularVisionBE"] ?? null,
+      nearVisualAcuityRE: formData["nearVisualAcuityRE"] ?? null,
+      nearVisualAcuityLE: formData["nearVisualAcuityLE"] ?? null,
+      nearBinocularVisionBE: formData["nearBinocularVisionBE"] ?? null,
       recommendationSpectacle:
         devices.recommendationSpectacle.length > 0
           ? jsonToCSV([devices.recommendationSpectacle], {
@@ -180,22 +188,23 @@ const TrainingFormCLVE = ({
               delimiter: comma,
             })
           : "",
-      dispensedDateSpectacle: formData["dispensedDateSpectacle"]
-        ? formData["dispensedDateSpectacle"]
-        : null,
-      costSpectacle: formData["costSpectacle"]
-        ? formData["costSpectacle"]
-        : null,
-      costToBeneficiarySpectacle: formData["costToBeneficiarySpectacle"]
-        ? formData["costToBeneficiarySpectacle"]
-        : null,
       dispensedSpectacle:
         devices.dispensedSpectacle === "Other"
-          ? formData["dispensedSpectacleOther"]
+          ? formData["dispensedOpticalOther"]
           : devices.dispensedSpectacle,
-      trainingGivenSpectacle: formData["trainingGivenSpectacle"]
-        ? formData["trainingGivenSpectacle"]
-        : null,
+      ...(devices.dispensedSpectacle.length > 0
+        ? {
+          dispensedDateSpectacle: formData["dispensedDateSpectacle"],
+          costSpectacle: formData["costSpectacle"],
+          costToBeneficiarySpectacle: formData["costToBeneficiarySpectacle"],
+          trainingGivenSpectacle: formData["trainingGivenSpectacle"],
+          }
+        : {
+          dispensedDateSpectacle: null,
+          costSpectacle: null,
+          costToBeneficiarySpectacle: null,
+          trainingGivenSpectacle: null,
+          }),
       recommendationOptical:
         devices.recommendationOptical.length > 0
           ? jsonToCSV([devices.recommendationOptical], {
@@ -203,20 +212,23 @@ const TrainingFormCLVE = ({
               delimiter: comma,
             })
           : "",
-      dispensedDateOptical: formData["dispensedDateOptical"]
-        ? formData["dispensedDateOptical"]
-        : null,
-      costOptical: formData["costOptical"] ? formData["costOptical"] : null,
-      costToBeneficiaryOptical: formData["costToBeneficiaryOptical"]
-        ? formData["costToBeneficiaryOptical"]
-        : null,
       dispensedOptical:
         devices.dispensedOptical === "Other"
           ? formData["dispensedOpticalOther"]
           : devices.dispensedOptical,
-      trainingGivenOptical: formData["trainingGivenOptical"]
-        ? formData["trainingGivenOptical"]
-        : null,
+      ...(devices.dispensedOptical.length > 0
+        ? {
+            dispensedDateOptical: formData["dispensedDateOptical"],
+            costOptical: formData["costOptical"],
+            costToBeneficiaryOptical: formData["costToBeneficiaryOptical"],
+            trainingGivenOptical: formData["trainingGivenOptical"],
+          }
+        : {
+            dispensedDateOptical: null,
+            costOptical: null,
+            costToBeneficiaryOptical: null,
+            trainingGivenOptical: null,
+          }),
       recommendationNonOptical:
         devices.recommendationNonOptical.length > 0
           ? jsonToCSV([devices.recommendationNonOptical], {
@@ -224,22 +236,23 @@ const TrainingFormCLVE = ({
               delimiter: comma,
             })
           : "",
-      dispensedDateNonOptical: formData["dispensedDateNonOptical"]
-        ? formData["dispensedDateNonOptical"]
-        : null,
-      costNonOptical: formData["costNonOptical"]
-        ? formData["costNonOptical"]
-        : null,
-      costToBeneficiaryNonOptical: formData["costToBeneficiaryNonOptical"]
-        ? formData["costToBeneficiaryNonOptical"]
-        : null,
       dispensedNonOptical:
         devices.dispensedNonOptical === "Other"
           ? formData["dispensedNonOpticalOther"]
           : devices.dispensedNonOptical,
-      trainingGivenNonOptical: formData["trainingGivenNonOptical"]
-        ? formData["trainingGivenNonOptical"]
-        : null,
+      ...(devices.dispensedNonOptical.length > 0
+        ? {
+            dispensedDateNonOptical: formData["dispensedDateNonOptical"],
+            costNonOptical: formData["costNonOptical"],
+            costToBeneficiaryNonOptical: formData["costToBeneficiaryNonOptical"],
+            trainingGivenNonOptical: formData["trainingGivenNonOptical"],
+          }
+        : {
+            dispensedDateNonOptical: null,
+            costNonOptical: null,
+            costToBeneficiaryNonOptical: null,
+            trainingGivenNonOptical: null,
+          }),
       recommendationElectronic:
         devices.recommendationElectronic.length > 0
           ? jsonToCSV([devices.recommendationElectronic], {
@@ -247,22 +260,23 @@ const TrainingFormCLVE = ({
               delimiter: comma,
             })
           : "",
-      dispensedDateElectronic: formData["dispensedDateElectronic"]
-        ? formData["dispensedDateElectronic"]
-        : null,
-      costElectronic: formData["costElectronic"]
-        ? formData["costElectronic"]
-        : null,
-      costToBeneficiaryElectronic: formData["costToBeneficiaryElectronic"]
-        ? formData["costToBeneficiaryElectronic"]
-        : null,
       dispensedElectronic:
         devices.dispensedElectronic === "Other"
           ? formData["dispensedElectronicOther"]
           : devices.dispensedElectronic,
-      trainingGivenElectronic: formData["trainingGivenElectronic"]
-        ? formData["trainingGivenElectronic"]
-        : null,
+      ...(devices.dispensedElectronic.length > 0
+        ? {
+            dispensedDateElectronic: formData["dispensedDateElectronic"] ?? null,
+            costElectronic: formData["costElectronic"] ?? null,
+            costToBeneficiaryElectronic: formData["costToBeneficiaryElectronic"] ?? null,
+            trainingGivenElectronic: formData["trainingGivenElectronic"] ?? null,
+          }
+        : {
+            dispensedDateElectronic: null,
+            costElectronic: null,
+            costToBeneficiaryElectronic: null,
+            trainingGivenElectronic: null,
+          }),
       colourVisionRE:
         e.target.colourVisionRE == null ? null : e.target.colourVisionRE.value,
       colourVisionLE:
@@ -279,7 +293,8 @@ const TrainingFormCLVE = ({
         e.target.visualFieldsRE == null ? null : e.target.visualFieldsRE.value,
       visualFieldsLE:
         e.target.visualFieldsLE == null ? null : e.target.visualFieldsLE.value,
-      extraInformation: e.target.extraInformation.value,
+      extraInformation: 
+        e.target.extraInformation == null ? "" : e.target.extraInformation.value,
       ...customDataDistance,
       ...customDataNear,
     };
@@ -337,25 +352,21 @@ const TrainingFormCLVE = ({
 
   useEffect(() => {
     customFieldsDistance.forEach((field) => {
-      console.log("entered dv");
       setFormData((formData) => ({
         ...formData,
         [field]: dvAcuityValues[0],
       }));
     });
-    console.log(formData);
-  }, [customFieldsDistance, dvAcuityValues, formData]);
+  }, [customFieldsDistance, dvAcuityValues]);
 
   useEffect(() => {
-    console.log("entered nv");
     customFieldsNear.forEach((field) => {
       setFormData((formData) => ({
         ...formData,
         [field]: nvAcuityValues[0],
       }));
     });
-    console.log(formData);
-  }, [customFieldsNear, formData, nvAcuityValues]);
+  }, [customFieldsNear, nvAcuityValues]);
 
   const diagnosisOptions = createMenu(diagnosisValues, true, diagnosis);
   const recommendationSpectacleOptions = createMenu(
@@ -418,19 +429,17 @@ const TrainingFormCLVE = ({
     dispensedElectronic: false,
   });
 
-  const handleMultiSelectChange = (e, fieldName) => {
-    const {
-      target: { value },
-    } = e;
+  const handleMultiSelectChange = (e, field) => {
+    const value = e.target.value;
     setDevices({
       ...devices,
-      [fieldName]: value,
+      [field]: value,
     });
     if (value.includes("Other")) {
-      setShowOther({ ...showOther, [fieldName]: true });
+      setShowOther({ ...showOther, [field]: true });
     } else {
-      setShowOther({ ...showOther, [fieldName]: false });
-    }
+      setShowOther({ ...showOther, [field]: false });
+    } 
   };
 
   const handleDiagnosisChange = (e) => {
@@ -438,7 +447,6 @@ const TrainingFormCLVE = ({
       target: { value },
     } = e;
     setDiagnosis(value);
-    validateForm();
   };
 
   const updateFormData = (e, fieldName) => {
@@ -447,18 +455,14 @@ const TrainingFormCLVE = ({
         ...formData,
         [fieldName]: new Date(parseInputDate(e.target.value)),
       }));
-      console.log(e.target.type, fieldName, formData[fieldName]);
     } else if (e.target.type == "number") {
       setFormData((formData) => ({
         ...formData,
         [fieldName]: parseInt(e.target.value),
       }));
-      console.log(e.target.type, fieldName, formData[fieldName]);
     } else {
       setFormData((formData) => ({ ...formData, [fieldName]: e.target.value }));
-      console.log(e.target.type, fieldName, formData[fieldName]);
     }
-    validateForm();
   };
 
   return (
@@ -473,11 +477,11 @@ const TrainingFormCLVE = ({
         <div className="p-2 col">
           <button
             className={`w-100 text-align-left ${
-              section === "vision_evaluation"
+              section === "visionEvaluation"
                 ? "btn btn-success btn-block active-tab"
                 : "btn btn-light btn-block"
             }`}
-            onClick={() => setSection("vision_evaluation")}
+            onClick={() => setSection("visionEvaluation")}
           >
             Vision Evaluation
           </button>
@@ -511,11 +515,11 @@ const TrainingFormCLVE = ({
         <div className="p-2 col">
           <button
             className={`w-100 text-align-left ${
-              section === "non_optical"
+              section === "nonOptical"
                 ? "btn btn-success btn-block active-tab"
                 : "btn btn-light btn-block"
             }`}
-            onClick={() => setSection("non_optical")}
+            onClick={() => setSection("nonOptical")}
           >
             Non-Optical
           </button>
@@ -546,8 +550,8 @@ const TrainingFormCLVE = ({
         </div>
       </div>
       <hr />
-      <Form onSubmit={handleSubmit} className="mt-3">
-        {section === "vision_evaluation" && (
+      <Form onSubmit={handleSubmit} className="mt-3" id="clve_form">
+        <div className={section !== "visionEvaluation" ? 'd-none' : 'd-block'}>
           <Row>
             <Col>
               <Form.Label>Diagnosis { required() }</Form.Label>
@@ -589,8 +593,6 @@ const TrainingFormCLVE = ({
               </Form.Group>
             </Col>
           </Row>
-        )}
-        {section === "vision_evaluation" && (
           <Row>
             <Col>
               <Form.Group controlId="diagnosisOther">
@@ -605,16 +607,18 @@ const TrainingFormCLVE = ({
               </Form.Group>
             </Col>
           </Row>
-        )}
-        {section === "vision_evaluation" && (
-          <Row>
+          <Row >
             <Col>
               <Form.Group controlId="date">
                 <Form.Label>Date{ required() }</Form.Label>
                 <Form.Control
                   type="date"
                   required
-                  value={moment(formData["date"]).format("YYYY-MM-DD")}
+                  value={
+                    formData["date"]
+                      ? moment(formData["date"]).format("YYYY-MM-DD")
+                      : ""
+                  }
                   onChange={(e) => updateFormData(e, "date")}
                 />
               </Form.Group>
@@ -632,8 +636,6 @@ const TrainingFormCLVE = ({
               </Form.Group>
             </Col>
           </Row>
-        )}
-        {section === "vision_evaluation" && (
           <Form.Group controlId="unit-distance">
             <Form.Label>Select Distance metric:{ required() }</Form.Label>
             <Form.Control
@@ -648,8 +650,6 @@ const TrainingFormCLVE = ({
               <option>20ft</option>
             </Form.Control>
           </Form.Group>
-        )}
-        {section === "vision_evaluation" && (
           <Row>
             {customFieldsDistance &&
               customFieldsDistance.map((field) => (
@@ -668,8 +668,6 @@ const TrainingFormCLVE = ({
                 </Col>
               ))}
           </Row>
-        )}
-        {section === "vision_evaluation" && (
           <Form.Group controlId="unit-near">
             <Form.Label>Select Near metric:{ required() }</Form.Label>
             <Form.Control
@@ -685,8 +683,6 @@ const TrainingFormCLVE = ({
               <option>Snellen - Metric</option>
             </Form.Control>
           </Form.Group>
-        )}
-        {section === "vision_evaluation" && (
           <Row>
             {customFieldsNear &&
               customFieldsNear.map((field) => (
@@ -707,8 +703,6 @@ const TrainingFormCLVE = ({
                 </Col>
               ))}
           </Row>
-        )}
-        {section === "vision_evaluation" && (
           <div>
             <br />
             <Button
@@ -719,15 +713,13 @@ const TrainingFormCLVE = ({
               Continue
             </Button>
           </div>
-        )}
-        {section === "spectacle" && (
+        </div>
+        <div className={section !== "spectacle" ? 'd-none' : 'd-block'}>
           <Row>
             <Form.Group controlId="recommendationSpectacle">
               <Form.Label>Recommendation Spectacle</Form.Label>
             </Form.Group>
           </Row>
-        )}
-        {section === "spectacle" && (
           <FormControl fullWidth size="small">
             <Select
               value={devices.recommendationSpectacle}
@@ -741,9 +733,8 @@ const TrainingFormCLVE = ({
               {recommendationSpectacleOptions}
             </Select>
           </FormControl>
-        )}
 
-        {section === "spectacle" && showOther.recommendationSpectacle && (
+        {showOther.recommendationSpectacle && (
           <Form.Group controlId="recommendationSpectacleOther">
             <Form.Label>Other Recommendation Spectacle</Form.Label>
             <Form.Control
@@ -755,11 +746,10 @@ const TrainingFormCLVE = ({
           </Form.Group>
         )}
 
-        {section === "spectacle" && allfields && (
+        {allfields && (
           <div>
             <Row>
-              
-            <Col>
+              <Col>
                 <Row>
                   <Form.Group controlId="dispensedSpectacle">
                     <Form.Label>Dispensed Spectacle</Form.Label>
@@ -779,68 +769,76 @@ const TrainingFormCLVE = ({
                   </Select>
                 </FormControl>
               </Col>
-              <Col>
-                <Form.Group controlId="dispensedDateSpectacle">
-                  <Form.Label>Dispensed Date Spectacle</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={moment(formData["dispensedDateSpectacle"]).format(
-                      "YYYY-MM-DD"
-                    )}
-                    onChange={(e) => updateFormData(e, "dispensedDateSpectacle")}
-                  />
-                </Form.Group>
-              </Col>
             </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="costSpectacle">
-                  <Form.Label>Cost Spectacle{required()}</Form.Label>
-                  <Form.Control
-                    type="number"
-                    required
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costSpectacle"]}
-                    onChange={(e) => updateFormData(e, "costSpectacle")}
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group controlId="costToBeneficiarySpectacle">
-                  <Form.Label>Cost to Beneficiary Spectacle{required()}</Form.Label>
-                  <Form.Control
-                    type="number"
-                    required
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costToBeneficiarySpectacle"]}
-                    onChange={(e) =>
-                      updateFormData(e, "costToBeneficiarySpectacle")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="trainingGivenSpectacle">
-                  <Form.Label>Training Given Spectacle{required()}</Form.Label>
-                  <Form.Control
-                    as="select"
-                    required
-                    value={formData["trainingGivenSpectacle"]}
-                    onChange={(e) =>
-                      updateFormData(e, "trainingGivenSpectacle")
-                    }
-                  >
-                    <option defaultValue></option>
-                    <option>Yes</option>
-                    <option>No</option>
-                  </Form.Control>
-                </Form.Group>
-              </Col>
-            </Row>
+            {devices.dispensedSpectacle.length > 0 && (
+              <>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costSpectacle">
+                      <Form.Label>Cost Spectacle{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costSpectacle" ?? ""]}
+                        onChange={(e) => updateFormData(e, "costSpectacle")}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="dispensedDateSpectacle">
+                      <Form.Label>Dispensed Date Spectacle{required()}</Form.Label>
+                      <Form.Control
+                        type="date"
+                        required
+                        value={
+                          formData["dispensedDateSpectacle"]
+                            ? moment(formData["dispensedDateSpectacle"]).format(
+                              "YYYY-MM-DD")
+                            : ""
+                        }
+                        onChange={(e) => updateFormData(e, "dispensedDateSpectacle")}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costToBeneficiarySpectacle">
+                      <Form.Label>Cost to Beneficiary Spectacle{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costToBeneficiarySpectacle"] ?? ""}
+                        onChange={(e) =>
+                          updateFormData(e, "costToBeneficiarySpectacle")
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="trainingGivenSpectacle">
+                      <Form.Label>Training Given Spectacle{required()}</Form.Label>
+                      <Form.Control
+                        as="select"
+                        required
+                        value={formData["trainingGivenSpectacle"] ?? ""}
+                        onChange={(e) =>
+                          updateFormData(e, "trainingGivenSpectacle")
+                        }
+                      >
+                        <option defaultValue></option>
+                        <option>Yes</option>
+                        <option>No</option>
+                      </Form.Control>
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </>
+            )}
             {showOther.dispensedSpectacle && (
               <Form.Group controlId="dispensedSpectacleOther">
                 <Form.Label>Other Dispensed Spectacle</Form.Label>
@@ -854,7 +852,6 @@ const TrainingFormCLVE = ({
             )}
           </div>
         )}
-        {section === "spectacle" && (
           <div>
             <br />
             <Button
@@ -865,15 +862,13 @@ const TrainingFormCLVE = ({
               Continue
             </Button>
           </div>
-        )}
-        {section === "optical" && (
+        </div>
+        <div className={section !== "optical" ? 'd-none' : 'd-block'}>
           <Row>
             <Form.Group controlId="recommendationOptical">
               <Form.Label>Recommendation Optical</Form.Label>
             </Form.Group>
           </Row>
-        )}
-        {section === "optical" && (
           <FormControl fullWidth size="small">
             <Select
               value={devices.recommendationOptical}
@@ -887,9 +882,8 @@ const TrainingFormCLVE = ({
               {recommendationOpticalOptions}
             </Select>
           </FormControl>
-        )}
 
-        {section === "optical" && showOther.recommendationOptical && (
+        {showOther.recommendationOptical && (
           <Form.Group controlId="recommendationOpticalOther">
             <Form.Label>Other Recommendation Optical</Form.Label>
             <Form.Control
@@ -901,11 +895,10 @@ const TrainingFormCLVE = ({
           </Form.Group>
         )}
 
-        {section === "optical" && allfields && (
+        {allfields && (
           <div>
             <Row>
-              
-            <Col>
+              <Col>
                 <Row>
                   <Form.Group controlId="dispensedOptical">
                     <Form.Label>Dispensed Optical</Form.Label>
@@ -925,63 +918,71 @@ const TrainingFormCLVE = ({
                   </Select>
                 </FormControl>
               </Col>
-              <Col>
-                <Form.Group controlId="dispensedDateOptical">
-                  <Form.Label>Dispensed Date Optical</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={moment(formData["dispensedDateOptical"]).format(
-                      "YYYY-MM-DD"
-                    )}
-                    onChange={(e) => updateFormData(e, "dispensedDateOptical")}
-                  />
-                </Form.Group>
-              </Col>
             </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="costOptical">
-                  <Form.Label>Cost Optical</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costOptical"]}
-                    onChange={(e) => updateFormData(e, "costOptical")}
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group controlId="costToBeneficiaryOptical">
-                  <Form.Label>Cost to Beneficiary Optical</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costToBeneficiaryOptical"]}
-                    onChange={(e) =>
-                      updateFormData(e, "costToBeneficiaryOptical")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="trainingGivenOptical">
-                  <Form.Label>Training Given Optical</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={formData["trainingGivenOptical"]}
-                    onChange={(e) => updateFormData(e, "trainingGivenOptical")}
-                  >
-                    <option defaultValue></option>
-                    <option>Yes</option>
-                    <option>No</option>
-                  </Form.Control>
-                </Form.Group>
-              </Col>
-            </Row>
+            {devices.dispensedOptical.length > 0 && (
+              <>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costOptical">
+                      <Form.Label>Cost Optical{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costOptical"] ?? ""}
+                        onChange={(e) => updateFormData(e, "costOptical")}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="dispensedDateOptical">
+                      <Form.Label>Dispensed Date Optical{required()}</Form.Label>
+                      <Form.Control
+                        type="date"
+                        required
+                        value={
+                          formData["dispensedDateOptical"]
+                            ? moment(formData["dispensedDateOptical"]).format("YYYY-MM-DD")
+                            : ""
+                        }
+                        onChange={(e) => updateFormData(e, "dispensedDateOptical")}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costToBeneficiaryOptical">
+                      <Form.Label>Cost to Beneficiary Optical{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costToBeneficiaryOptical"] ?? ""}
+                        onChange={(e) => updateFormData(e, "costToBeneficiaryOptical")}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="trainingGivenOptical">
+                      <Form.Label>Training Given Optical{required()}</Form.Label>
+                      <Form.Control
+                        as="select"
+                        required
+                        value={formData["trainingGivenOptical"] ?? ""}
+                        onChange={(e) => updateFormData(e, "trainingGivenOptical")}
+                      >
+                        <option defaultValue></option>
+                        <option>Yes</option>
+                        <option>No</option>
+                      </Form.Control>
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </>
+            )}
             {showOther.dispensedOptical && (
               <Form.Group controlId="dispensedOpticalOther">
                 <Form.Label>Other Dispensed Optical</Form.Label>
@@ -995,26 +996,23 @@ const TrainingFormCLVE = ({
             )}
           </div>
         )}
-        {section === "optical" && (
           <div>
             <br />
             <Button
               className="btn btn-success border-0 btn-block"
               type="button"
-              onClick={() => setSection("non_optical")}
+              onClick={() => setSection("nonOptical")}
             >
               Continue
             </Button>
           </div>
-        )}
-        {section === "non_optical" && (
+        </div>
+        <div className={section !== "nonOptical" ? 'd-none' : 'd-block'}>
           <Row>
             <Form.Group controlId="recommendationNonOptical">
               <Form.Label>Recommendation Non-Optical</Form.Label>
             </Form.Group>
           </Row>
-        )}
-        {section === "non_optical" && (
           <FormControl fullWidth size="small">
             <Select
               value={devices.recommendationNonOptical}
@@ -1028,27 +1026,23 @@ const TrainingFormCLVE = ({
               {recommendationNonOpticalOptions}
             </Select>
           </FormControl>
-        )}
 
-        {section === "non_optical" && showOther.recommendationNonOptical && (
+        {showOther.recommendationNonOptical && (
           <Form.Group controlId="recommendationNonOpticalOther">
-            <Form.Label>Other Recommendation NonOptical</Form.Label>
+            <Form.Label>Other Recommendation Non-Optical</Form.Label>
             <Form.Control
               as="input"
               autoComplete="off"
               value={formData["recommendationNonOpticalOther"]}
-              onChange={(e) =>
-                updateFormData(e, "recommendationNonOpticalOther")
-              }
+              onChange={(e) => updateFormData(e, "recommendationNonOpticalOther")}
             />
           </Form.Group>
         )}
 
-        {section === "non_optical" && allfields && (
+        {allfields && (
           <div>
             <Row>
-              
-            <Col>
+              <Col>
                 <Row>
                   <Form.Group controlId="dispensedNonOptical">
                     <Form.Label>Dispensed Non-Optical</Form.Label>
@@ -1068,81 +1062,84 @@ const TrainingFormCLVE = ({
                   </Select>
                 </FormControl>
               </Col>
-              <Col>
-                <Form.Group controlId="dispensedDateNonOptical">
-                  <Form.Label>Dispensed Date NonOptical</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={moment(formData["dispensedDateNonOptical"]).format(
-                      "YYYY-MM-DD"
-                    )}
-                    onChange={(e) => updateFormData(e, "dispensedDateNonOptical")}
-                  />
-                </Form.Group>
-              </Col>
             </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="costNonOptical">
-                  <Form.Label>Cost NonOptical</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costNonOptical"]}
-                    onChange={(e) => updateFormData(e, "costNonOptical")}
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group controlId="costToBeneficiaryNonOptical">
-                  <Form.Label>Cost to Beneficiary NonOptical</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costToBeneficiaryNonOptical"]}
-                    onChange={(e) =>
-                      updateFormData(e, "costToBeneficiaryNonOptical")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="trainingGivenNonOptical">
-                  <Form.Label>Training Given Non Optical</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={formData["trainingGivenNonOptical"]}
-                    onChange={(e) =>
-                      updateFormData(e, "trainingGivenNonOptical")
-                    }
-                  >
-                    <option defaultValue></option>
-                    <option>Yes</option>
-                    <option>No</option>
-                  </Form.Control>
-                </Form.Group>
-              </Col>
-            </Row>
+            {devices.dispensedNonOptical.length > 0 && (
+              <>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costNonOptical">
+                      <Form.Label>Cost Non-Optical{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costNonOptical"] ?? ""}
+                        onChange={(e) => updateFormData(e, "costNonOptical")}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="dispensedDateNonOptical">
+                      <Form.Label>Dispensed Date Non-Optical{required()}</Form.Label>
+                      <Form.Control
+                        type="date"
+                        required
+                        value={
+                          formData["dispensedDateNonOptical"]
+                            ? moment(formData["dispensedDateNonOptical"]).format("YYYY-MM-DD")
+                            : moment(today).format("YYYY-MM-DD")
+                        }
+                        onChange={(e) => updateFormData(e, "dispensedDateNonOptical")}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costToBeneficiaryNonOptical">
+                      <Form.Label>Cost to Beneficiary Non-Optical{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costToBeneficiaryNonOptical"] ?? ""}
+                        onChange={(e) => updateFormData(e, "costToBeneficiaryNonOptical")}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="trainingGivenNonOptical">
+                      <Form.Label>Training Given Non-Optical{required()}</Form.Label>
+                      <Form.Control
+                        as="select"
+                        required
+                        value={formData["trainingGivenNonOptical"] ?? ""}
+                        onChange={(e) => updateFormData(e, "trainingGivenNonOptical")}
+                      >
+                        <option defaultValue></option>
+                        <option>Yes</option>
+                        <option>No</option>
+                      </Form.Control>
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </>
+            )}
             {showOther.dispensedNonOptical && (
               <Form.Group controlId="dispensedNonOpticalOther">
-                <Form.Label>Other Dispensed NonOptical</Form.Label>
+                <Form.Label>Other Dispensed Non-Optical</Form.Label>
                 <Form.Control
                   as="input"
                   autoComplete="off"
                   value={formData["dispensedNonOpticalOther"]}
-                  onChange={(e) =>
-                    updateFormData(e, "dispensedNonOpticalOther")
-                  }
+                  onChange={(e) => updateFormData(e, "dispensedNonOpticalOther")}
                 />
               </Form.Group>
             )}
           </div>
         )}
-        {section === "non_optical" && (
           <div>
             <br />
             <Button
@@ -1153,15 +1150,13 @@ const TrainingFormCLVE = ({
               Continue
             </Button>
           </div>
-        )}
-        {section === "electronic" && (
+        </div>
+        <div className={section !== "electronic" ? 'd-none' : 'd-block'}>
           <Row>
             <Form.Group controlId="recommendationElectronic">
               <Form.Label>Recommendation Electronic</Form.Label>
             </Form.Group>
           </Row>
-        )}
-        {section === "electronic" && (
           <FormControl fullWidth size="small">
             <Select
               value={devices.recommendationElectronic}
@@ -1175,27 +1170,23 @@ const TrainingFormCLVE = ({
               {recommendationElectronicOptions}
             </Select>
           </FormControl>
-        )}
 
-        {section === "electronic" && showOther.recommendationElectronic && (
+        {showOther.recommendationElectronic && (
           <Form.Group controlId="recommendationElectronicOther">
             <Form.Label>Other Recommendation Electronic</Form.Label>
             <Form.Control
               as="input"
               autoComplete="off"
               value={formData["recommendationElectronicOther"]}
-              onChange={(e) =>
-                updateFormData(e, "recommendationElectronicOther")
-              }
+              onChange={(e) => updateFormData(e, "recommendationElectronicOther")}
             />
           </Form.Group>
         )}
 
-        {section === "electronic" && allfields && (
+        {allfields && (
           <div>
             <Row>
-              
-            <Col>
+              <Col>
                 <Row>
                   <Form.Group controlId="dispensedElectronic">
                     <Form.Label>Dispensed Electronic</Form.Label>
@@ -1215,66 +1206,71 @@ const TrainingFormCLVE = ({
                   </Select>
                 </FormControl>
               </Col>
-              <Col>
-                <Form.Group controlId="dispensedDateElectronic">
-                  <Form.Label>Dispensed Date Electronic</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={moment(formData["dispensedDateElectronic"]).format(
-                      "YYYY-MM-DD"
-                    )}
-                    onChange={(e) => updateFormData(e, "dispensedDateElectronic")}
-                  />
-                </Form.Group>
-              </Col>
             </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="costElectronic">
-                  <Form.Label>Cost Electronic</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costElectronic"]}
-                    onChange={(e) => updateFormData(e, "costElectronic")}
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group controlId="costToBeneficiaryElectronic">
-                  <Form.Label>Cost to Beneficiary Electronic</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min={0}
-                    autoComplete="off"
-                    value={formData["costToBeneficiaryElectronic"]}
-                    onChange={(e) =>
-                      updateFormData(e, "costToBeneficiaryElectronic")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Form.Group controlId="trainingGivenElectronic">
-                  <Form.Label>Training Given Electronic</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={formData["trainingGivenElectronic"]}
-                    onChange={(e) =>
-                      updateFormData(e, "trainingGivenElectronic")
-                    }
-                  >
-                    <option defaultValue></option>
-                    <option>Yes</option>
-                    <option>No</option>
-                  </Form.Control>
-                </Form.Group>
-              </Col>
-            </Row>
-            <p style={{marginTop: "8px", marginBottom: "0"}}>If the dispensed electronic device is free then the benificiary Phone number, Aadhar number, socio-economic status, and Consent form are required!</p>
+            {devices.dispensedElectronic.length > 0 && (
+              <>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costElectronic">
+                      <Form.Label>Cost Electronic{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costElectronic"] ?? ""}
+                        onChange={(e) => updateFormData(e, "costElectronic")}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="dispensedDateElectronic">
+                      <Form.Label>Dispensed Date Electronic{required()}</Form.Label>
+                      <Form.Control
+                        type="date"
+                        required
+                        value={
+                          formData["dispensedDateElectronic"]
+                            ? moment(formData["dispensedDateElectronic"]).format("YYYY-MM-DD")
+                            : moment(today).format("YYYY-MM-DD")
+                        }
+                        onChange={(e) => updateFormData(e, "dispensedDateElectronic")}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="costToBeneficiaryElectronic">
+                      <Form.Label>Cost to Beneficiary Electronic{required()}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        required
+                        min={0}
+                        autoComplete="off"
+                        value={formData["costToBeneficiaryElectronic"] ?? ""}
+                        onChange={(e) => updateFormData(e, "costToBeneficiaryElectronic")}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="trainingGivenElectronic">
+                      <Form.Label>Training Given Electronic{required()}</Form.Label>
+                      <Form.Control
+                        as="select"
+                        required
+                        value={formData["trainingGivenElectronic"] ?? ""}
+                        onChange={(e) => updateFormData(e, "trainingGivenElectronic")}
+                      >
+                        <option defaultValue></option>
+                        <option>Yes</option>
+                        <option>No</option>
+                      </Form.Control>
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </>
+            )}
             {showOther.dispensedElectronic && (
               <Form.Group controlId="dispensedElectronicOther">
                 <Form.Label>Other Dispensed Electronic</Form.Label>
@@ -1282,15 +1278,12 @@ const TrainingFormCLVE = ({
                   as="input"
                   autoComplete="off"
                   value={formData["dispensedElectronicOther"]}
-                  onChange={(e) =>
-                    updateFormData(e, "dispensedElectronicOther")
-                  }
+                  onChange={(e) => updateFormData(e, "dispensedElectronicOther")}
                 />
               </Form.Group>
             )}
           </div>
         )}
-        {section === "electronic" && (
           <div>
             <br />
             <Button
@@ -1301,8 +1294,9 @@ const TrainingFormCLVE = ({
               Continue
             </Button>
           </div>
-        )}
-        {section === "other" && allfields && (
+        </div>
+        <div className={section !== "other" ? 'd-none' : 'd-block'}>
+        {allfields && (
           <div>
             <Row>
               <Col>
@@ -1348,24 +1342,22 @@ const TrainingFormCLVE = ({
             </Row>
           </div>
         )}
-        {section === "other" && (
           <Form.Group controlId="extraInformation">
             <Form.Label>Comments</Form.Label>
             <Form.Control as="textarea" rows={3} autoComplete="off" />
           </Form.Group>
-        )}
-        {section === "other" && (
           <div>
             <br />
             <Button
               disabled={loading}
               className="btn btn-success border-0 btn-block"
-              type="submit"
+              onClick={handleSubmit}
+              type="button"
             >
               Submit Evaluation
             </Button>
           </div>
-        )}
+        </div>
       </Form>
     </div>
   );
