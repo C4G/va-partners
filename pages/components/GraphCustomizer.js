@@ -25,6 +25,9 @@ import {
   setLveHeader,
 } from '@/constants/reportFunctions';
 import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
+import { buildSummarySheet } from '@/utils/ui/build-summary-sheet';
+import { buildCashGrantSummaryOfFinances } from '@/utils/ui/build-cash-grant-summary-of-finances';
+import { buildNilCashGrantSummaryOfFinances } from '@/utils/ui/build-nil-cash-grant-summary-of-finances';
 
 
 const refData = `S.no\tPrograms\tTypes\tDescription
@@ -195,8 +198,16 @@ const GraphCustomizer = ({
   
       const wahd = XLSX.utils.json_to_sheet([]);
   
-      XLSX.utils.book_append_sheet(wb, [], "Summary");
-      XLSX.utils.book_append_sheet(wb, [], "Summary of Finances");
+      if (hospitalSummary.length === 1) {
+        XLSX.utils.book_append_sheet(wb, buildSummarySheet(), "Summary");
+        const tier = hospitalSummary[0].tier;
+        if (tier === 'NIL_CASH_GRANT') {
+          XLSX.utils.book_append_sheet(wb, buildNilCashGrantSummaryOfFinances(), "Summary of Finances Tier 2 & 3");
+        }
+        if (tier === 'RECEIVE_CASH_GRANT') {
+          XLSX.utils.book_append_sheet(wb, buildCashGrantSummaryOfFinances(), "Summary of Finances");
+        }
+      }
       XLSX.utils.book_append_sheet(wb, wahd, "Summary of Services");
       XLSX.utils.book_append_sheet(wb, wref, "Reference");
       XLSX.utils.book_append_sheet(wb, wclve, "CLVE_LVD Beneficiaries");

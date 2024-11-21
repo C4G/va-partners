@@ -431,6 +431,11 @@ export function getAggregatedHospitalData(
   let ceSessionsTotal = 0;
   let ceBeneficiariesTotal = 0;
 
+  // training
+  let trainingRow = { Programs1: "Training", Programs2: "" };
+  let trainingSessionsTotal = 0;
+  let trainingBeneficiariesTotal = 0;
+
   // List of unique training types from training data
   const trainingTypes = Array.from(
     new Set(
@@ -710,6 +715,18 @@ export function getAggregatedHospitalData(
     ceSessionsTotal += ceRow[hospital.name + " Sessions"];
     ceBeneficiariesTotal += ceRow[hospital.name + " Beneficiaries"];
 
+    // Training data
+    trainingRow[hospital.name + " Sessions"] = hospital.training.length;
+    trainingRow[hospital.name + " Beneficiaries"] = Array.from(
+      new Set(
+        hospital.training.map(
+          (evaluation) => evaluation.beneficiaryId
+        )
+      )
+    ).length;
+    trainingSessionsTotal += trainingRow[hospital.name + " Sessions"];
+    trainingBeneficiariesTotal += trainingRow[hospital.name + " Beneficiaries"];
+
     let trainingIdx = 0;
     // Populate row corresponding to each training type identified earlier
     for (let trainingType of trainingTypes) {
@@ -985,6 +1002,9 @@ export function getAggregatedHospitalData(
     ceRow["Number of Sessions"] = ceSessionsTotal;
     ceRow["Number of Beneficiaries"] = ceBeneficiariesTotal;
 
+    trainingRow["Number of Sessions"] = trainingSessionsTotal;
+    trainingRow["Number of Beneficiaries"] = trainingBeneficiariesTotal;
+
     for (let trainingTypeRow of trainingTypesList) {
       trainingTypeRow["tRow"]["Number of Sessions"] =
         trainingTypeRow["tSessionsTotal"];
@@ -1071,6 +1091,7 @@ export function getAggregatedHospitalData(
   aggregatedHospitalData.push(veRow);
   aggregatedHospitalData.push(clveRow);
   aggregatedHospitalData.push(ceRow);
+  aggregatedHospitalData.push(trainingRow);
   aggregatedHospitalData.push(...trainingTypesList.map((item) => item.tRow));
   aggregatedHospitalData.push(overallTrainingRow);
   aggregatedHospitalData.push(devicesRow);

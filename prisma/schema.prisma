@@ -8,6 +8,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum HospitalTier {
+  NIL_CASH_GRANT
+  RECEIVE_CASH_GRANT
+}
+
 model User {
   id             Int            @id @default(autoincrement())
   email          String         @unique
@@ -29,6 +34,7 @@ model Hospital {
   deleted      Boolean?       @default(false)
   hospitalRole HospitalRole[]
   Beneficiary  Beneficiary[]
+  tier         HospitalTier   @default(NIL_CASH_GRANT)
 }
 
 model HospitalRole {

@@ -312,13 +312,16 @@ function buildRecDevicesBreakdownGraph(countsData, breakdownType) {
 }
 
 
-function buildTotalBeneficiariesGraph(totalBeneficiaries) {
+function buildTotalBeneficiariesGraph(uniqueBeneficiariesByActivity) {
+  
+  // Calculate the total beneficaries by activity
+  const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0) - uniqueBeneficiariesByActivity.Devices_Dispensed;
   return {
     labels: ["Accurate Beneficiaries"],
     datasets: [
       {
         label: "Number of Beneficiaries",
-        data: [totalBeneficiaries],
+        data: [total],
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
@@ -445,14 +448,12 @@ function buildUniqueBeneficiariesGraph(countsData, drilledDown) {
   if (!countsData) return null;
 
   if (!drilledDown) {
-    // Calculate the total unique beneficiaries
-    const total = Object.values(countsData["Unique_Beneficiaries_By_Activity"]).reduce((sum, val) => sum + val, 0);
     return {
       labels: ["Total Unique Beneficiaries"],
       datasets: [
         {
           label: 'Total',
-          data: [total],
+          data: [countsData.Unique_Beneficiaries],
           backgroundColor: ["rgba(75, 192, 192, 0.6)"],
           borderColor: ["rgba(75, 192, 192, 1)"],
           borderWidth: 1,
@@ -1725,7 +1726,7 @@ function buildAgeGraph(beneficiaries) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-            return <Bar data={buildTotalBeneficiariesGraph(totalBeneficiaries)} />;
+            return <Bar data={buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries_By_Activity ?? {})} />;
           case 1:
             return countsData ? (
               <div>

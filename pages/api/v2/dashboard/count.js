@@ -258,7 +258,7 @@ export async function readData(req, res) {
 
     // Get total number of beneficiaries matching the filters (regardless of activities)
     const totalBeneficiariesCount = await prisma.Beneficiary.count({
-      where: beneficiaryFilters,
+      where: { ...beneficiaryFilters, deleted: false },
     });
 
     // Get counts for main activities and unique beneficiaries
@@ -267,6 +267,7 @@ export async function readData(req, res) {
       prisma.Beneficiary.count({
         where: {
           ...beneficiaryFilters,
+          deleted: false,
           ...(dateRangeCondition && {
             OR: subtypes.map((subtype) => ({
               [subtype]: {
@@ -282,7 +283,7 @@ export async function readData(req, res) {
       ...subtypes.map((subtype) =>
         modelMap[subtype].count({
           where: {
-            beneficiary: beneficiaryFilters,
+            beneficiary: { ...beneficiaryFilters, deleted: false },
             ...(dateRangeCondition && { date: dateRangeCondition }),
           },
         })
@@ -303,7 +304,7 @@ export async function readData(req, res) {
     const trainingGrouped = await prisma.Training.groupBy({
       by: ["type", "subType"],
       where: {
-        beneficiary: beneficiaryFilters,
+        beneficiary: { ...beneficiaryFilters, deleted: false },
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       _count: {
@@ -336,7 +337,7 @@ export async function readData(req, res) {
     const counsellingTypeCountsArray = await prisma.Counselling_Education.groupBy({
       by: ["type"],
       where: {
-        beneficiary: beneficiaryFilters,
+        beneficiary: { ...beneficiaryFilters, deleted: false },
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       _count: {
@@ -386,7 +387,7 @@ export async function readData(req, res) {
     // Get counts of Devices Dispensed and Recommended from CLVE
     const clveRecords = await prisma.Comprehensive_Low_Vision_Evaluation.findMany({
       where: {
-        beneficiary: beneficiaryFilters,
+        beneficiary: { ...beneficiaryFilters, deleted: false },
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       select: {
@@ -452,7 +453,7 @@ export async function readData(req, res) {
     const distanceBinocularCounts = await prisma.Comprehensive_Low_Vision_Evaluation.groupBy({
       by: ['distanceBinocularVisionBE'],
       where: {
-        ...beneficiaryFilters,
+        beneficiary: { ...beneficiaryFilters, deleted: false },
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       _count: {
@@ -494,7 +495,7 @@ export async function readData(req, res) {
     // Screenings
     const screeningsBeneficiaries = await prisma.Low_Vision_Evaluation.findMany({
       where: {
-        beneficiary: beneficiaryFilters,
+        beneficiary: { ...beneficiaryFilters, deleted: false },
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       select: {
@@ -506,7 +507,7 @@ export async function readData(req, res) {
     // Vision Enhancement
     const visionEnhancementBeneficiaries = await prisma.Vision_Enhancement.findMany({
       where: {
-        beneficiary: beneficiaryFilters,
+        beneficiary: { ...beneficiaryFilters, deleted: false },
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       select: {
@@ -521,7 +522,7 @@ export async function readData(req, res) {
     // Counselling
     const counsellingBeneficiaries = await prisma.Counselling_Education.findMany({
       where: {
-        beneficiary: beneficiaryFilters,
+        beneficiary: { ...beneficiaryFilters, deleted: false },
         ...(dateRangeCondition && { date: dateRangeCondition }),
       },
       select: {
@@ -534,7 +535,7 @@ export async function readData(req, res) {
     const trainingBeneficiariesList = await Promise.all([
       prisma.Training.findMany({
         where: {
-          beneficiary: beneficiaryFilters,
+          beneficiary: { ...beneficiaryFilters, deleted: false },
           ...(dateRangeCondition && { date: dateRangeCondition }),
         },
         select: {
@@ -543,7 +544,7 @@ export async function readData(req, res) {
       }),
       prisma.Mobile_Training.findMany({
         where: {
-          beneficiary: beneficiaryFilters,
+          beneficiary: { ...beneficiaryFilters, deleted: false },
           ...(dateRangeCondition && { date: dateRangeCondition }),
         },
         select: {
@@ -552,7 +553,7 @@ export async function readData(req, res) {
       }),
       prisma.Computer_Training.findMany({
         where: {
-          beneficiary: beneficiaryFilters,
+          beneficiary: { ...beneficiaryFilters, deleted: false },
           ...(dateRangeCondition && { date: dateRangeCondition }),
         },
         select: {
@@ -561,7 +562,7 @@ export async function readData(req, res) {
       }),
       prisma.Orientation_Mobility_Training.findMany({
         where: {
-          beneficiary: beneficiaryFilters,
+          beneficiary: { ...beneficiaryFilters, deleted: false },
           ...(dateRangeCondition && { date: dateRangeCondition }),
         },
         select: {
