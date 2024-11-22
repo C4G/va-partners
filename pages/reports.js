@@ -312,16 +312,13 @@ function buildRecDevicesBreakdownGraph(countsData, breakdownType) {
 }
 
 
-function buildTotalBeneficiariesGraph(uniqueBeneficiariesByActivity) {
-  
-  // Calculate the total beneficaries by activity
-  const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0) - uniqueBeneficiariesByActivity.Devices_Dispensed;
+function buildTotalBeneficiariesGraph(uniqueBeneficiaries) {
   return {
     labels: ["Accurate Beneficiaries"],
     datasets: [
       {
         label: "Number of Beneficiaries",
-        data: [total],
+        data: [uniqueBeneficiaries],
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
@@ -447,13 +444,15 @@ function buildTrainingSubtypesGraph(countsData, selectedType) {
 function buildUniqueBeneficiariesGraph(countsData, drilledDown) {
   if (!countsData) return null;
 
+  const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"];
   if (!drilledDown) {
+    const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0) - uniqueBeneficiariesByActivity.Devices_Dispensed;
     return {
       labels: ["Total Unique Beneficiaries"],
       datasets: [
         {
           label: 'Total',
-          data: [countsData.Unique_Beneficiaries],
+          data: [total],
           backgroundColor: ["rgba(75, 192, 192, 0.6)"],
           borderColor: ["rgba(75, 192, 192, 1)"],
           borderWidth: 1,
@@ -462,7 +461,6 @@ function buildUniqueBeneficiariesGraph(countsData, drilledDown) {
     };
   } else {
     // Provide the detailed breakdown
-    const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"];
 
     const labels = Object.keys(uniqueBeneficiariesByActivity).map(
       (key) => `${key} (${uniqueBeneficiariesByActivity[key]})`
@@ -1726,7 +1724,7 @@ function buildAgeGraph(beneficiaries) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-            return <Bar data={buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries_By_Activity ?? {})} />;
+            return <Bar data={buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries ?? 0)} />;
           case 1:
             return countsData ? (
               <div>
