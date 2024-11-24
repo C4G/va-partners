@@ -582,7 +582,6 @@ export async function readData(req, res) {
       CLVE: clveBeneficiaryIds.size,
       Counselling: counsellingBeneficiaryIds.size,
       Training: trainingBeneficiaryIds.size,
-      Devices_Dispensed: devicesBeneficiaryIds.size,
     };
 
     // Add to formattedCounts

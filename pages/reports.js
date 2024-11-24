@@ -367,7 +367,7 @@ const visualAcuityOptions = {
       color: '#000', // Set text color for better readability
       anchor: 'end',
       align: 'start',
-      offset: 10,
+      offset: -5,
       font: {
         weight: 'bold',
         size: 14,
@@ -446,7 +446,7 @@ function buildUniqueBeneficiariesGraph(countsData, drilledDown) {
 
   const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"];
   if (!drilledDown) {
-    const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0) - uniqueBeneficiariesByActivity.Devices_Dispensed;
+    const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0)
     return {
       labels: ["Total Unique Beneficiaries"],
       datasets: [
@@ -741,6 +741,65 @@ export default function Summary({
     active: false,
     type: null, // Holds the currently selected Training type for drill-down
   });
+
+  const downloadChartData = (chartData, filename) => {
+    if (!chartData || !chartData.labels || !chartData.datasets) {
+      console.error("Invalid chart data");
+      return;
+    }
+  
+    const { labels, datasets } = chartData;
+    const csvRows = [];
+  
+    // Add headers
+    csvRows.push(['Label', ...datasets.map(ds => ds.label)]);
+  
+    // Add data rows
+    labels.forEach((label, index) => {
+      const row = [label];
+      datasets.forEach(ds => {
+        row.push(ds.data[index]);
+      });
+      csvRows.push(row);
+    });
+  
+    // Convert to CSV string
+    const csvContent = csvRows.map(e => e.join(",")).join("\n");
+  
+    // Create a Blob from the CSV string
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+    // Create a link to download the Blob
+    const link = document.createElement("a");
+  
+    // Safely handle selectedHospitalNames
+    let sanitizedHospitalNames = 'All_Hospitals';
+    if (Array.isArray(selectedHospitalNames) && selectedHospitalNames.length > 0) {
+      if (selectedHospitalNames.length === 1) {
+        // Replace spaces with underscores for a single hospital name
+        sanitizedHospitalNames = selectedHospitalNames[0].replace(/\s+/g, '_');
+      } else {
+        // Use 'MULTI' if multiple hospitals are selected
+        sanitizedHospitalNames = 'MULTI';
+      }
+    }
+  
+    // Safely handle startDate and endDate
+    const formattedStartDate = startDate ? moment(startDate).format('YYYY-MM-DD') : 'Unknown_StartDate';
+    const formattedEndDate = endDate ? moment(endDate).format('YYYY-MM-DD') : 'Unknown_EndDate';
+  
+    // Construct the complete filename
+    const completeFilename = `${filename}_${sanitizedHospitalNames}_${formattedStartDate}_${formattedEndDate}.csv`;
+  
+    // Create the download link
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", completeFilename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
   // Graph options
   const options={
@@ -1565,7 +1624,6 @@ const counselingEducationColDefs =[
           'rgba(54, 162, 235, 0.6)',      // Moderate visual impairment
           'rgba(255, 159, 64, 0.6)',      // Mild visual impairment
           'rgba(153, 102, 255, 0.6)',     // Visual Acuity normal
-          // 'rgba(75, 192, 192, 0.6)',    // Other (excluded)
         ],
         borderColor: [
           'rgba(255, 99, 132, 1)',        // Blindness
@@ -1573,7 +1631,6 @@ const counselingEducationColDefs =[
           'rgba(54, 162, 235, 1)',        // Moderate visual impairment
           'rgba(255, 159, 64, 1)',        // Mild visual impairment
           'rgba(153, 102, 255, 1)',       // Visual Acuity normal
-          // 'rgba(75, 192, 192, 1)',      // Other (excluded)
         ],
         borderWidth: 1,
       },
@@ -1724,8 +1781,19 @@ function buildAgeGraph(beneficiaries) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-            return <Bar data={buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries ?? 0)} />;
-          case 1:
+            return (
+              <div>
+                <Bar data={buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries ?? 0)} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries), 'Total_Beneficiaries')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
+            case 1:
             return countsData ? (
               <div>
                 {backButton}
@@ -1733,16 +1801,56 @@ function buildAgeGraph(beneficiaries) {
                   data={uniqueBeneficiariesGraphData} 
                   options={uniqueBeneficiariesOptions} 
                 />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(uniqueBeneficiariesGraphData, 'Unique_Beneficiaries')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
               </div>
             ) : (
               <p>Loading...</p>
             );
           case 2:
-            return <Bar data={buildSessionsGraph(totalSessions)} />;
+            return (
+              <div>
+                <Bar data={buildSessionsGraph(totalSessions)} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildSessionsGraph(totalSessions), 'Total_Sessions')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           case 3:
-            return <Bar data={genderGraphData} options={options} />;
+            return (
+              <div>
+                <Bar data={genderGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(genderGraphData, 'Gender_Distribution')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           case 4:
-            return <Bar data={ageGraphData} options={options} />;
+            return (
+              <div>
+                <Bar data={ageGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(ageGraphData, 'Age_Distribution')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           default:
             return null;
         }
@@ -1756,7 +1864,18 @@ function buildAgeGraph(beneficiaries) {
             if (activitiesChartData.labels.length === 0) {
               return <p>No Activities data available for the selected filters.</p>;
             }
-            return <Bar data={activitiesChartData} options={options} />;
+            return (
+              <div>
+                <Bar data={activitiesChartData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(activitiesChartData, 'All_Activities')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           }
           case 1:
             return countsData ? (
@@ -1774,18 +1893,36 @@ function buildAgeGraph(beneficiaries) {
                 )}
                 {trainingDrillDown.active ? (
                   buildTrainingSubtypesGraph(countsData, trainingDrillDown.type).labels.length > 0 ? (
-                    <Bar
-                      data={buildTrainingSubtypesGraph(countsData, trainingDrillDown.type)}
-                      options={trainingSubtypesOptions}
-                    />
+                    <div>
+                      <Bar
+                        data={buildTrainingSubtypesGraph(countsData, trainingDrillDown.type)}
+                        options={trainingSubtypesOptions}
+                      />
+                      <Button
+                        variant="outlined"
+                        onClick={() => downloadChartData(buildTrainingSubtypesGraph(countsData, trainingDrillDown.type), `Training_Subtypes_${trainingDrillDown.type}`)}
+                        style={{ marginTop: '10px' }}
+                      >
+                        Download Data
+                      </Button>
+                    </div>
                   ) : (
                     <p>No sub-type data available for {trainingDrillDown.type}.</p>
                   )
                 ) : (
-                  <Bar
-                    data={buildTrainingTypesGraph(countsData)}
-                    options={trainingTypesOptions}
-                  />
+                  <div>
+                    <Bar
+                      data={buildTrainingTypesGraph(countsData)}
+                      options={trainingTypesOptions}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => downloadChartData(buildTrainingTypesGraph(countsData), 'Training_Types')}
+                      style={{ marginTop: '10px' }}
+                    >
+                      Download Data
+                    </Button>
+                  </div>
                 )}
               </div>
             ) : (
@@ -1793,7 +1930,16 @@ function buildAgeGraph(beneficiaries) {
             );
           case 2:
             return countsData ? (
-              <Bar data={buildBreakdownGraph(countsData, 'counsellingEducation')} options={options} />
+              <div>
+                <Bar data={buildBreakdownGraph(countsData, 'counsellingEducation')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildBreakdownGraph(countsData, 'counsellingEducation'), 'Counselling_Education')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
             ) : (
               <p>Loading...</p>
             );
@@ -1804,64 +1950,173 @@ function buildAgeGraph(beneficiaries) {
         switch (activeDevicesGraphTab) {
           case 0:
             return countsData ? (
-              <Bar data={buildDevicesGraph(countsData)} options={options} />
+              <div>
+                <Bar data={buildDevicesGraph(countsData)} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesGraph(countsData), 'Dispensed_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
             ) : (
               <p>Loading...</p>
             );
           case 1:
             return countsData ? (
-              <Bar data={buildDevicesBreakdownGraph(countsData, 'Electronic')} options={options} />
+              <div>
+                <Bar data={buildDevicesBreakdownGraph(countsData, 'Electronic')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Electronic'), 'Dispensed_Electronic_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
             ) : (
               <p>Loading...</p>
             );
           case 2:
             return countsData ? (
-              <Bar data={buildDevicesBreakdownGraph(countsData, 'Spectacle')} options={options} />
+              <div>
+                <Bar data={buildDevicesBreakdownGraph(countsData, 'Spectacle')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Spectacle'), 'Dispensed_Spectacle_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
             ) : (
               <p>Loading...</p>
             );
           case 3:
-              return countsData ? (
+            return countsData ? (
+              <div>
                 <Bar data={buildDevicesBreakdownGraph(countsData, 'Optical')} options={options} />
-              ) : (
-                <p>Loading...</p>
-              );
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Optical'), 'Dispensed_Optical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           case 4:
-              return countsData ? (
+            return countsData ? (
+              <div>
                 <Bar data={buildDevicesBreakdownGraph(countsData, 'NonOptical')} options={options} />
-              ) : (
-                <p>Loading...</p>
-              );
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'NonOptical'), 'Dispensed_NonOptical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           default:
             return null;
         }
       case 3:
         switch (activeRecDevicesGraphTab) {
           case 0:
-            return <Bar data={recDevicesGraphData} options={options} />;
+            return (
+              <div>
+                <Bar data={recDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(recDevicesGraphData, 'Recommended_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           case 1:
-            return <Bar data={electronicRecDevicesGraphData} options={options} />;
+            return (
+              <div>
+                <Bar data={electronicRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(electronicRecDevicesGraphData, 'Recommended_Electronic_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           case 2:
-            return <Bar data={spectacleRecDevicesGraphData} options={options} />;
+            return (
+              <div>
+                <Bar data={spectacleRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(spectacleRecDevicesGraphData, 'Recommended_Spectacle_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           case 3:
-              return <Bar data={opticalRecDevicesGraphData} options={options} />;
+            return (
+              <div>
+                <Bar data={opticalRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(opticalRecDevicesGraphData, 'Recommended_Optical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           case 4:
-              return <Bar data={nonOpticalRecDevicesGraphData} options={options} />;
+            return (
+              <div>
+                <Bar data={nonOpticalRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(nonOpticalRecDevicesGraphData, 'Recommended_NonOptical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
           default:
             return null;
         }
-      case 4:
-        return visualAcuityChartData ? (
+    case 4:
+      return visualAcuityChartData ? (
+        <div>
           <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
             <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
           </Box>
-        ) : (
-          <p>No Visual Acuity data available.</p>
-        );
-      default:
-        return null;
-    }
-  };
+          <Button
+            variant="outlined"
+            onClick={() => downloadChartData(visualAcuityChartData, 'Visual_Acuity_Distribution')}
+            style={{ marginTop: '10px' }}
+          >
+            Download Data
+          </Button>
+        </div>
+      ) : (
+        <p>No Visual Acuity data available.</p>
+      );
+    default:
+      return null;
+  }
+};
 
   return (
     <Layout>
@@ -2130,23 +2385,8 @@ function buildAgeGraph(beneficiaries) {
                       </Tabs>
                     )}
 
-                    {/* Visual Acuity Graph Sub-Tab */}
-                    {activeGraphTab === 4 && (
-                      isLoading ? (
-                        <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
-                          <p>Loading...</p>
-                        </Box>
-                      ) : visualAcuityChartData ? (
-                        <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
-                          <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
-                        </Box>
-                      ) : (
-                        <p>No Visual Acuity data available.</p>
-                      )
-                    )}
-
                     {/* Render the selected graph */}
-                    {activeGraphTab !== 4 && renderGraph()}
+                    {renderGraph()}
                   </Paper>
                 </div>
               </div>
