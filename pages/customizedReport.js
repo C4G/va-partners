@@ -45,8 +45,8 @@ function ReportCustomizer(props) {
   const resetToDefault = () => {
     setSelectedGenders(['Male', 'Female', 'Other']);
     setSelectedMdvi(['Yes', 'No']);
-    setMinAge(0);
-    setMaxAge(100);
+    setMinAge(null);
+    setMaxAge(null);
   };
 
   return (
@@ -93,14 +93,14 @@ function ReportCustomizer(props) {
               label="Minimum Age"
               type="number"
               value={minAge}
-              onChange={(e) => setMinAge(e.target.value ? Number(e.target.value) : 0)}
+              onChange={(e) => setMinAge(e.target.value ? Number(e.target.value) : null)}
               fullWidth
             />
             <TextField
               label="Maximum Age"
               type="number"
               value={maxAge}
-              onChange={(e) => setMaxAge(e.target.value ? Number(e.target.value) : 100)}
+              onChange={(e) => setMaxAge(e.target.value ? Number(e.target.value) : null)}
               fullWidth
             />
           </Box>

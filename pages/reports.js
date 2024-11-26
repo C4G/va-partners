@@ -722,8 +722,8 @@ export default function Summary({
   // Filter states
   const [selectedGenders, setSelectedGenders] = useState(['Male','Female', 'Other']);
   const [selectedMdvi, setSelectedMdvi] = useState(['Yes', 'No']);
-  const [minAge, setMinAge] = useState(0);
-  const [maxAge, setMaxAge] = useState(100);
+  const [minAge, setMinAge] = useState(null);
+  const [maxAge, setMaxAge] = useState(null);
 
   // Drawer state for filters
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -2129,6 +2129,10 @@ function buildAgeGraph(beneficiaries) {
               user={user}
               summary={hospitals}
               selectedHospitals={selectedHospitalNames}
+              genders={selectedGenders}
+              mdvis={selectedMdvi}
+              minAge={minAge}
+              maxAge={maxAge}
               handleHospitalSelection={handleMultiSelectChange}
               startDate={startDate}
               handleStartDateChange={(e) => setStartDate(e.target.value)}

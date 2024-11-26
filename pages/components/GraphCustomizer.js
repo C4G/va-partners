@@ -239,6 +239,16 @@ const GraphCustomizer = ({
         skipHeader: true,
         origin: -1,
       });
+      // Bold Summary of Services row 4-11
+      const rows = Array.from({ length: 8 }, (_, i) => i + 4);
+      const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode('A'.charCodeAt(0) + i));
+      for (const row of rows) {
+        for (const column of columns) {
+          const cell = column + row;
+          const cellValue = wahd[cell]?.v;
+          if (cellValue != null) wahd[cell].s = { font: { bold: true } };
+        }
+      }
   
       // Change the column width for the reference sheet
       const wscols = [];
