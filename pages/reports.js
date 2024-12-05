@@ -901,7 +901,7 @@ export default function Summary({
   
     // Add data rows
     labels.forEach((label, index) => {
-      const row = [label];
+      const row = [`"${label}"`];
       datasets.forEach(ds => {
         row.push(ds.data[index]);
       });
@@ -910,7 +910,7 @@ export default function Summary({
   
     // Convert to CSV string
     const csvContent = csvRows.map(e => e.join(",")).join("\n");
-  
+
     // Create a Blob from the CSV string
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   
