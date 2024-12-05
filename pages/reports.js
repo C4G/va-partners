@@ -28,8 +28,8 @@ import "ag-grid-community/styles/ag-theme-quartz.css";
 import EditIcon from '@mui/icons-material/Edit';
 import { Drawer, IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import { useDebounce } from "utils/global/useDebounce";
 import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Register Chart.js components
 ChartJS.register(
@@ -75,22 +75,6 @@ const graphOptions = {
   borderWidth: 1,
 };
 
-// Function to compute total sessions
-function computeTotalSessions(countsData) {
-  if (!countsData) return 0;
-  const activityCounts = [
-    countsData["Low_Vision_Evaluation"] || 0,
-    countsData["Comprehensive_Low_Vision_Evaluation"] || 0,
-    countsData["Vision_Enhancement"] || 0,
-    countsData["Training"] || 0,
-    countsData["Mobile_Training"] || 0,
-    countsData["Computer_Training"] || 0,
-    countsData["Orientation_Mobility_Training"] || 0,
-    countsData["Counselling_Education"] || 0,
-  ];
-  const totalSessions = activityCounts.reduce((sum, count) => sum + count, 0);
-  return totalSessions;
-}
 
 // Placeholder for existing graph building functions
 
@@ -218,11 +202,13 @@ function buildDevicesGraph(countsData) {
   return chartData;
 }
 
-// Function to build Recommended Devices Graph
 function buildRecDevicesGraph(countsData) {
-  if (!countsData['Devices_Recommended']) {
-    console.error('Devices recommended data not available in countsData');
-    return null;
+  if (!countsData || !countsData['Devices_Recommended']) {
+    // Return an empty chart data object or null
+    return {
+      labels: [],
+      datasets: [],
+    };
   }
 
   const devicesCounts = countsData['Devices_Recommended'];
@@ -232,7 +218,7 @@ function buildRecDevicesGraph(countsData) {
   const recommendedOpticalCount = devicesCounts['Optical'] || 0;
   const recommendedNonOpticalCount = devicesCounts['NonOptical'] || 0;
 
-  const chartData = {
+  return {
     labels: [
       `Spectacle (${recommendedSpectacleCount})`,
       `Electronic (${recommendedElectronicCount})`,
@@ -252,8 +238,6 @@ function buildRecDevicesGraph(countsData) {
       },
     ],
   };
-
-  return chartData;
 }
 
 
@@ -287,7 +271,6 @@ function buildDevicesBreakdownGraph(countsData, breakdownType) {
 // Function to build Recommended Devices Breakdown Graph
 function buildRecDevicesBreakdownGraph(countsData, breakdownType) {
   if (!countsData['Devices_Recommended']) {
-    console.error('Devices recommended data not available in countsData');
     return null;
   }
 
@@ -311,36 +294,130 @@ function buildRecDevicesBreakdownGraph(countsData, breakdownType) {
   return chartData;
 }
 
+function buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals) {
+  if (!countsData) return { labels: [], datasets: [] };
 
-function buildTotalBeneficiariesGraph(uniqueBeneficiaries) {
-  return {
-    labels: ["Accurate Beneficiaries"],
-    datasets: [
-      {
-        label: "Number of Beneficiaries",
-        data: [uniqueBeneficiaries],
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 1,
-      },
-    ],
-  };
+  if (countsData.Activity_Counts_Per_Hospital && selectedHospitals.length > 1) {
+    // Multiple hospitals selected, build data per hospital
+    const labels = [];
+    const dataPoints = [];
+
+    for (const hospitalId of selectedHospitals) {
+      const hospitalCounts = countsData.Activity_Counts_Per_Hospital[hospitalId];
+      if (!hospitalCounts) continue;
+
+      const totalBeneficiaries = hospitalCounts["Unique_Beneficiaries"] || 0;
+
+      // Get hospital name from hospitals array
+      const hospital = hospitals.find((h) => h.id === parseInt(hospitalId, 10));
+      const hospitalName = hospital ? hospital.name : `Hospital ${hospitalId}`;
+
+      labels.push(hospitalName);
+      dataPoints.push(totalBeneficiaries);
+    }
+
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Number of Beneficiaries",
+          data: dataPoints,
+          backgroundColor: labels.map(() => "rgba(54, 162, 235, 0.2)"),
+          borderColor: labels.map(() => "rgba(54, 162, 235, 1)"),
+          borderWidth: 1,
+        },
+      ],
+    };
+  } else {
+    // Single hospital selected or counts per hospital not provided
+    const totalBeneficiaries = countsData["Unique_Beneficiaries"] || 0;
+
+    return {
+      labels: ["Accurate Beneficiaries"],
+      datasets: [
+        {
+          label: "Number of Beneficiaries",
+          data: [totalBeneficiaries],
+          backgroundColor: "rgba(54, 162, 235, 0.2)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
 }
 
+function buildSessionsGraph(countsData, selectedHospitals, hospitals) {
+  if (!countsData) return null;
 
-function buildSessionsGraph(totalSessions) {
-  return {
-    labels: ["Total Sessions"],
-    datasets: [
-      {
-        label: "Number of Sessions",
-        data: [totalSessions],
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        borderColor: "rgba(75, 192, 192, 1)",
-        borderWidth: 1,
-      },
-    ],
-  };
+  if (countsData.Activity_Counts_Per_Hospital && selectedHospitals.length > 1) {
+    // Multiple hospitals selected, build data per hospital
+    const labels = [];
+    const dataPoints = [];
+
+    for (const hospitalId of selectedHospitals) {
+      const hospitalCounts = countsData.Activity_Counts_Per_Hospital[hospitalId];
+      if (!hospitalCounts) continue;
+
+      const activityCounts = [
+        hospitalCounts["Low_Vision_Evaluation"] || 0,
+        hospitalCounts["Comprehensive_Low_Vision_Evaluation"] || 0,
+        hospitalCounts["Vision_Enhancement"] || 0,
+        hospitalCounts["Training"] || 0,
+        hospitalCounts["Mobile_Training"] || 0,
+        hospitalCounts["Computer_Training"] || 0,
+        hospitalCounts["Orientation_Mobility_Training"] || 0,
+        hospitalCounts["Counselling_Education"] || 0,
+      ];
+      const totalSessions = activityCounts.reduce((sum, count) => sum + count, 0);
+
+      // Get hospital name from hospitals array
+      const hospital = hospitals.find((h) => h.id === parseInt(hospitalId, 10));
+      const hospitalName = hospital ? hospital.name : `Hospital ${hospitalId}`;
+
+      labels.push(hospitalName);
+      dataPoints.push(totalSessions);
+    }
+
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Number of Sessions",
+          data: dataPoints,
+          backgroundColor: labels.map(() => "rgba(75, 192, 192, 0.2)"),
+          borderColor: labels.map(() => "rgba(75, 192, 192, 1)"),
+          borderWidth: 1,
+        },
+      ],
+    };
+  } else {
+    // Single hospital selected or counts per hospital not provided
+    const activityCounts = [
+      countsData["Low_Vision_Evaluation"] || 0,
+      countsData["Comprehensive_Low_Vision_Evaluation"] || 0,
+      countsData["Vision_Enhancement"] || 0,
+      countsData["Training"] || 0,
+      countsData["Mobile_Training"] || 0,
+      countsData["Computer_Training"] || 0,
+      countsData["Orientation_Mobility_Training"] || 0,
+      countsData["Counselling_Education"] || 0,
+    ];
+    const totalSessions = activityCounts.reduce((sum, count) => sum + count, 0);
+
+    return {
+      labels: ["Total Sessions"],
+      datasets: [
+        {
+          label: "Number of Sessions",
+          data: [totalSessions],
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
 }
 
 const visualAcuityOptions = {
@@ -440,74 +517,139 @@ function buildTrainingSubtypesGraph(countsData, selectedType) {
   };
 }
 
-// Function to build Unique Beneficiaries by Activity Graph with Drilldown
-function buildUniqueBeneficiariesGraph(countsData, drilledDown) {
+// Helper functions to assign colors
+function getColor(index) {
+  const colors = [
+    "rgba(255, 99, 132, 0.6)",
+    "rgba(54, 162, 235, 0.6)",
+    "rgba(255, 206, 86, 0.6)",
+    "rgba(75, 192, 192, 0.6)",
+    "rgba(153, 102, 255, 0.6)",
+    "rgba(255, 159, 64, 0.6)",
+    "rgba(119, 221, 119, 0.6)",
+    "rgba(0, 191, 255, 0.6)",
+    "rgba(255, 99, 71, 0.6)",
+    "rgba(128, 0, 128, 0.6)",
+  ];
+  return colors[index % colors.length];
+}
+
+function getBorderColor(index) {
+  const colors = [
+    "rgba(255, 99, 132, 1)",
+    "rgba(54, 162, 235, 1)",
+    "rgba(255, 206, 86, 1)",
+    "rgba(75, 192, 192, 1)",
+    "rgba(153, 102, 255, 1)",
+    "rgba(255, 159, 64, 1)",
+    "rgba(119, 221, 119, 1)",
+    "rgba(0, 191, 255, 1)",
+    "rgba(255, 99, 71, 1)",
+    "rgba(128, 0, 128, 1)",
+  ];
+  return colors[index % colors.length];
+}
+
+function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals, drilledDown) {
   if (!countsData) return null;
 
-  const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"];
   if (!drilledDown) {
-    const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0)
-    return {
-      labels: ["Total Unique Beneficiaries"],
-      datasets: [
-        {
-          label: 'Total',
-          data: [total],
-          backgroundColor: ["rgba(75, 192, 192, 0.6)"],
-          borderColor: ["rgba(75, 192, 192, 1)"],
-          borderWidth: 1,
-        },
-      ],
-    };
+    if (selectedHospitals.length > 1) {
+      // Use Unique_Beneficiaries_By_Activity_Per_Hospital
+      const activityCountsPerHospital = countsData["Unique_Beneficiaries_By_Activity_Per_Hospital"] || {};
+
+      // Sum total unique beneficiaries for each hospital
+      const labels = Object.keys(activityCountsPerHospital); // Hospital names
+      const dataPoints = labels.map((hospital) => {
+        const activities = activityCountsPerHospital[hospital] || {};
+        return Object.values(activities).reduce((sum, count) => sum + count, 0); // Sum of all activities per hospital
+      });
+
+      return {
+        labels: labels, // Hospital names
+        datasets: [
+          {
+            label: "Total Unique Beneficiaries",
+            data: dataPoints,
+            backgroundColor: labels.map((_, index) => getColor(index)),
+            borderColor: labels.map((_, index) => getBorderColor(index)),
+            borderWidth: 1,
+          },
+        ],
+      };
+    } else {
+      // Not drilled down and single hospital selected: Show total unique beneficiaries for that hospital
+      const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"] || {};
+      const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0);
+
+      return {
+        labels: ["Total Unique Beneficiaries"],
+        datasets: [
+          {
+            label: 'Total',
+            data: [total],
+            backgroundColor: ["rgba(75, 192, 192, 0.6)"],
+            borderColor: ["rgba(75, 192, 192, 1)"],
+            borderWidth: 1,
+          },
+        ],
+      };
+    }
   } else {
-    // Provide the detailed breakdown
+    if (selectedHospitals.length > 1) {
+      // Drilled down: Show stacked bar chart of unique beneficiaries by activity per hospital
+      const activityCountsPerHospital = countsData["Unique_Beneficiaries_By_Activity_Per_Hospital"] || {};
 
-    const labels = Object.keys(uniqueBeneficiariesByActivity).map(
-      (key) => `${key} (${uniqueBeneficiariesByActivity[key]})`
-    );
-    const dataPoints = Object.values(uniqueBeneficiariesByActivity);
+      const labels = Object.keys(activityCountsPerHospital); // Hospital names
+      const activities = Object.values(activityCountsPerHospital).reduce((acc, activities) => {
+        Object.keys(activities).forEach((activity) => {
+          if (!acc.includes(activity)) acc.push(activity);
+        });
+        return acc;
+      }, []); // All unique activity names
 
-    const chartData = {
-      labels: labels,
-      datasets: [
-        {
-          label: 'Unique Beneficiaries by Activity',
+      // Build dataset for stacked bar chart
+      const datasets = activities.map((activity, activityIndex) => {
+        const dataPoints = labels.map(
+          (hospital) => activityCountsPerHospital[hospital]?.[activity] || 0
+        );
+
+        return {
+          label: activity,
           data: dataPoints,
-          backgroundColor: [
-            "rgba(255, 99, 132, 0.2)",
-            "rgba(54, 162, 235, 0.2)",
-            "rgba(255, 206, 86, 0.2)",
-            "rgba(75, 192, 192, 0.2)",
-            "rgba(153, 102, 255, 0.2)",
-          ],
-          borderColor: [
-            "rgba(255, 99, 132, 1)",
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 206, 86, 1)",
-            "rgba(75, 192, 192, 1)",
-            "rgba(153, 102, 255, 1)",
-          ],
+          backgroundColor: getColor(activityIndex),
+          borderColor: getBorderColor(activityIndex),
           borderWidth: 1,
-        },
-      ],
-    };
+        };
+      });
 
-    return chartData;
+      return {
+        labels: labels, // Hospital names
+        datasets: datasets,
+      };
+    } else {
+      // Drilled down and single hospital selected: Show unique beneficiaries by activity
+      const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"] || {};
+
+      const labels = Object.keys(uniqueBeneficiariesByActivity);
+      const dataPoints = labels.map((key) => uniqueBeneficiariesByActivity[key]);
+
+      return {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Unique Beneficiaries by Activity',
+            data: dataPoints,
+            backgroundColor: labels.map((_, index) => getColor(index)),
+            borderColor: labels.map((_, index) => getBorderColor(index)),
+            borderWidth: 1,
+          },
+        ],
+      };
+    }
   }
 }
 
-// Function to calculate age from date of birth
-function calculateAge(dateOfBirth) {
-  if (!dateOfBirth) return null;
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-}
 
 // Edit Button Renderer for AgGrid
 const EditButtonRenderer = (props) => {
@@ -679,17 +821,20 @@ export default function Summary({
   );
   const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
 
-  // Debounced date range to prevent excessive API calls
-  const debouncedDateRange = useDebounce({ startDate, endDate }, 500);
-
   // State variables for tabs
   const [masterTabIndex, setMasterTabIndex] = useState(0); // Table/Graph
   const [subTabIndex, setSubTabIndex] = useState(0); // Sub-tabs within Table
   const [selectedHospitals, setSelectedHospitals] = useState([]);
   const [selectedHospitalNames, setSelectedHospitalNames] = useState([]);
 
+  const [isChartLoading, setIsChartLoading] = useState(false);
+
   // State variables for counts and graph data
-  const [countsData, setCountsData] = useState(null);
+  // const [countsData, setCountsData] = useState(null);
+  const [countsData, setCountsData] = useState({
+    genderCounts: { Male: 0, Female: 0, Other: 0 },
+    ageGroupCounts: { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 },
+  });
   const [isTableActive, setIsTableActive] = useState(true);
   const [isGraphActive, setIsGraphActive] = useState(false);
   
@@ -712,7 +857,7 @@ export default function Summary({
 
   // Loading and counts states
   const [isLoading, setIsLoading] = useState(false);
-  const [totalSessions, setTotalSessions] = useState(0);
+  // const [totalSessions, setTotalSessions] = useState(0);
   const [totalBeneficiaries, setTotalBeneficiaries] = useState(0);
   const [totalVisionEnhancements, setTotalVisionEnhancements] = useState(0);
   const [totalTrainings, setTotalTrainings] = useState(0);
@@ -832,7 +977,6 @@ export default function Summary({
     setTotalTrainings(0);
     setTotalComprehensiveEvaluations(0);
     setTotalCounselingRecords(0);
-    setTotalSessions(0);
   }, [selectedHospitals, startDate, endDate, selectedGenders, selectedMdvi, minAge, maxAge]);
 
   // Fetch counts data when graph is active and filters change
@@ -843,8 +987,9 @@ export default function Summary({
 
     const fetchCountsData = async () => {
       try {
-        const startDateUTC = debouncedDateRange.startDate ? moment(debouncedDateRange.startDate).utc().startOf('day').toISOString() : null;
-        const endDateUTC = debouncedDateRange.endDate ? moment(debouncedDateRange.endDate).utc().endOf('day').toISOString() : null;
+        setIsChartLoading(true); // Start loading
+        const startDateUTC = startDate ? moment(startDate).utc().startOf('day').toISOString() : null;
+        const endDateUTC = endDate ? moment(endDate).utc().endOf('day').toISOString() : null;
         const params = {
           hospitalIds: selectedHospitals,
           startDate: startDateUTC,
@@ -868,19 +1013,21 @@ export default function Summary({
       } catch (error) {
         console.error("Error fetching counts data:", error);
         setCountsData(null);
+      }finally {
+        setIsChartLoading(false); // End loading
       }
     };
 
     fetchCountsData();
-  }, [isGraphActive, selectedGenders, selectedMdvi, minAge, maxAge, selectedHospitals, debouncedDateRange.startDate, debouncedDateRange.endDate]);
+  }, [isGraphActive, selectedGenders, selectedMdvi, minAge, maxAge, selectedHospitals, startDate, endDate]);
 
   // Update totals when countsData changes
   useEffect(() => {
     if (countsData) {
-      const totalSessions = computeTotalSessions(countsData);
-      setTotalSessions(totalSessions);
+      // const totalSessions = computeTotalSessions(countsData);
+      // setTotalSessions(totalSessions);
   
-      setTotalBeneficiaries(countsData["Total_Beneficiaries"] || 0);
+      setTotalBeneficiaries(countsData["Unique_Beneficiaries"] || 0);
     }
   }, [countsData]);
 
@@ -893,9 +1040,7 @@ export default function Summary({
       try {
         const offset = (page - 1) * pageSize;
         const startDateUTC = new Date(startDate);
-        startDateUTC.setUTCHours(0, 0, 0, 0);
         const endDateUTC = new Date(endDate);
-        endDateUTC.setUTCHours(23, 59, 59, 999);
         const params = {
           offset,
           limit: pageSize, // Use selected page size here
@@ -1595,9 +1740,6 @@ const counselingEducationColDefs =[
   };
 
   // Generate graph data
-  const genderGraphData = buildGenderGraph(beneficiaries);
-  const ageGraphData = buildAgeGraph(beneficiaries);
-  const recDevicesGraphData = countsData ? buildRecDevicesGraph(countsData) : null;
   const electronicRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Electronic') : null;
   const spectacleRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Spectacle') : null;
   const opticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Optical') : null;
@@ -1638,8 +1780,13 @@ const counselingEducationColDefs =[
   } : null;
 
   // Generate Unique Beneficiaries Graph Data with Drilldown
-  const uniqueBeneficiariesGraphData = buildUniqueBeneficiariesGraph(countsData, uniqueBeneficiariesDrilledDown);
-
+  // const uniqueBeneficiariesGraphData = buildUniqueBeneficiariesGraph(countsData, uniqueBeneficiariesDrilledDown);
+  const uniqueBeneficiariesGraphData = buildUniqueBeneficiariesGraph(
+    countsData,
+    selectedHospitals,
+    hospitals,
+    uniqueBeneficiariesDrilledDown
+  );
 
 // Define options with an onClick handler for Training Types chart
 const trainingTypesOptions = {
@@ -1693,43 +1840,72 @@ const trainingSubtypesOptions = {
     },
   },
 };
-  // Define options with an onClick handler for Unique Beneficiaries chart
+  
   const uniqueBeneficiariesOptions = {
-    ...options,
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+      },
+    },
+    scales: {
+      x: {
+        stacked: uniqueBeneficiariesDrilledDown, // Enable stacking when drilled down
+        title: {
+          display: true,
+          text: 'Hospitals',
+        },
+      },
+      y: {
+        stacked: uniqueBeneficiariesDrilledDown, // Enable stacking when drilled down
+        title: {
+          display: true,
+          text: 'Number of Unique Beneficiaries',
+        },
+        beginAtZero: true,
+      },
+    },
     onClick: (event, elements) => {
-      if (elements.length > 0 && !uniqueBeneficiariesDrilledDown) {
-        const chartElement = elements[0];
-        const index = chartElement.index;
-
-        // Check if the clicked bar is the 'Total Unique Beneficiaries' bar
-        if (uniqueBeneficiariesGraphData.labels[index] === "Total Unique Beneficiaries") {
-          setUniqueBeneficiariesDrilledDown(true);
-        }
+      if (elements.length > 0) {
+        // Toggle drill-down mode
+        setUniqueBeneficiariesDrilledDown(!uniqueBeneficiariesDrilledDown);
       }
     },
   };
 
-  // Back button to return from drilldown
-  const backButton = uniqueBeneficiariesDrilledDown ? (
-    <Button variant="outlined" onClick={() => setUniqueBeneficiariesDrilledDown(false)} style={{ marginBottom: '10px' }}>
-      Back to Total
-    </Button>
-  ) : null;
+// Function to build Gender Graph using countsData
+function buildGenderGraph(countsData) {
+  if (!countsData || !countsData.genderCounts) {
+    return {
+      labels: ["Male", "Female"],
+      datasets: [
+        {
+          label: "Gender Distribution",
+          data: [0, 0, 0],
+          backgroundColor: ["rgba(54, 162, 235, 0.6)", "rgba(255, 99, 132, 0.6)", "rgba(255, 206, 86, 0.6)"],
+          borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 99, 132, 1)", "rgba(255, 206, 86, 1)"],
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
 
-  
-// Function to build Gender Graph
-function buildGenderGraph(beneficiaries) {
-  const maleCount = beneficiaries.filter(user => user.gender && (user.gender.toLowerCase() === 'male' || user.gender.toLowerCase() === 'm')).length;
-
-  const femaleCount = beneficiaries.filter(user => user.gender && (user.gender.toLowerCase() === 'female' || user.gender.toLowerCase() === 'f')).length;
+  const { Male, Female } = countsData.genderCounts;
 
   const chartData = {
     labels: ["Male", "Female"],
     datasets: [
       {
         label: "Gender Distribution",
-        data: [maleCount, femaleCount],
-        ...graphOptions,
+        data: [Male, Female],
+        backgroundColor: ["rgba(54, 162, 235, 0.6)", "rgba(255, 99, 132, 0.6)", "rgba(255, 206, 86, 0.6)"],
+        borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 99, 132, 1)", "rgba(255, 206, 86, 1)"],
+        borderWidth: 1,
       },
     ],
   };
@@ -1737,26 +1913,36 @@ function buildGenderGraph(beneficiaries) {
   return chartData;
 }
 
-// Function to build Age Graph
-function buildAgeGraph(beneficiaries) {
-  const ageGroups = {
-    "0-18": 0,
-    "19-35": 0,
-    "36-50": 0,
-    "51-65": 0,
-    "66+": 0
-  };
+// Function to build Age Graph using countsData
+function buildAgeGraph(countsData) {
+  if (!countsData || !countsData.ageGroupCounts) {
+    return {
+      labels: ["0-18", "19-35", "36-50", "51-65", "66+"],
+      datasets: [
+        {
+          label: "Age Distribution",
+          data: [0, 0, 0, 0, 0],
+          backgroundColor: [
+            "rgba(75, 192, 192, 0.6)",
+            "rgba(153, 102, 255, 0.6)",
+            "rgba(255, 159, 64, 0.6)",
+            "rgba(255, 206, 86, 0.6)",
+            "rgba(54, 162, 235, 0.6)"
+          ],
+          borderColor: [
+            "rgba(75, 192, 192, 1)",
+            "rgba(153, 102, 255, 1)",
+            "rgba(255, 159, 64, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(54, 162, 235, 1)"
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
 
-  beneficiaries.forEach(user => {
-    const age = calculateAge(user.dateOfBirth);
-    if (age !== null) {
-      if (age <= 18) ageGroups["0-18"]++;
-      else if (age <= 35) ageGroups["19-35"]++;
-      else if (age <= 50) ageGroups["36-50"]++;
-      else if (age <= 65) ageGroups["51-65"]++;
-      else ageGroups["66+"]++;
-    }
-  });
+  const ageGroups = countsData.ageGroupCounts;
 
   const chartData = {
     labels: Object.keys(ageGroups),
@@ -1764,7 +1950,21 @@ function buildAgeGraph(beneficiaries) {
       {
         label: "Age Distribution",
         data: Object.values(ageGroups),
-        ...graphOptions,
+        backgroundColor: [
+          "rgba(75, 192, 192, 0.6)",
+          "rgba(153, 102, 255, 0.6)",
+          "rgba(255, 159, 64, 0.6)",
+          "rgba(255, 206, 86, 0.6)",
+          "rgba(54, 162, 235, 0.6)"
+        ],
+        borderColor: [
+          "rgba(75, 192, 192, 1)",
+          "rgba(153, 102, 255, 1)",
+          "rgba(255, 159, 64, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(54, 162, 235, 1)"
+        ],
+        borderWidth: 1,
       },
     ],
   };
@@ -1774,6 +1974,20 @@ function buildAgeGraph(beneficiaries) {
 
   // Handle graph tabs
   const renderGraph = () => {
+    if (isChartLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <CircularProgress />
+          <p>Loading charts...</p>
+        </div>
+      );
+    }
+
+    // If no data yet (and not loading), show a message
+    if (!countsData) {
+      return <p>Please select filters to view charts.</p>;
+    }
+
     if (selectedHospitals.length === 0) {
       return <p><br></br>Please select hospitals to view the graphs.</p>;
     }
@@ -1781,79 +1995,106 @@ function buildAgeGraph(beneficiaries) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-            return (
-              <div>
-                <Bar data={buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries ?? 0)} />
-                <Button
-                  variant="outlined"
-                  onClick={() => downloadChartData(buildTotalBeneficiariesGraph(countsData?.Unique_Beneficiaries), 'Total_Beneficiaries')}
-                  style={{ marginTop: '10px' }}
-                >
-                  Download Data
-                </Button>
-              </div>
-            );
+              return countsData ? (
+                <div>
+                  <Bar data={buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals)} />
+                  <Button
+                    variant="outlined"
+                    onClick={() => downloadChartData(buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals), 'Total_Beneficiaries')}
+                    style={{ marginTop: '10px' }}
+                  >
+                    Download Data
+                  </Button>
+                </div>
+              ) : (
+                <p>Loading...</p>
+              );
             case 1:
-            return countsData ? (
-              <div>
-                {backButton}
-                <Bar 
-                  data={uniqueBeneficiariesGraphData} 
-                  options={uniqueBeneficiariesOptions} 
-                />
-                <Button
-                  variant="outlined"
-                  onClick={() => downloadChartData(uniqueBeneficiariesGraphData, 'Unique_Beneficiaries')}
-                  style={{ marginTop: '10px' }}
-                >
-                  Download Data
-                </Button>
-              </div>
-            ) : (
-              <p>Loading...</p>
-            );
+              return countsData ? (
+                <div>
+                  {uniqueBeneficiariesDrilledDown && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => setUniqueBeneficiariesDrilledDown(false)}
+                      style={{ marginBottom: '10px' }}
+                    >
+                      Back to Total
+                    </Button>
+                  )}
+                  <Bar
+                    data={uniqueBeneficiariesGraphData}
+                    options={uniqueBeneficiariesOptions}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      downloadChartData(
+                        uniqueBeneficiariesGraphData,
+                        'Unique_Beneficiaries'
+                      )
+                    }
+                    style={{ marginTop: '10px' }}
+                  >
+                    Download Data
+                  </Button>
+                </div>
+              ) : (
+                <p>Loading...</p>
+              );
+    
           case 2:
-            return (
-              <div>
-                <Bar data={buildSessionsGraph(totalSessions)} />
-                <Button
-                  variant="outlined"
-                  onClick={() => downloadChartData(buildSessionsGraph(totalSessions), 'Total_Sessions')}
-                  style={{ marginTop: '10px' }}
-                >
-                  Download Data
-                </Button>
-              </div>
-            );
-          case 3:
-            return (
-              <div>
-                <Bar data={genderGraphData} options={options} />
-                <Button
-                  variant="outlined"
-                  onClick={() => downloadChartData(genderGraphData, 'Gender_Distribution')}
-                  style={{ marginTop: '10px' }}
-                >
-                  Download Data
-                </Button>
-              </div>
-            );
-          case 4:
-            return (
-              <div>
-                <Bar data={ageGraphData} options={options} />
-                <Button
-                  variant="outlined"
-                  onClick={() => downloadChartData(ageGraphData, 'Age_Distribution')}
-                  style={{ marginTop: '10px' }}
-                >
-                  Download Data
-                </Button>
-              </div>
-            );
-          default:
-            return null;
+  return countsData ? (
+    <div>
+      <Bar data={buildSessionsGraph(countsData, selectedHospitals, hospitals)} />
+      <Button
+        variant="outlined"
+        onClick={() =>
+          downloadChartData(
+            buildSessionsGraph(countsData, selectedHospitals, hospitals),
+            'Total_Sessions'
+          )
         }
+        style={{ marginTop: '10px' }}
+      >
+        Download Data
+      </Button>
+    </div>
+  ) : (
+    <p>Loading...</p>
+  );
+        case 3:
+          return countsData && countsData.genderCounts ? (
+            <div>
+              <Bar data={buildGenderGraph(countsData)} options={options} />
+              <Button
+                variant="outlined"
+                onClick={() => downloadChartData(buildGenderGraph(countsData), 'Gender_Distribution')}
+                style={{ marginTop: '10px' }}
+              >
+                Download Data
+              </Button>
+            </div>
+          ) : (
+            <p>Loading...</p>
+          );
+        case 4:
+          return countsData && countsData.ageGroupCounts ? (
+            <div>
+              <Bar data={buildAgeGraph(countsData)} options={options} />
+              <Button
+                variant="outlined"
+                onClick={() => downloadChartData(buildAgeGraph(countsData), 'Age_Distribution')}
+                style={{ marginTop: '10px' }}
+              >
+                Download Data
+              </Button>
+            </div>
+          ) : (
+            <p>Loading...</p>
+          );
+        default:
+          return null;
+      }
       case 1:
         switch (activeActivitiesGraphTab) {
           case 0: {
@@ -2031,15 +2272,21 @@ function buildAgeGraph(beneficiaries) {
           case 0:
             return (
               <div>
-                <Bar data={recDevicesGraphData} options={options} />
-                <Button
-                  variant="outlined"
-                  onClick={() => downloadChartData(recDevicesGraphData, 'Recommended_Devices')}
-                  style={{ marginTop: '10px' }}
-                >
-                  Download Data
-                </Button>
-              </div>
+              {(!countsData || !countsData['Devices_Recommended']) ? (
+                <p>Loading recommended devices data...</p>
+              ) : (
+                <div>
+                  <Bar data={buildRecDevicesGraph(countsData)} />
+                  <Button
+                    variant="outlined"
+                    onClick={() => downloadChartData(buildRecDevicesGraph(countsData), 'Recommended_Devices')}
+                    style={{ marginTop: '10px' }}
+                  >
+                    Download Data
+                  </Button>
+                </div>
+              )}
+            </div>
             );
           case 1:
             return (
@@ -2129,15 +2376,9 @@ function buildAgeGraph(beneficiaries) {
               user={user}
               summary={hospitals}
               selectedHospitals={selectedHospitalNames}
-              genders={selectedGenders}
-              mdvis={selectedMdvi}
-              minAge={minAge}
-              maxAge={maxAge}
               handleHospitalSelection={handleMultiSelectChange}
               startDate={startDate}
-              handleStartDateChange={(e) => setStartDate(e.target.value)}
               endDate={endDate}
-              handleEndDateChange={(e) => setEndDate(e.target.value)}
               handleAllSelect={handleAllSelect}
               setStartDate={setStartDate}
               setEndDate={setEndDate}

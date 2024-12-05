@@ -6,7 +6,6 @@ import {
   Select,
   MenuItem,
   Checkbox,
-  TextField,
   Box,
   ListItemText,
   Grid,
@@ -28,6 +27,7 @@ import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-para
 import { buildSummarySheet } from '@/utils/ui/build-summary-sheet';
 import { buildCashGrantSummaryOfFinances } from '@/utils/ui/build-cash-grant-summary-of-finances';
 import { buildNilCashGrantSummaryOfFinances } from '@/utils/ui/build-nil-cash-grant-summary-of-finances';
+import TextFieldWrapper from './TextFieldWrapper';
 
 
 const refData = `S.no\tPrograms\tTypes\tDescription
@@ -70,9 +70,7 @@ const GraphCustomizer = ({
   selectedHospitals = [], // Add default value to ensure it's an array
   handleHospitalSelection,
   startDate,
-  handleStartDateChange,
   endDate,
-  handleEndDateChange,
   setStartDate,
   setEndDate,
   minAge,
@@ -118,9 +116,7 @@ const GraphCustomizer = ({
     try {
       // Adjust the start and end dates
       const adjustedStartDate = new Date(startDate);
-      adjustedStartDate.setUTCHours(0, 0, 0, 0);
       const adjustedEndDate = new Date(endDate);
-      adjustedEndDate.setUTCHours(23, 59, 59, 999);
 
       const hospitalIds = summary
         .filter((hospital) => selectedHospitals.includes(hospital.name))
@@ -415,29 +411,19 @@ const GraphCustomizer = ({
 
         {/* Start Date */}
         <Grid item xs={12} sm={6} md={2}>
-          <TextField
+          <TextFieldWrapper
             label="Start Date"
-            type="date"
             value={moment(startDate).format('YYYY-MM-DD')}
-            onChange={handleStartDateChange}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            fullWidth
+            setDate={setStartDate}
           />
         </Grid>
 
         {/* End Date */}
         <Grid item xs={12} sm={6} md={2}>
-          <TextField
+          <TextFieldWrapper
             label="End Date"
-            type="date"
             value={moment(endDate).format('YYYY-MM-DD')}
-            onChange={handleEndDateChange}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            fullWidth
+            setDate={setEndDate}
           />
         </Grid>
 
