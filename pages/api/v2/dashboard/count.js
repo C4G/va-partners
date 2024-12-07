@@ -394,27 +394,32 @@ async function readData(req, res) {
     formattedCounts["Devices_Dispensed_Details"] = devicesDispensedDetails;
     formattedCounts["Devices_Recommended_Details"] = devicesRecommendedDetails;
 
-    // Demographics: from selectedBeneficiaries
-    const genderCountsFormatted = { Male: 0, Female: 0, Other: 0 };
-    const ageGroups = { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 };
-    for (const b of selectedBeneficiaries) {
-      const g = b.gender?.toLowerCase();
-      if (g === 'male' || g === 'm') genderCountsFormatted.Male++;
-      else if (g === 'female' || g === 'f') genderCountsFormatted.Female++;
-      else genderCountsFormatted.Other++;
+    let filteredBeneficiaries = selectedBeneficiaries.filter(b => 
+  uniqueBenefIds.has(`${b.mrn}-${b.hospitalId}`)
+);
 
-      const age = calculateAge(b.dateOfBirth);
-      if (age !== null) {
-        if (age <= 18) ageGroups["0-18"]++;
-        else if (age <= 35) ageGroups["19-35"]++;
-        else if (age <= 50) ageGroups["36-50"]++;
-        else if (age <= 65) ageGroups["51-65"]++;
-        else ageGroups["66+"]++;
-      }
-    }
+// Now compute gender and age from filteredBeneficiaries, not selectedBeneficiaries.
+const genderCountsFormatted = { Male: 0, Female: 0, Other: 0 };
+const ageGroups = { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 };
 
-    formattedCounts["genderCounts"] = genderCountsFormatted;
-    formattedCounts["ageGroupCounts"] = ageGroups;
+for (const b of filteredBeneficiaries) {
+  const g = b.gender?.toLowerCase();
+  if (g === 'male' || g === 'm') genderCountsFormatted.Male++;
+  else if (g === 'female' || g === 'f') genderCountsFormatted.Female++;
+  else genderCountsFormatted.Other++;
+
+  const age = calculateAge(b.dateOfBirth);
+  if (age !== null) {
+    if (age <= 18) ageGroups["0-18"]++;
+    else if (age <= 35) ageGroups["19-35"]++;
+    else if (age <= 50) ageGroups["36-50"]++;
+    else if (age <= 65) ageGroups["51-65"]++;
+    else ageGroups["66+"]++;
+  }
+}
+
+formattedCounts["genderCounts"] = genderCountsFormatted;
+formattedCounts["ageGroupCounts"] = ageGroups;
 
     // Visual Acuity
     const distanceBinocularCounts = await prisma.Comprehensive_Low_Vision_Evaluation.groupBy({
