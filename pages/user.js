@@ -1,4 +1,3 @@
-// pages/user.js
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { getSession } from "next-auth/react";
@@ -17,11 +16,8 @@ import { readBeneficiaryMirror } from "./api/beneficiaryMirror";
 
 function UserPage(props) {
   const router = useRouter();
-
-  // State variable for form fields
   const [formData, setFormData] = useState(props.user);
   const [editableField, setEditableField] = useState("");
-
   const [consentName, setConsentName] = useState("");
 
   const hospitalOptions = [];
@@ -36,7 +32,6 @@ function UserPage(props) {
 
   const grantConsent = async () => {
     if (consentName === props.user.beneficiaryName) {
-      // Update user data in the database
       const response = await fetch(`/api/beneficiary`, {
         method: "PATCH",
         headers: {
@@ -45,7 +40,6 @@ function UserPage(props) {
         body: JSON.stringify({ mrn: props.user.mrn, consent: "Yes" }),
       });
 
-      // Handle response from the API
       if (response.ok) {
         setEditableField("");
         setConsentName("");
@@ -54,15 +48,12 @@ function UserPage(props) {
         alert("An error occurred while saving user data. Please try again.");
       }
     } else {
-      alert(
-        "Please ensure that you have entered the beneficiary's name correctly. Try again!"
-      );
+      alert("Please ensure that you have entered the beneficiary's name correctly. Try again!");
       setConsentName("");
     }
   };
 
   const revokeConsent = async () => {
-    // Update user data in the database
     const response = await fetch(`/api/beneficiary`, {
       method: "PATCH",
       headers: {
@@ -71,7 +62,6 @@ function UserPage(props) {
       body: JSON.stringify({ mrn: props.user.mrn, consent: "No" }),
     });
 
-    // Handle response from the API
     if (response.ok) {
       setEditableField("");
       setFormData((formData) => ({ ...formData, consent: "No" }));
@@ -82,7 +72,6 @@ function UserPage(props) {
   };
 
   const deleteBeneficiary = async () => {
-    // Update user data in the database
     const response = await fetch(`/api/beneficiary`, {
       method: "DELETE",
       headers: {
@@ -90,7 +79,7 @@ function UserPage(props) {
       },
       body: JSON.stringify({ mrn: props.user.mrn, hospitalId: props.user.hospitalId }),
     });
-    // Handle response from the API
+
     if (response.ok) {
       router.push("/beneficiary");
     } else {
@@ -98,7 +87,6 @@ function UserPage(props) {
     }
   };
 
-  // Handle input changes
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
@@ -106,27 +94,24 @@ function UserPage(props) {
     });
   };
 
-  // Handle select changes
   const handleSelectChange = (e) => {
-    console.log("Entered", e);
     let sel = e.target;
     setFormData({
       ...formData,
       [sel.name]: sel.selectedOptions[0].label.split("(")[0],
     });
-    if (sel.name === "hospitalName")
+    if (sel.name === "hospitalName") {
       setFormData((formData) => ({
         ...formData,
         hospitalId: sel.selectedOptions[0].value,
       }));
+    }
   };
 
-  // Handle edit icon click
   const handleEditClick = (field) => {
     setEditableField(field);
   };
 
-  // Submit the edited data
   const handleSubmit = async (e, field) => {
     e.preventDefault();
     let fieldValue = formData[field];
@@ -135,7 +120,6 @@ function UserPage(props) {
       field = "hospitalId";
     }
 
-    // Update user data in the database
     const response = await fetch(`/api/beneficiary`, {
       method: "PATCH",
       headers: {
@@ -144,7 +128,6 @@ function UserPage(props) {
       body: JSON.stringify({ mrn: props.user.mrn, [field]: fieldValue }),
     });
 
-    // Handle response from the API
     if (response.ok) {
       setEditableField("");
     } else {
@@ -184,7 +167,6 @@ function UserPage(props) {
           <div className="modal" id="indicateConsent">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
-                {/* <!-- Modal Header --> */}
                 <div className="modal-header">
                   <h4 className="modal-title">Consent Form</h4>
                   <button
@@ -194,8 +176,6 @@ function UserPage(props) {
                     id="close-indicate"
                   ></button>
                 </div>
-
-                {/* <!-- Modal body --> */}
                 <div className="modal-body">
                   I hereby grant Vision-Aid the authority to use my photos,
                   videos or other media in their public campaigns.
@@ -212,8 +192,6 @@ function UserPage(props) {
                     />
                   </div>
                 </div>
-
-                {/* <!-- Modal footer --> */}
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -259,7 +237,6 @@ function UserPage(props) {
           <div className="modal" id="revokeConsent">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
-                {/* <!-- Modal Header --> */}
                 <div className="modal-header">
                   <h4 className="modal-title">Revoke Consent?</h4>
                   <button
@@ -269,13 +246,9 @@ function UserPage(props) {
                     id="close-revoke"
                   ></button>
                 </div>
-
-                {/* <!-- Modal body --> */}
                 <div className="modal-body">
                   Please confirm that you wish to revoke consent.
                 </div>
-
-                {/* <!-- Modal footer --> */}
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -313,7 +286,6 @@ function UserPage(props) {
           <div className="modal" id="grantConsent">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
-                {/* <!-- Modal Header --> */}
                 <div className="modal-header">
                   <h4 className="modal-title">Grant Consent?</h4>
                   <button
@@ -323,14 +295,10 @@ function UserPage(props) {
                     id="close-grant"
                   ></button>
                 </div>
-
-                {/* <!-- Modal body --> */}
                 <div className="modal-body">
                   <div>
                     Type the beneficiary&apos;s full name to grant consent to
-                    Vision-Aid. Please do so only if you wish to give Vision-Aid
-                    the authority to use your photos, videos or other media in
-                    their public campaigns.
+                    Vision-Aid.
                   </div>
                   <br /> <br />
                   <input
@@ -339,8 +307,6 @@ function UserPage(props) {
                     onChange={(e) => setConsentName(e.target.value)}
                   />
                 </div>
-
-                {/* <!-- Modal footer --> */}
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -399,14 +365,10 @@ function UserPage(props) {
     return canEdit && editableField === field ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form
-            onSubmit={(e) => handleSubmit(e, field)}
-            className="d-inline ms-2"
-          >
+          <form onSubmit={(e) => handleSubmit(e, field)} className="d-inline ms-2">
             <div className="row">
               <div className="col-md-9 nopadding">
                 <select
-                  // className="form-select"
                   className="profile-card-select"
                   name={field}
                   id={field}
@@ -416,13 +378,9 @@ function UserPage(props) {
                   {options}
                 </select>
               </div>
-              {/* <div className="divider" /> */}
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding">
                   <Check2 />
                 </button>
               </div>
@@ -430,19 +388,21 @@ function UserPage(props) {
           </form>
         </div>
       </div>
-    ) : type == "hidden" ? (
+    ) : type === "hidden" ? (
       <div></div>
     ) : (
       <div className="text-align-left">
         <div className="flex-container">
           {formData[field]}
-          <button
-            type="button"
-            className="btn btn-link btn-sm text-primary ms-2"
-            onClick={() => handleEditClick(field)}
-          >
-            {canEdit && <Pencil />}
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              className="btn btn-link btn-sm text-primary ms-2"
+              onClick={() => handleEditClick(field)}
+            >
+              <Pencil />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -452,10 +412,7 @@ function UserPage(props) {
     return canEdit && editableField === field ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form
-            onSubmit={(e) => handleSubmit(e, field)}
-            className="d-inline ms-2"
-          >
+          <form onSubmit={(e) => handleSubmit(e, field)} className="d-inline ms-2">
             <div className="row">
               <div className="col-md-9 nopadding">
                 <input
@@ -466,13 +423,9 @@ function UserPage(props) {
                   onChange={handleInputChange}
                 />
               </div>
-              {/* <div className="divider" /> */}
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding">
                   <Check2 />
                 </button>
               </div>
@@ -480,21 +433,21 @@ function UserPage(props) {
           </form>
         </div>
       </div>
-    ) : type == "hidden" ? (
+    ) : type === "hidden" ? (
       <div></div>
     ) : (
       <div className="text-align-left">
         <div className="flex-container">
           <div>{formData[field]}</div>
-          <div className="text-align-right">
+          {canEdit && (
             <button
               type="button"
               className="btn btn-link btn-sm text-primary ms-2"
               onClick={() => handleEditClick(field)}
             >
-              {canEdit && <Pencil />}
+              <Pencil />
             </button>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -504,10 +457,7 @@ function UserPage(props) {
     return editableField === "dateOfBirth" ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form
-            onSubmit={(e) => handleSubmit(e, "dateOfBirth")}
-            // className="d-inline ms-2"
-          >
+          <form onSubmit={(e) => handleSubmit(e, "dateOfBirth")}>
             <div className="row nopadding">
               <div className="col-md-9 nopadding">
                 <input
@@ -518,17 +468,12 @@ function UserPage(props) {
                   onChange={handleInputChange}
                 />
               </div>
-              {/* <div className="divider" /> */}
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding text-align-right"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
                   <Check2 />
                 </button>
               </div>
-              {/* </div> */}
             </div>
           </form>
         </div>
@@ -542,7 +487,7 @@ function UserPage(props) {
             className="btn btn-link btn-sm text-primary ms-2 text-align-right"
             onClick={() => handleEditClick("dateOfBirth")}
           >
-            {<Pencil />}
+            <Pencil />
           </button>
         </div>
       </div>
@@ -553,27 +498,19 @@ function UserPage(props) {
     return editableField === "extraInformation" ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form
-            onSubmit={(e) => handleSubmit(e, "extraInformation")}
-            className="d-inline ms-2"
-          >
+          <form onSubmit={(e) => handleSubmit(e, "extraInformation")} className="d-inline ms-2">
             <div className="row">
               <div className="col-md-9 nopadding">
                 <textarea
-                  type="text"
                   className="profile-card-input"
                   name="extraInformation"
                   value={formData["extraInformation"]}
                   onChange={handleInputChange}
                 />
               </div>
-              {/* <div className="divider" /> */}
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding text-align-right"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
                   <Check2 />
                 </button>
               </div>
@@ -584,18 +521,34 @@ function UserPage(props) {
     ) : (
       <div className="text-align-left">
         <div className="flex-container">
-          {formData["extraInformation"].toString().split(":")[1].split('"')[1]}:{" "}
-          {formData["extraInformation"].toString().split(":")[2].split('"')[1]}
+          {formData["extraInformation"]}
           <button
             type="button"
             className="btn btn-link btn-sm text-primary ms-2"
             onClick={() => handleEditClick("extraInformation")}
           >
-            {<Pencil />}
+            <Pencil />
           </button>
         </div>
       </div>
     );
+  };
+
+  // Construct the back URL from query parameters passed from report.js
+  const queryParams = new URLSearchParams({
+    selectedHospitals: props.query.selectedHospitals || '[]',
+    startDate: props.query.startDate || '',
+    endDate: props.query.endDate || '',
+    selectedGenders: props.query.selectedGenders || '[]',
+    selectedMdvi: props.query.selectedMdvi || '[]',
+    minAge: props.query.minAge || '',
+    maxAge: props.query.maxAge || '',
+    subTabIndex: props.query.subTabIndex || '0',
+    masterTabIndex: props.query.masterTabIndex || '0',
+  });
+
+  const handleBack = () => {
+    router.push('/reports?' + queryParams.toString());
   };
 
   return (
@@ -604,7 +557,11 @@ function UserPage(props) {
       <div className="container p-4 mb-3">
         <div className="d-flex">
           <h2 className="nopadding">Beneficiary Details</h2>
-          <div className="left-auto-margin flex-container">
+          <div className="ms-auto">
+            {/* Back button to return to report page with filters */}
+            <button className="btn btn-secondary me-3" onClick={handleBack}>
+              Back
+            </button>
             <button
               className="btn btn-danger"
               data-bs-toggle="modal"
@@ -616,7 +573,6 @@ function UserPage(props) {
           <div className="modal" id="deleteBeneficiary">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
-                {/* <!-- Modal Header --> */}
                 <div className="modal-header">
                   <h4 className="modal-title">Delete Beneficiary</h4>
                   <button
@@ -626,13 +582,9 @@ function UserPage(props) {
                     id="close-revoke"
                   ></button>
                 </div>
-
-                {/* <!-- Modal body --> */}
                 <div className="modal-body">
                   Please confirm that you wish to delete this beneficiary permanently. This will remove all training data associated with this beneficiary.
                 </div>
-
-                {/* <!-- Modal footer --> */}
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -647,6 +599,7 @@ function UserPage(props) {
             </div>
           </div>
         </div>
+        
         <hr className="horizontal-line" />
         <div className="row">
           <div className="col-md-5">
@@ -658,31 +611,23 @@ function UserPage(props) {
               hospitalName={renderSelectField("hospitalName", "text", true)}
               education={renderField(
                 "education",
-                props.beneficiaryMirror.educationRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.educationRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               districts={renderField(
                 "districts",
-                props.beneficiaryMirror.occupationRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.occupationRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               state={renderField(
                 "state",
-                props.beneficiaryMirror.stateRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.stateRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               beneficiaryName={renderField("beneficiaryName", "text", true)}
               occupation={renderField(
                 "occupation",
-                props.beneficiaryMirror.occupationRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.occupationRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               extraInformation={renderExtraInformation()}
@@ -690,7 +635,6 @@ function UserPage(props) {
               mdvi={renderSelectField("mDVI", "text", true)}
             />
           </div>
-          {/* <div className="col-md-1"></div> */}
           <div className="col-md-7">
             <BeneficiaryServicesTable user={props.user} />
           </div>
@@ -698,9 +642,7 @@ function UserPage(props) {
         <br />
         <div className="row">
           <div className="col-md-5">
-            <ConsentForm
-              consent={renderConsentField("consent", "text", true)}
-            />
+            <ConsentForm consent={renderConsentField("consent", "text", true)} />
           </div>
         </div>
       </div>
@@ -711,7 +653,6 @@ function UserPage(props) {
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
   if (session == null) {
-    console.log("session is null");
     return {
       redirect: {
         destination: "/",
@@ -729,7 +670,6 @@ export async function getServerSideProps(ctx) {
   }
 
   const beneficiaryMirror = await readBeneficiaryMirror(user.hospital?.name);
-
   user.hospitalName = user.hospital?.name;
 
   return {
@@ -741,8 +681,10 @@ export async function getServerSideProps(ctx) {
       counsellingType: await getCounsellingType(),
       trainingSubType: await getTrainingSubTypes(),
       hospitals: await findAllHospital(),
+      query: ctx.query,
     },
   };
 }
 
 export default UserPage;
+

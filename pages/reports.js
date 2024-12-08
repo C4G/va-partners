@@ -10,6 +10,7 @@ import {
   Filler,
 } from 'chart.js';
 import { readUser } from "./api/user";
+import { useRouter } from 'next/router';
 import { getSession } from "next-auth/react";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bar } from "react-chartjs-2";
@@ -651,25 +652,6 @@ function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals,
 }
 
 
-// Edit Button Renderer for AgGrid
-const EditButtonRenderer = (props) => {
-  
-  const mrn = props.data.mrn;
-  const hospitalId = props.data.hospitalId;
-
-  return (
-    <IconButton
-      color="primary"
-      onClick={() => {
-        const url = `/user?mrn=${encodeURIComponent(mrn)}&hospitalId=${encodeURIComponent(hospitalId)}`;
-        window.location.href = url;
-      }}
-    >
-      <EditIcon />
-    </IconButton>
-  );
-};
-
 // Fetch data server-side
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
@@ -822,6 +804,89 @@ export default function Summary({
   );
   const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
 
+  const router = useRouter();
+  const {
+    selectedHospitals: qSelectedHospitals,
+    startDate: qStartDate,
+    endDate: qEndDate,
+    selectedGenders: qSelectedGenders,
+    selectedMdvi: qSelectedMdvi,
+    minAge: qMinAge,
+    maxAge: qMaxAge,
+    subTabIndex: qSubTabIndex,
+    masterTabIndex: qMasterTabIndex
+  } = router.query;
+
+
+    // Parse query parameters
+  useEffect(() => {
+    if (qSelectedHospitals) {
+      try {
+        const parsedHospitals = JSON.parse(qSelectedHospitals);
+        setSelectedHospitals(parsedHospitals);
+        console.log("Parsed selectedHospitals:", parsedHospitals);
+      } catch (error) {
+        console.error("Error parsing selectedHospitals from query:", error);
+        setSelectedHospitals([]);
+      }
+    }
+
+    if (qStartDate) {
+      setStartDate(qStartDate);
+      console.log("Start Date:", qStartDate);
+    }
+    if (qEndDate) {
+      setEndDate(qEndDate);
+      console.log("End Date:", qEndDate);
+    }
+    if (qSelectedGenders) {
+      try {
+        const parsedGenders = JSON.parse(qSelectedGenders);
+        setSelectedGenders(parsedGenders);
+        console.log("Parsed selectedGenders:", parsedGenders);
+      } catch (error) {
+        console.error("Error parsing selectedGenders from query:", error);
+        setSelectedGenders(['Male','Female', 'Other']);
+      }
+    }
+    if (qSelectedMdvi) {
+      try {
+        const parsedMdvi = JSON.parse(qSelectedMdvi);
+        setSelectedMdvi(parsedMdvi);
+        console.log("Parsed selectedMdvi:", parsedMdvi);
+      } catch (error) {
+        console.error("Error parsing selectedMdvi from query:", error);
+        setSelectedMdvi(['Yes', 'No']);
+      }
+    }
+    if (qMinAge) {
+      setMinAge(Number(qMinAge));
+      console.log("Min Age:", Number(qMinAge));
+    }
+    if (qMaxAge) {
+      setMaxAge(Number(qMaxAge));
+      console.log("Max Age:", Number(qMaxAge));
+    }
+    if (qSubTabIndex) {
+      setSubTabIndex(Number(qSubTabIndex));
+      console.log("Sub Tab Index:", Number(qSubTabIndex));
+    }
+    if (qMasterTabIndex) {
+      setMasterTabIndex(Number(qMasterTabIndex));
+      console.log("Master Tab Index:", Number(qMasterTabIndex));
+    }
+  }, [
+    qSelectedHospitals,
+    qStartDate,
+    qEndDate,
+    qSelectedGenders,
+    qSelectedMdvi,
+    qMinAge,
+    qMaxAge,
+    qSubTabIndex,
+    qMasterTabIndex
+  ]);
+
   // State variables for tabs
   const [masterTabIndex, setMasterTabIndex] = useState(0); // Table/Graph
   const [subTabIndex, setSubTabIndex] = useState(0); // Sub-tabs within Table
@@ -888,6 +953,35 @@ export default function Summary({
     type: null, // Holds the currently selected Training type for drill-down
   });
 
+  const EditButtonRenderer = (props) => {
+    const { mrn, hospitalId } = props.data;
+  
+    const queryParams = new URLSearchParams({
+      selectedHospitals: JSON.stringify(selectedHospitals || []),
+      startDate: startDate || '',
+      endDate: endDate || '',
+      selectedGenders: JSON.stringify(selectedGenders || []),
+      selectedMdvi: JSON.stringify(selectedMdvi || []),
+      minAge: minAge || '',
+      maxAge: maxAge || '',
+      subTabIndex: subTabIndex || '0',
+      masterTabIndex: masterTabIndex || '0',
+    });
+
+    return (
+      <IconButton
+        color="primary"
+        onClick={() => {
+          const url = `/user?mrn=${encodeURIComponent(mrn)}&hospitalId=${encodeURIComponent(hospitalId)}&${queryParams.toString()}`;
+          window.location.href = url;
+        }}
+      >
+        <EditIcon />
+      </IconButton>
+    );
+  };
+  
+
   const downloadChartData = (chartData, filename) => {
     if (!chartData || !chartData.labels || !chartData.datasets) {
       console.error("Invalid chart data");
@@ -902,7 +996,7 @@ export default function Summary({
   
     // Add data rows
     labels.forEach((label, index) => {
-      const row = [`"${label}"`];
+      const row = [label];
       datasets.forEach(ds => {
         row.push(ds.data[index]);
       });
@@ -911,7 +1005,7 @@ export default function Summary({
   
     // Convert to CSV string
     const csvContent = csvRows.map(e => e.join(",")).join("\n");
-
+  
     // Create a Blob from the CSV string
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   
@@ -1022,6 +1116,17 @@ export default function Summary({
     fetchCountsData();
   }, [isGraphActive, selectedGenders, selectedMdvi, minAge, maxAge, selectedHospitals, startDate, endDate]);
 
+
+  // Once hospitals are loaded and selectedHospitals are set, derive selectedHospitalNames
+useEffect(() => {
+  if (hospitals && hospitals.length > 0 && selectedHospitals && selectedHospitals.length > 0) {
+    const names = hospitals
+      .filter((h) => selectedHospitals.includes(h.id))
+      .map((h) => h.name);
+    setSelectedHospitalNames(names);
+  }
+}, [hospitals, selectedHospitals]);
+
   // Update totals when countsData changes
   useEffect(() => {
     if (countsData) {
@@ -1035,7 +1140,7 @@ export default function Summary({
   // Fetch table data when table is active and filters or pagination change
   useEffect(() => {
     if (!isTableActive || selectedHospitals.length === 0) return;
-
+  
     const fetchData = async (type, page, setData, setTotal) => {
       setIsLoading(true);
       try {
@@ -1044,7 +1149,7 @@ export default function Summary({
         const endDateUTC = new Date(endDate);
         const params = {
           offset,
-          limit: pageSize, // Use selected page size here
+          limit: pageSize,
           startDate: startDateUTC.toISOString(),
           endDate: endDateUTC.toISOString(),
           hospitalIds: selectedHospitals,
@@ -1052,17 +1157,38 @@ export default function Summary({
           min_age: minAge,
           max_age: maxAge,
           mdvis: selectedMdvi
-        }
-        const response = await fetch(`/api/v2/dashboard/${type}?${buildDashboardQueryParams(params)}`);
+        };
+  
+        // Log the parameters being sent
+        console.log(`Fetching data for type: ${type} with params:`, params);
+  
+        const queryString = buildDashboardQueryParams(params);
+        console.log(`Fetching /api/v2/dashboard/${type}?${queryString}`);
+  
+        const response = await fetch(`/api/v2/dashboard/${type}?${queryString}`, {
+          method: 'GET',
+          credentials: 'include', // Include credentials for authentication
+        });
         const result = await response.json();
-        setData(result.records || []);
-        setTotal(result.totalRecords || 0);
+  
+        // Log the API response
+        console.log(`Response for ${type}:`, result);
+  
+        if (response.ok) {
+          setData(result.records || []);
+          setTotal(result.totalRecords || 0);
+        } else {
+          console.error(`Error fetching ${type} data:`, result.error);
+          alert(`Error fetching ${type} data: ${result.error || 'Unknown error'}`);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
+        alert("An unexpected error occurred while fetching data.");
       } finally {
         setIsLoading(false);
       }
     };
+
 
     switch (subTabIndex) {
       case 0:
@@ -1706,15 +1832,6 @@ const counselingEducationColDefs =[
   const handleSubTabChange = (event, newValue) => {
     setSubTabIndex(newValue);
   };
-
-  // Set initial selected hospital on mount
-  useEffect(() => {
-    setSelectedHospitals([hospitals?.[0]?.id]);
-  }, [hospitals]);
-
-  useEffect(() => {
-    setSelectedHospitalNames([hospitals?.[0]?.name]);
-  }, [hospitals]);
 
   // Handle hospital selection changes
   const handleMultiSelectChange = (e) => {
@@ -2447,103 +2564,118 @@ function buildAgeGraph(countsData) {
                 <Tab label="Counselling" />
               </Tabs>
 
-              {/* Beneficiaries Tab */}
-              {subTabIndex === 0 && (
-                isLoading ? (
-                  <p>Loading...</p>
-                ) : beneficiaries.length > 0 ? (
-                  <PaginatedTable
-                    data={beneficiaries}
-                    columnDefs={beneficiaryColDefs} // Placeholder for Beneficiary column definitions
-                    page={beneficiaryPage}
-                    totalRecords={totalBeneficiaries}
-                    pageSize={pageSize} 
-                    onPageSizeChange={handlePageSizeChange} 
-                    onPageChange={(newPage) => setBeneficiaryPage(newPage)}
-                  />
-                ) : (
-                  <p>No Beneficiary records found for the selected filters.</p>
-                )
-              )}
+         {/* Beneficiaries Tab */}
+    {subTabIndex === 0 && (
+      isLoading ? (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <CircularProgress />
+          <p>Loading beneficiaries...</p>
+        </div>
+      ) : beneficiaries.length > 0 ? (
+        <PaginatedTable
+          data={beneficiaries}
+          columnDefs={beneficiaryColDefs}
+          page={beneficiaryPage}
+          totalRecords={totalBeneficiaries}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          onPageChange={(newPage) => setBeneficiaryPage(newPage)}
+        />
+      ) : (
+        <p>No Beneficiary records found for the selected filters.</p>
+      )
+    )}
 
-              {/* Vision Enhancement Tab */}
-              {subTabIndex === 1 && (
-                isLoading ? (
-                  <p>Loading...</p>
-                ) : visionEnhancements.length > 0 ? (
-                  <PaginatedTable
-                    data={visionEnhancements}
-                    columnDefs={visionEnhancementColDefs} // Placeholder for Vision Enhancement column definitions
-                    page={visionEnhancementPage}
-                    totalRecords={totalVisionEnhancements}
-                    pageSize={pageSize} 
-                    onPageSizeChange={handlePageSizeChange} 
-                    onPageChange={(newPage) => setVisionEnhancementPage(newPage)}
-                  />
-                ) : (
-                  <p>No Vision Enhancement records found for the selected filters.</p>
-                )
-              )}
+    {/* Vision Enhancement Tab */}
+    {subTabIndex === 1 && (
+      isLoading ? (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <CircularProgress />
+          <p>Loading vision enhancements...</p>
+        </div>
+      ) : visionEnhancements.length > 0 ? (
+        <PaginatedTable
+          data={visionEnhancements}
+          columnDefs={visionEnhancementColDefs}
+          page={visionEnhancementPage}
+          totalRecords={totalVisionEnhancements}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          onPageChange={(newPage) => setVisionEnhancementPage(newPage)}
+        />
+      ) : (
+        <p>No Vision Enhancement records found for the selected filters.</p>
+      )
+    )}
 
-              {/* Training Tab */}
-              {subTabIndex === 2 && (
-                isLoading ? (
-                  <p>Loading...</p>
-                ) : trainings.length > 0 ? (
-                  <PaginatedTable
-                    data={trainings}
-                    columnDefs={trainingColDefs} // Placeholder for Training column definitions
-                    page={trainingPage}
-                    totalRecords={totalTrainings}
-                    pageSize={pageSize} 
-                    onPageSizeChange={handlePageSizeChange} 
-                    onPageChange={(newPage) => setTrainingPage(newPage)}
-                  />
-                ) : (
-                  <p>No Training records found for the selected filters.</p>
-                )
-              )}
+                 {/* Training Tab */}
+      {subTabIndex === 2 && (
+        isLoading ? (
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <CircularProgress />
+            <p>Loading trainings ...</p>
+          </div>
+        ) : trainings.length > 0 ? (
+          <PaginatedTable
+            data={trainings}
+            columnDefs={trainingColDefs} // Placeholder for Training column definitions
+            page={trainingPage}
+            totalRecords={totalTrainings}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            onPageChange={(newPage) => setTrainingPage(newPage)}
+          />
+        ) : (
+          <p>No Training records found for the selected filters.</p>
+        )
+      )}
 
-              {/* Comprehensive Low Vision Evaluation Tab */}
-              {subTabIndex === 3 && (
-                isLoading ? (
-                  <p>Loading...</p>
-                ) : comprehensiveEvaluations.length > 0 ? (
-                  <PaginatedTable
-                    data={comprehensiveEvaluations}
-                    columnDefs={comprehensiveLowVisionEvaluationColDefs} // Placeholder for Comprehensive Low Vision Evaluation column definitions
-                    page={comprehensivePage}
-                    totalRecords={totalComprehensiveEvaluations}
-                    pageSize={pageSize} 
-                    onPageSizeChange={handlePageSizeChange} 
-                    onPageChange={(newPage) => setComprehensivePage(newPage)}
-                  />
-                ) : (
-                  <p>No Comprehensive Low Vision Evaluation records found for the selected filters.</p>
-                )
-              )}
+      {/* Comprehensive Low Vision Evaluation Tab */}
+      {subTabIndex === 3 && (
+        isLoading ? (
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <CircularProgress />
+            <p>Loading CLVEs ...</p>
+          </div>
+        ) : comprehensiveEvaluations.length > 0 ? (
+          <PaginatedTable
+            data={comprehensiveEvaluations}
+            columnDefs={comprehensiveLowVisionEvaluationColDefs} // Placeholder for Comprehensive Low Vision Evaluation column definitions
+            page={comprehensivePage}
+            totalRecords={totalComprehensiveEvaluations}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            onPageChange={(newPage) => setComprehensivePage(newPage)}
+          />
+        ) : (
+          <p>No Comprehensive Low Vision Evaluation records found for the selected filters.</p>
+        )
+      )}
 
-              {/* Counselling Tab */}
-              {subTabIndex === 4 && (
-                isLoading ? (
-                  <p>Loading...</p>
-                ) : counselingRecords.length > 0 ? (
-                  <PaginatedTable
-                    data={counselingRecords}
-                    columnDefs={counselingEducationColDefs} // Placeholder for Counseling Education column definitions
-                    page={counselingPage}
-                    totalRecords={totalCounselingRecords}
-                    pageSize={pageSize} 
-                    onPageSizeChange={handlePageSizeChange} 
-                    onPageChange={(newPage) => setCounselingPage(newPage)}
-                  />
-                ) : (
-                  <p>No Counselling records found for the selected filters.</p>
-                )
-              )}
-            </div>
-          )}
-
+      {/* Counselling Tab */}
+      {subTabIndex === 4 && (
+        isLoading ? (
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <CircularProgress />
+            <p>Loading counsellings ...</p>
+          </div>
+        ) : counselingRecords.length > 0 ? (
+          <PaginatedTable
+            data={counselingRecords}
+            columnDefs={counselingEducationColDefs} // Placeholder for Counseling Education column definitions
+            page={counselingPage}
+            totalRecords={totalCounselingRecords}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            onPageChange={(newPage) => setCounselingPage(newPage)}
+          />
+        ) : (
+          <p>No Counselling records found for the selected filters.</p>
+        )
+      )}
+    </div>
+  )
+}
           {masterTabIndex === 1 && (
             <div>
               {/* Graph Customization */}
