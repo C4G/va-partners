@@ -30,7 +30,7 @@ import {
   createOptionMenu,
   parseInputDate,
 } from "@/constants/globalFunctions";
-import { comma, diagnosisValues } from "@/constants/generalConstants";
+import { comma, CLVEDiagnosis } from "@/constants/generalConstants";
 import { jsonToCSV } from "react-papaparse";
 import moment from "moment";
 import { required } from "../../comps/required";
@@ -67,7 +67,6 @@ const TrainingFormCLVE = ({
   const [mdviValue, setMdviValue] = useState(mdvi);
   const [section, setSection] = useState("visionEvaluation");
   const [diagnosis, setDiagnosis] = useState([]);
-  const today = new Date();
   const [formData, setFormData] = useState({
     unitDistance: "LogMAR",
     unitNear: "LogMAR",
@@ -120,15 +119,11 @@ const TrainingFormCLVE = ({
       }
       return acc;
     }, {});
-    var allDiagnosis = "";
-
-    diagnosis.forEach((diagnosisValue) => {
-      if (diagnosisValue == "Other") {
-        allDiagnosis = allDiagnosis + " " + formData["diagnosisOther"];
-      } else {
-        allDiagnosis = allDiagnosis + " " + diagnosisValue;
-      }
-    });
+  
+    const allDiagnosis = diagnosis.reduce(
+      (curr, selected) => `${curr} ${selected === "Other" ? formData["diagnosisOther"] : selected}`,
+      ""
+    ).trim();
 
     if (showOther.recommendationSpectacle) {
       devices.recommendationSpectacle.splice(
@@ -368,7 +363,7 @@ const TrainingFormCLVE = ({
     });
   }, [customFieldsNear, nvAcuityValues]);
 
-  const diagnosisOptions = createMenu(diagnosisValues, true, diagnosis);
+  const diagnosisOptions = createMenu(CLVEDiagnosis, true, diagnosis);
   const recommendationSpectacleOptions = createMenu(
     spectacleDevices,
     true,
@@ -1088,7 +1083,7 @@ const TrainingFormCLVE = ({
                         value={
                           formData["dispensedDateNonOptical"]
                             ? moment(formData["dispensedDateNonOptical"]).format("YYYY-MM-DD")
-                            : moment(today).format("YYYY-MM-DD")
+                            : ""
                         }
                         onChange={(e) => updateFormData(e, "dispensedDateNonOptical")}
                       />
@@ -1232,7 +1227,7 @@ const TrainingFormCLVE = ({
                         value={
                           formData["dispensedDateElectronic"]
                             ? moment(formData["dispensedDateElectronic"]).format("YYYY-MM-DD")
-                            : moment(today).format("YYYY-MM-DD")
+                            : ""
                         }
                         onChange={(e) => updateFormData(e, "dispensedDateElectronic")}
                       />
