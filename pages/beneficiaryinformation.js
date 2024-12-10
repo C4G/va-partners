@@ -167,7 +167,7 @@ function RequiredFields(props) {
       }),
     });
     if (response.ok) {
-      router.push("/user?mrn=" + mrn);
+      router.push("/user?mrn=" + mrn + "&hospitalId=" + hospitalId);
     } else {
       setLoading(false);
       alert(
@@ -275,13 +275,13 @@ function RequiredFields(props) {
       <label htmlFor="gender">Gender{required()}</label>
       <select className="form-select" id="gender" required>
         <option value="">Select Gender</option>
-        <option key="M" value="M">
+        <option key="Male" value="Male">
           Male
         </option>
-        <option key="F" value="F">
+        <option key="Female" value="Female">
           Female
         </option>
-        <option key="O" value="Other">
+        <option key="Other" value="Other">
           Other
         </option>
       </select>

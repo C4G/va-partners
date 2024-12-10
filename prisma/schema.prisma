@@ -8,6 +8,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  Other
+  Male
+  Female
+}
+
 enum HospitalTier {
   NIL_CASH_GRANT
   RECEIVE_CASH_GRANT
@@ -50,7 +56,7 @@ model Beneficiary {
   mrn                                 String
   beneficiaryName                     String
   dateOfBirth                         DateTime
-  gender                              String
+  gender                              Gender
   phoneNumber                         String?
   education                           String?
   occupation                          String?
