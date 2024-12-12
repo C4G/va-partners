@@ -403,9 +403,9 @@ const genderCountsFormatted = { Male: 0, Female: 0, Other: 0 };
 const ageGroups = { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 };
 
 for (const b of filteredBeneficiaries) {
-  const g = b.gender?.toLowerCase();
-  if (g === 'male' || g === 'm') genderCountsFormatted.Male++;
-  else if (g === 'female' || g === 'f') genderCountsFormatted.Female++;
+  const g = b.gender
+  if (g === "Male") genderCountsFormatted.Male++;
+  else if (g === "Female") genderCountsFormatted.Female++;
   else genderCountsFormatted.Other++;
 
   const age = calculateAge(b.dateOfBirth);

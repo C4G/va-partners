@@ -58,14 +58,6 @@ export async function readData(req, res) {
       parsedGenders = [genders];
     }
 
-    // Expand genders: 'Male' to ['Male', 'M'], 'Female' to ['Female', 'F'], 'Other' remains as ['Other']
-    parsedGenders = parsedGenders.flatMap(gender => {
-      if (gender === 'Male') return ['Male', 'M'];
-      if (gender === 'Female') return ['Female', 'F'];
-      if (gender === 'Other') return ['Other'];
-      return [gender]; // default case
-    });
-
     // Parse mdvis
     let parsedMdvis = [];
     if (Array.isArray(mdvis)) {
