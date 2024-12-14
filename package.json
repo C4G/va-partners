@@ -32,6 +32,7 @@
     "framer-motion": "^10.16.4",
     "import-google-fonts": "^0.0.2",
     "js-cookie": "^3.0.1",
+    "lodash.debounce": "^4.0.8",
     "moment": "^2.29.4",
     "next": "^14.2.15",
     "next-auth": "^4.19.2",

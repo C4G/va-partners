@@ -31,6 +31,7 @@ import { Drawer, IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
 import CircularProgress from '@mui/material/CircularProgress';
+import debounce from 'lodash.debounce';
 
 // Register Chart.js components
 ChartJS.register(
@@ -816,77 +817,9 @@ export default function Summary({
     subTabIndex: qSubTabIndex,
     masterTabIndex: qMasterTabIndex
   } = router.query;
+  
 
-
-    // Parse query parameters
-  useEffect(() => {
-    if (qSelectedHospitals) {
-      try {
-        const parsedHospitals = JSON.parse(qSelectedHospitals);
-        setSelectedHospitals(parsedHospitals);
-        console.log("Parsed selectedHospitals:", parsedHospitals);
-      } catch (error) {
-        console.error("Error parsing selectedHospitals from query:", error);
-        setSelectedHospitals([]);
-      }
-    }
-
-    if (qStartDate) {
-      setStartDate(qStartDate);
-      console.log("Start Date:", qStartDate);
-    }
-    if (qEndDate) {
-      setEndDate(qEndDate);
-      console.log("End Date:", qEndDate);
-    }
-    if (qSelectedGenders) {
-      try {
-        const parsedGenders = JSON.parse(qSelectedGenders);
-        setSelectedGenders(parsedGenders);
-        console.log("Parsed selectedGenders:", parsedGenders);
-      } catch (error) {
-        console.error("Error parsing selectedGenders from query:", error);
-        setSelectedGenders(['Male','Female', 'Other']);
-      }
-    }
-    if (qSelectedMdvi) {
-      try {
-        const parsedMdvi = JSON.parse(qSelectedMdvi);
-        setSelectedMdvi(parsedMdvi);
-        console.log("Parsed selectedMdvi:", parsedMdvi);
-      } catch (error) {
-        console.error("Error parsing selectedMdvi from query:", error);
-        setSelectedMdvi(['Yes', 'No']);
-      }
-    }
-    if (qMinAge) {
-      setMinAge(Number(qMinAge));
-      console.log("Min Age:", Number(qMinAge));
-    }
-    if (qMaxAge) {
-      setMaxAge(Number(qMaxAge));
-      console.log("Max Age:", Number(qMaxAge));
-    }
-    if (qSubTabIndex) {
-      setSubTabIndex(Number(qSubTabIndex));
-      console.log("Sub Tab Index:", Number(qSubTabIndex));
-    }
-    if (qMasterTabIndex) {
-      setMasterTabIndex(Number(qMasterTabIndex));
-      console.log("Master Tab Index:", Number(qMasterTabIndex));
-    }
-  }, [
-    qSelectedHospitals,
-    qStartDate,
-    qEndDate,
-    qSelectedGenders,
-    qSelectedMdvi,
-    qMinAge,
-    qMaxAge,
-    qSubTabIndex,
-    qMasterTabIndex
-  ]);
-
+  
   // State variables for tabs
   const [masterTabIndex, setMasterTabIndex] = useState(0); // Table/Graph
   const [subTabIndex, setSubTabIndex] = useState(0); // Sub-tabs within Table
@@ -953,26 +886,118 @@ export default function Summary({
     type: null, // Holds the currently selected Training type for drill-down
   });
 
+
+    // Debounced function to update URL query parameters
+    const updateURL = debounce(() => {
+      const newQuery = {
+        selectedHospitals: JSON.stringify(selectedHospitals),
+        startDate: startDate,
+        endDate: endDate,
+        selectedGenders: JSON.stringify(selectedGenders),
+        selectedMdvi: JSON.stringify(selectedMdvi),
+        minAge: minAge || '',
+        maxAge: maxAge || '',
+        subTabIndex: subTabIndex.toString(),
+        masterTabIndex: masterTabIndex.toString(),
+      };
+  
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: newQuery,
+        },
+        undefined,
+        { shallow: true }
+      );
+    }, 300); // 300ms debounce delay
+  
+    // Synchronize URL with filter states
+    useEffect(() => {
+      updateURL();
+  
+      // Cleanup the debounce on unmount
+      return () => {
+        updateURL.cancel();
+      };
+    }, [
+      selectedHospitals,
+      startDate,
+      endDate,
+      selectedGenders,
+      selectedMdvi,
+      minAge,
+      maxAge,
+      subTabIndex,
+      masterTabIndex,
+    ]);
+  
+    // Initialize filter states from URL query parameters on mount
+    useEffect(() => {
+      if (qSelectedHospitals) {
+        try {
+          const parsedHospitals = JSON.parse(qSelectedHospitals);
+          setSelectedHospitals(parsedHospitals);
+        } catch (error) {
+          console.error("Error parsing selectedHospitals from query:", error);
+          setSelectedHospitals([]);
+        }
+      }
+  
+      if (qStartDate) {
+        setStartDate(qStartDate);
+      }
+      if (qEndDate) {
+        setEndDate(qEndDate);
+      }
+      if (qSelectedGenders) {
+        try {
+          const parsedGenders = JSON.parse(qSelectedGenders);
+          setSelectedGenders(parsedGenders);
+        } catch (error) {
+          console.error("Error parsing selectedGenders from query:", error);
+          setSelectedGenders(['Male','Female', 'Other']);
+        }
+      }
+      if (qSelectedMdvi) {
+        try {
+          const parsedMdvi = JSON.parse(qSelectedMdvi);
+          setSelectedMdvi(parsedMdvi);
+        } catch (error) {
+          console.error("Error parsing selectedMdvi from query:", error);
+          setSelectedMdvi(['Yes', 'No']);
+        }
+      }
+      if (qMinAge) {
+        setMinAge(Number(qMinAge));
+      }
+      if (qMaxAge) {
+        setMaxAge(Number(qMaxAge));
+      }
+      if (qSubTabIndex) {
+        setSubTabIndex(Number(qSubTabIndex));
+      }
+      if (qMasterTabIndex) {
+        setMasterTabIndex(Number(qMasterTabIndex));
+      }
+    }, [
+      qSelectedHospitals,
+      qStartDate,
+      qEndDate,
+      qSelectedGenders,
+      qSelectedMdvi,
+      qMinAge,
+      qMaxAge,
+      qSubTabIndex,
+      qMasterTabIndex
+    ]);
   const EditButtonRenderer = (props) => {
     const { mrn, hospitalId } = props.data;
   
-    const queryParams = new URLSearchParams({
-      selectedHospitals: JSON.stringify(selectedHospitals || []),
-      startDate: startDate || '',
-      endDate: endDate || '',
-      selectedGenders: JSON.stringify(selectedGenders || []),
-      selectedMdvi: JSON.stringify(selectedMdvi || []),
-      minAge: minAge || '',
-      maxAge: maxAge || '',
-      subTabIndex: subTabIndex || '0',
-      masterTabIndex: masterTabIndex || '0',
-    });
-
     return (
       <IconButton
         color="primary"
         onClick={() => {
-          const url = `/user?mrn=${encodeURIComponent(mrn)}&hospitalId=${encodeURIComponent(hospitalId)}&${queryParams.toString()}`;
+          const url = `/user?mrn=${encodeURIComponent(mrn)}&hospitalId=${encodeURIComponent(hospitalId)}`;
           window.location.href = url;
         }}
       >

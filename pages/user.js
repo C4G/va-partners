@@ -534,23 +534,6 @@ function UserPage(props) {
     );
   };
 
-  // Construct the back URL from query parameters passed from report.js
-  const queryParams = new URLSearchParams({
-    selectedHospitals: props.query.selectedHospitals || '[]',
-    startDate: props.query.startDate || '',
-    endDate: props.query.endDate || '',
-    selectedGenders: props.query.selectedGenders || '[]',
-    selectedMdvi: props.query.selectedMdvi || '[]',
-    minAge: props.query.minAge || '',
-    maxAge: props.query.maxAge || '',
-    subTabIndex: props.query.subTabIndex || '0',
-    masterTabIndex: props.query.masterTabIndex || '0',
-  });
-
-  const handleBack = () => {
-    router.push('/reports?' + queryParams.toString());
-  };
-
   return (
     <div>
       <Navigation user={props.currentUser} />
@@ -558,10 +541,6 @@ function UserPage(props) {
         <div className="d-flex">
           <h2 className="nopadding">Beneficiary Details</h2>
           <div className="ms-auto">
-            {/* Back button to return to report page with filters */}
-            <button className="btn btn-secondary me-3" onClick={handleBack}>
-              Back
-            </button>
             <button
               className="btn btn-danger"
               data-bs-toggle="modal"
