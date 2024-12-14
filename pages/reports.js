@@ -815,7 +815,8 @@ export default function Summary({
     minAge: qMinAge,
     maxAge: qMaxAge,
     subTabIndex: qSubTabIndex,
-    masterTabIndex: qMasterTabIndex
+    masterTabIndex: qMasterTabIndex,
+    quarter: qQuarter
   } = router.query;
   
 
@@ -823,6 +824,7 @@ export default function Summary({
   // State variables for tabs
   const [masterTabIndex, setMasterTabIndex] = useState(0); // Table/Graph
   const [subTabIndex, setSubTabIndex] = useState(0); // Sub-tabs within Table
+  const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedHospitals, setSelectedHospitals] = useState([]);
   const [selectedHospitalNames, setSelectedHospitalNames] = useState([]);
 
@@ -899,6 +901,7 @@ export default function Summary({
         maxAge: maxAge || '',
         subTabIndex: subTabIndex.toString(),
         masterTabIndex: masterTabIndex.toString(),
+        quarter: selectedQuarter || ''
       };
   
       router.replace(
@@ -979,6 +982,9 @@ export default function Summary({
       if (qMasterTabIndex) {
         setMasterTabIndex(Number(qMasterTabIndex));
       }
+      if (qQuarter) {
+        setSelectedQuarter(qQuarter);
+      }
     }, [
       qSelectedHospitals,
       qStartDate,
@@ -988,7 +994,8 @@ export default function Summary({
       qMinAge,
       qMaxAge,
       qSubTabIndex,
-      qMasterTabIndex
+      qMasterTabIndex,
+      qQuarter
     ]);
   const EditButtonRenderer = (props) => {
     const { mrn, hospitalId } = props.data;
@@ -2525,6 +2532,8 @@ function buildAgeGraph(countsData) {
               handleAllSelect={handleAllSelect}
               setStartDate={setStartDate}
               setEndDate={setEndDate}
+              selectedQuarter={selectedQuarter}     
+              setSelectedQuarter={setSelectedQuarter} 
             />
 
             {/* All Filters Button */}

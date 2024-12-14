@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import DownloadIcon from '@mui/icons-material/Download';
 import {
   FormControl,
@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import moment from 'moment';
 
-// Add the following imports
 import XLSX from 'xlsx-js-style';
 import {
   getReportData,
@@ -29,7 +28,6 @@ import { buildCashGrantSummaryOfFinances } from '@/utils/ui/build-cash-grant-sum
 import { buildNilCashGrantSummaryOfFinances } from '@/utils/ui/build-nil-cash-grant-summary-of-finances';
 import TextFieldWrapper from './TextFieldWrapper';
 
-
 const refData = `S.no\tPrograms\tTypes\tDescription
 1\tScreening /Out reach activities/ Camp\tLow Vision Screening\tLow vision screening of the school of the blind and Identification of the visually impaired for assistive technology
 2\t\tIdentification of MDVI\tBeneficiaries come under Multiple disabilities and vision impairment.
@@ -39,8 +37,8 @@ const refData = `S.no\tPrograms\tTypes\tDescription
 6\tLow vision device training\tTraining is given after dispensing devices\t
 7\tCounseling & referrals/ Counseling and education\tEducation and counseling\tList of referrals
 8\tOrientation & Mobility training (O and M)\t\tTraining to help the visually impaired orient to the environment around and navigate safely
-9\tComputer training\t\tTraining programs are conducted to build proficiency in computer skills using assistive technology like screen readers, magnification and contrast modifcations
-10\tMobile technologies \t\tEducating on various mobile app for navigation and other functions
+9\tComputer training\t\tTraining programs are conducted to build proficiency in computer skills using assistive technology like screen readers, magnification and contrast modifications
+10\tMobile technologies \t\tEducating on various mobile apps for navigation and other functions
 11\tVisual skills training\tAll subtypes under it as a whole\tVisual skills training greater than 7 years and adults
 12\tOther training\tCorporate skill development\tComputer Programming, Digital accessibility testing DAT
 13\t\tBraille Training & resources and Training with Braille reader / ORBIT reader\tTraining on Braille devices for education and Braille literacy
@@ -65,45 +63,39 @@ const hospitalAbbr = {
   "Community Eye Care Foundation": "CECF, PUN"
 };
 
-const GraphCustomizer = ({
-  summary = [], // Add default value to ensure it's an array
-  selectedHospitals = [], // Add default value to ensure it's an array
+function GraphCustomizer({
+  summary = [],
+  selectedHospitals = [],
   handleHospitalSelection,
   startDate,
   endDate,
   setStartDate,
   setEndDate,
+  selectedQuarter,
+  setSelectedQuarter,
   minAge,
   maxAge,
   genders,
   mdvis,
-}) => {
+}) {
   // Define quarters covering 3 months each
   const quarters = [
-    { label: 'Q1', startMonth: 0, endMonth: 2 }, // Jan - Mar
-    { label: 'Q2', startMonth: 3, endMonth: 5 }, // Apr - Jun
-    { label: 'Q3', startMonth: 6, endMonth: 8 }, // Jul - Sep
+    { label: 'Q1', startMonth: 0, endMonth: 2 },  // Jan - Mar
+    { label: 'Q2', startMonth: 3, endMonth: 5 },  // Apr - Jun
+    { label: 'Q3', startMonth: 6, endMonth: 8 },  // Jul - Sep
     { label: 'Q4', startMonth: 9, endMonth: 11 }, // Oct - Dec
   ];
 
-  // State to track the selected quarter
-  const [selectedQuarter, setSelectedQuarter] = useState('');
-
-  // Get the current month
   const currentMonth = moment().month();
-
-  // Determine the current quarter index based on the current month
   const currentQuarterIndex = quarters.findIndex(
     (q) => currentMonth >= q.startMonth && currentMonth <= q.endMonth
   );
 
-  // Create an array for the dropdown showing the current and previous quarters
   const availableQuarters = [
     ...quarters.slice(currentQuarterIndex, currentQuarterIndex + 1),
     ...quarters.slice(0, currentQuarterIndex).reverse(),
   ];
 
-  // Append "(Current)" to the current quarter's label
   const updatedAvailableQuarters = availableQuarters.map((quarter, index) => {
     if (index === 0) {
       return { ...quarter, label: `${quarter.label} (Current)` };
@@ -112,9 +104,83 @@ const GraphCustomizer = ({
     }
   });
 
+  const setQuarter = (year, quarterIndex) => {
+    const q = quarters[quarterIndex];
+    const start = moment()
+      .year(year)
+      .month(q.startMonth)
+      .startOf('month')
+      .toDate();
+    const end = moment()
+      .year(year)
+      .month(q.endMonth)
+      .endOf('month')
+      .toDate();
+    setStartDate(start);
+    setEndDate(end);
+
+    let quarterLabel = q.label;
+    if (quarterIndex === currentQuarterIndex) {
+      quarterLabel = `${q.label} (Current)`;
+    }
+    setSelectedQuarter(quarterLabel);
+  };
+
+  // If no quarter is selected, default to the current quarter
+  useEffect(() => {
+    if (!selectedQuarter) {
+      setQuarter(moment().year(), currentQuarterIndex);
+    }
+  }, [currentQuarterIndex, selectedQuarter]);
+
+  // Whenever selectedQuarter changes (from query or UI), update the start/end dates accordingly
+  useEffect(() => {
+    if (selectedQuarter) {
+      const quarterLabelClean = selectedQuarter.replace(' (Current)', '');
+      const selectedIndex = quarters.findIndex((q) => q.label === quarterLabelClean);
+      if (selectedIndex !== -1) {
+        setQuarter(moment().year(), selectedIndex); 
+      }
+    }
+  }, [selectedQuarter]);
+
+  const handleQuarterSelection = (event) => {
+    let quarterLabel = event.target.value;
+    if (quarterLabel === '') {
+      setSelectedQuarter('');
+      return;
+    }
+    // Remove ' (Current)' if present
+    quarterLabel = quarterLabel.replace(' (Current)', '');
+    const selectedIndex = quarters.findIndex((q) => q.label === quarterLabel);
+    setQuarter(moment().year(), selectedIndex);
+  };
+
+  const isDateInQuarterRange = (startDate, endDate) =>
+    quarters.some((q) => {
+      const start = moment()
+        .year(moment(startDate).year())
+        .month(q.startMonth)
+        .startOf('month');
+      const end = moment()
+        .year(moment(endDate).year())
+        .month(q.endMonth)
+        .endOf('month');
+      return (
+        moment(startDate).isBetween(start, end, undefined, '[]') &&
+        moment(endDate).isBetween(start, end, undefined, '[]')
+      );
+    });
+
+  useEffect(() => {
+    const isInQuarter = isDateInQuarterRange(startDate, endDate);
+    if (!isInQuarter && selectedQuarter) {
+      setSelectedQuarter('');
+    }
+  }, [startDate, endDate, selectedQuarter]);
+
   const downloadFilteredReport = async () => {
     try {
-      // Adjust the start and end dates
       const adjustedStartDate = new Date(startDate);
       const adjustedEndDate = new Date(endDate);
 
@@ -132,9 +198,16 @@ const GraphCustomizer = ({
         mdvis,
       };
 
-      const types = ["Beneficiary", "Vision_Enhancement", "Training", "Low_Vision_Evaluation", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"];
+      const types = [
+        "Beneficiary",
+        "Vision_Enhancement",
+        "Training",
+        "Low_Vision_Evaluation",
+        "Comprehensive_Low_Vision_Evaluation",
+        "Counselling_Education"
+      ];
 
-      const apiCalls = types.map((type) => fetch(`/api/v2/dashboard/${type}?${buildDashboardQueryParams(params)}`, { 
+      const apiCalls = types.map((type) => fetch(`/api/v2/dashboard/${type}?${buildDashboardQueryParams(params)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       }));
@@ -163,11 +236,8 @@ const GraphCustomizer = ({
         counsellingEducation: finalResult[5].records.filter((ce) => ce.hospitalId === hospital.id),
       }));
 
-      // Generate report data
-      const reportData = getReportData(allBeneficiaryData,hospitalSummary,true);
+      const reportData = getReportData(allBeneficiaryData, hospitalSummary, true);
 
-
-      // Destructure report data
       const {
         beneficiaryData = [],
         visionEnhancementData = [],
@@ -184,16 +254,16 @@ const GraphCustomizer = ({
       const wref = XLSX.utils.aoa_to_sheet(refRows);
       const wben = XLSX.utils.json_to_sheet(beneficiaryData);
       const wved = XLSX.utils.json_to_sheet(visionEnhancementData);
-  
+
       const wlved = XLSX.utils.json_to_sheet([]);
       const wclve = XLSX.utils.json_to_sheet([]);
-  
+
       const wed = XLSX.utils.json_to_sheet(electronicDevicesData);
       const wtd = XLSX.utils.json_to_sheet(trainingData);
       const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
-  
+
       const wahd = XLSX.utils.json_to_sheet([]);
-  
+
       if (hospitalSummary.length === 1) {
         XLSX.utils.book_append_sheet(wb, buildSummarySheet(), "Summary");
         const tier = hospitalSummary[0].tier;
@@ -214,19 +284,19 @@ const GraphCustomizer = ({
       XLSX.utils.book_append_sheet(wb, wben, "Overall Beneficiary Sheet");
       XLSX.utils.book_append_sheet(wb, wed, "Electronic Devices Break Up");
       XLSX.utils.book_append_sheet(wb, [], "Action items from prev quarter");
-  
+
       setClveHeader(wclve);
       XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
         skipHeader: true,
         origin: -1,
       });
-  
+
       setLveHeader(wlved);
       XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
         skipHeader: true,
         origin: -1,
       });
-  
+
       setAhdHeader(
         wahd,
         selectedHospitals,
@@ -235,7 +305,8 @@ const GraphCustomizer = ({
         skipHeader: true,
         origin: -1,
       });
-      // Bold Summary of Services row 4-11
+
+      // Bold Summary of Services rows
       const rows = Array.from({ length: 8 }, (_, i) => i + 4);
       const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode('A'.charCodeAt(0) + i));
       for (const row of rows) {
@@ -245,16 +316,15 @@ const GraphCustomizer = ({
           if (cellValue != null) wahd[cell].s = { font: { bold: true } };
         }
       }
-  
-      // Change the column width for the reference sheet
+
+      // Adjust Reference sheet column widths
       const wscols = [];
-      const wrefcols = [4, 53, 66, 84]; // values obtained from manually adjusting the downloaded excel sheet
+      const wrefcols = [4, 53, 66, 84];
       for (let i = 0; i < refRows[0].length; i++) {
-          wscols.push({wch: wrefcols[i]}); // Set the initial width for each column
+        wscols.push({ wch: wrefcols[i] });
       }
       wref['!cols'] = wscols;
-  
-      // generate the filename based on the filter date range and the selected hospitals
+
       let reportHospitalName = hospitalAbbr[selectedHospitals[0]];
       if (selectedHospitals.length === summary.length) {
         reportHospitalName = "ALL";
@@ -269,80 +339,12 @@ const GraphCustomizer = ({
       fileNameComponents.push(adjustedStartDate.toISOString().split('T')[0]);
       fileNameComponents.push(adjustedEndDate.toISOString().split('T')[0]);
       const filename = fileNameComponents.join("_") + ".xlsx";
-  
+
       XLSX.writeFile(wb, filename);
     } catch (error) {
       console.error('Error generating report:', error);
     }
   };
-
-  // Function to set date range for a given quarter and year
-  const setQuarter = (year, quarterIndex) => {
-    const q = quarters[quarterIndex];
-    const start = moment()
-      .year(year)
-      .month(q.startMonth)
-      .startOf('month')
-      .toDate();
-    const end = moment()
-      .year(year)
-      .month(q.endMonth)
-      .endOf('month')
-      .toDate();
-    setStartDate(start);
-    setEndDate(end);
-
-    // Get the label used in the dropdown
-    let quarterLabel = q.label;
-    if (quarterIndex === currentQuarterIndex) {
-      quarterLabel = `${q.label} (Current)`;
-    }
-    setSelectedQuarter(quarterLabel); // Set the selected quarter
-  };
-
-  // Set the current quarter as default on component load
-  useEffect(() => {
-    setQuarter(moment().year(), currentQuarterIndex);
-  }, [currentQuarterIndex]); // Run when currentQuarterIndex changes
-
-  // Handle quarter selection (single select)
-  const handleQuarterSelection = (event) => {
-    let quarterLabel = event.target.value;
-    if (quarterLabel === '') {
-      setSelectedQuarter(''); // Clear selected quarter when empty is selected
-      return;
-    }
-    // Remove ' (Current)' from the label if present
-    quarterLabel = quarterLabel.replace(' (Current)', '');
-    // Find the correct index in the original quarters array
-    const selectedIndex = quarters.findIndex((q) => q.label === quarterLabel);
-    setQuarter(moment().year(), selectedIndex); // Update the date range when a quarter is selected
-  };
-
-  // Check if current selected dates are inside any quarter range
-  const isDateInQuarterRange = (startDate, endDate) =>
-    quarters.some((q) => {
-      const start = moment()
-        .year(moment(startDate).year())
-        .month(q.startMonth)
-        .startOf('month');
-      const end = moment()
-        .year(moment(endDate).year())
-        .month(q.endMonth)
-        .endOf('month');
-      return (
-        moment(startDate).isBetween(start, end, undefined, '[]') &&
-        moment(endDate).isBetween(start, end, undefined, '[]')
-      );
-    });
-
-  // Use effect to check date range when dates are changed manually
-  useEffect(() => {
-    const isInQuarter = isDateInQuarterRange(startDate, endDate);
-    if (!isInQuarter) {
-      setSelectedQuarter(''); // Clear the quarter if date range is outside the quarters
-    }
-  }, [startDate, endDate]);
 
   return (
     <Box sx={{ flexGrow: 1, padding: 2 }}>
@@ -396,7 +398,6 @@ const GraphCustomizer = ({
               }}
               label="Select Hospitals"
             >
-              {/* Hospital options */}
               {summary.map((hospital) => (
                 <MenuItem key={hospital.id} value={hospital.name}>
                   <Checkbox
@@ -451,25 +452,25 @@ const GraphCustomizer = ({
 
         {/* Download Report Button */}
         <Grid item xs={12} sm={6} md={1}>
-  <Tooltip title="Download Report">
-    <IconButton
-      onClick={downloadFilteredReport}
-      aria-label="download report"
-      sx={{
-        height: '55px',          // Reduced height for a smaller button
-        width: '55px',           // Reduced width for a smaller button
-        borderRadius: '5px',     // Rounded corners
-        backgroundColor: '#2074d4', // Blue background
-        color: 'white',          // White icon color for contrast
-        '&:hover': {
-          backgroundColor: '#1864c4', // Darker blue on hover
-        },
-      }}
-    >
-      <DownloadIcon />
-    </IconButton>
-  </Tooltip>
-</Grid>
+          <Tooltip title="Download Report">
+            <IconButton
+              onClick={downloadFilteredReport}
+              aria-label="download report"
+              sx={{
+                height: '55px',
+                width: '55px',
+                borderRadius: '5px',
+                backgroundColor: '#2074d4',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#1864c4',
+                },
+              }}
+            >
+              <DownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Grid>
       </Grid>
     </Box>
   );
