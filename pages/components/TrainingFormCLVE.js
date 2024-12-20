@@ -92,10 +92,10 @@ const TrainingFormCLVE = ({
         }
     }
 
-    return isValid
+    return isValid;
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e, formData) => {
     const isValid = validateForm();
     e.preventDefault();
     if (!isValid) {
@@ -272,24 +272,13 @@ const TrainingFormCLVE = ({
             costToBeneficiaryElectronic: null,
             trainingGivenElectronic: null,
           }),
-      colourVisionRE:
-        e.target.colourVisionRE == null ? null : e.target.colourVisionRE.value,
-      colourVisionLE:
-        e.target.colourVisionLE == null ? null : e.target.colourVisionLE.value,
-      contrastSensitivityRE:
-        e.target.contrastSensitivityRE == null
-          ? null
-          : e.target.contrastSensitivityRE.value,
-      contrastSensitivityLE:
-        e.target.contrastSensitivityLE == null
-          ? null
-          : e.target.contrastSensitivityLE.value,
-      visualFieldsRE:
-        e.target.visualFieldsRE == null ? null : e.target.visualFieldsRE.value,
-      visualFieldsLE:
-        e.target.visualFieldsLE == null ? null : e.target.visualFieldsLE.value,
-      extraInformation: 
-        e.target.extraInformation == null ? "" : e.target.extraInformation.value,
+      colourVisionRE: formData.colourVisionRE,
+      colourVisionLE: formData.colourVisionLE,
+      contrastSensitivityRE: formData.contrastSensitivityRE,
+      contrastSensitivityLE: formData.contrastSensitivityLE,
+      visualFieldsRE: formData.visualFieldsRE,
+      visualFieldsLE: formData.visualFieldsLE,
+      extraInformation: formData.extraInformation,
       ...customDataDistance,
       ...customDataNear,
     };
@@ -545,7 +534,7 @@ const TrainingFormCLVE = ({
         </div>
       </div>
       <hr />
-      <Form onSubmit={handleSubmit} className="mt-3" id="clve_form">
+      <Form onSubmit={(e) => handleSubmit(e, formData)} className="mt-3" id="clve_form">
         <div className={section !== "visionEvaluation" ? 'd-none' : 'd-block'}>
           <Row>
             <Col>
@@ -1297,13 +1286,21 @@ const TrainingFormCLVE = ({
               <Col>
                 <Form.Group controlId="colourVisionRE">
                   <Form.Label>Colour Vision Right Eye</Form.Label>
-                  <Form.Control as="textarea" rows={1} autoComplete="off" />
+                  <Form.Control
+                    as="textarea"
+                    rows={1}
+                    autoComplete="off" 
+                    value={formData["colourVisionRE"]}
+                    onChange={(e) => updateFormData(e, "colourVisionRE")}
+                    />
                 </Form.Group>
               </Col>
               <Col>
                 <Form.Group controlId="colourVisionLE">
                   <Form.Label>Colour Vision Left Eye</Form.Label>
-                  <Form.Control as="textarea" rows={1} autoComplete="off" />
+                  <Form.Control as="textarea" rows={1} autoComplete="off"
+                    value={formData["colourVisionLE"]}
+                    onChange={(e) => updateFormData(e, "colourVisionLE")} />
                 </Form.Group>
               </Col>
             </Row>
@@ -1311,13 +1308,17 @@ const TrainingFormCLVE = ({
               <Col>
                 <Form.Group controlId="contrastSensitivityRE">
                   <Form.Label>Contrast Sensitivity Right Eye</Form.Label>
-                  <Form.Control as="textarea" rows={1} autoComplete="off" />
+                  <Form.Control as="textarea" rows={1} autoComplete="off"
+                    value={formData["contrastSensitivityRE"]}
+                    onChange={(e) => updateFormData(e, "contrastSensitivityRE")}  />
                 </Form.Group>
               </Col>
               <Col>
                 <Form.Group controlId="contrastSensitivityLE">
                   <Form.Label>Contrast Sensitivity Left Eye</Form.Label>
-                  <Form.Control as="textarea" rows={1} autoComplete="off" />
+                  <Form.Control as="textarea" rows={1} autoComplete="off"
+                    value={formData["contrastSensitivityLE"]}
+                    onChange={(e) => updateFormData(e, "contrastSensitivityLE")}  />
                 </Form.Group>
               </Col>
             </Row>
@@ -1325,13 +1326,17 @@ const TrainingFormCLVE = ({
               <Col>
                 <Form.Group controlId="visualFieldsRE">
                   <Form.Label>Visual Fields Right Eye</Form.Label>
-                  <Form.Control as="textarea" rows={1} autoComplete="off" />
+                  <Form.Control as="textarea" rows={1} autoComplete="off"
+                    value={formData["visualFieldsRE"]}
+                    onChange={(e) => updateFormData(e, "visualFieldsRE")}  />
                 </Form.Group>
               </Col>
               <Col>
                 <Form.Group controlId="visualFieldsLE">
                   <Form.Label>Visual Fields Left Eye</Form.Label>
-                  <Form.Control as="textarea" rows={1} autoComplete="off" />
+                  <Form.Control as="textarea" rows={1} autoComplete="off"
+                    value={formData["visualFieldsLE"]}
+                    onChange={(e) => updateFormData(e, "visualFieldsLE")}  />
                 </Form.Group>
               </Col>
             </Row>
@@ -1339,15 +1344,16 @@ const TrainingFormCLVE = ({
         )}
           <Form.Group controlId="extraInformation">
             <Form.Label>Comments</Form.Label>
-            <Form.Control as="textarea" rows={3} autoComplete="off" />
+            <Form.Control as="textarea" rows={3} autoComplete="off"
+                    value={formData["extraInformation"]}
+                    onChange={(e) => updateFormData(e, "extraInformation")}  />
           </Form.Group>
           <div>
             <br />
             <Button
               disabled={loading}
               className="btn btn-success border-0 btn-block"
-              onClick={handleSubmit}
-              type="button"
+              type="submit"
             >
               Submit Evaluation
             </Button>
