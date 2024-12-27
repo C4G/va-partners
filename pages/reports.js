@@ -678,7 +678,7 @@ export async function getServerSideProps(ctx) {
   let hospitals = await findAllHospital();
 
   if (!isAdmin) {
-    hospitals = hospitals.filter((hospital) => user.hospitalRoles.map(role => role.hospitalId).includes(hospital.id));
+    hospitals = hospitals.filter((hospital) => user.hospitalRole.map(role => role.hospitalId).includes(hospital.id));
   }
 
   return {
