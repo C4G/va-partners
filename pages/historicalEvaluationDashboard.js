@@ -53,7 +53,7 @@ export default function HistoricalEvaluationPage(props) {
     let user = {};
     try {
       const beneficiary = await fetch(
-        `${process.env.VERCEL_URL}/api/beneficiary?mrn=${props.mrn}`,
+        `/api/beneficiary?mrn=${props.mrn}&hospitalId=${props.hospitalId}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -63,7 +63,7 @@ export default function HistoricalEvaluationPage(props) {
     } catch (error) {
       console.error("Error fetching users:", error);
     }
-    user.hospitalName = user.hospital.name;
+    user.hospitalName = user.hospital?.name;
     setUser(user);
   };
 
@@ -301,7 +301,7 @@ export async function getServerSideProps(ctx) {
     };
   }
   const currentUser = await readUser(session.user.email);
-  const user = await readBeneficiaryMrn(query.mrn);
+  const user = await readBeneficiaryMrn(query.mrn, query.hospitalId);
 
   if (!user || !service) {
     return {
@@ -315,6 +315,7 @@ export async function getServerSideProps(ctx) {
   return {
     props: {
       mrn: query.mrn,
+      hospitalId: query.hospitalId,
       currentUser: JSON.parse(JSON.stringify(currentUser)),
       user: JSON.parse(JSON.stringify(user)),
       service: service,

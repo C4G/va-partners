@@ -1,84 +1,58 @@
-import { readUser, allHospitalRoles } from "./api/user";
+// Import necessary libraries and components
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { readUser } from "./api/user";
+import { useRouter } from 'next/router';
 import { getSession } from "next-auth/react";
-import { Chart as ChartJS } from "chart.js/auto";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bar } from "react-chartjs-2";
-import {
-  getSummaryForAllHospitals,
-} from "@/pages/api/hospital";
+import { findAllHospital } from "@/pages/api/hospital";
 import { Container } from "react-bootstrap";
 import Navigation from "./navigation/Navigation";
 import Layout from './components/layout';
 import moment from "moment";
 import { useState, useEffect } from "react";
 import GraphCustomizer from "./components/GraphCustomizer";
-import { Tab, Tabs, Paper } from "@mui/material";
-// import * as XLSX from "xlsx";
-import XLSX from "xlsx-js-style";
-import { isNotNullBlankOrUndefined } from "@/constants/globalFunctions";
-import { Download } from "react-bootstrap-icons";
-import { useRouter } from "next/router";
-import {
-  setAhdHeader,
-  setClveHeader,
-  setLveHeader,
-  getReportData,
-  filterTrainingSummaryByDateRange,
-} from "@/constants/reportFunctions";
+import { Tab, Tabs, Paper, Button, Box } from "@mui/material";
+import ReportCustomizer from './customizedReport';
+import { AgGridReact } from 'ag-grid-react'; 
+import "ag-grid-community/styles/ag-grid.css"; 
+import "ag-grid-community/styles/ag-theme-quartz.css"; 
+import EditIcon from '@mui/icons-material/Edit';
+import { Drawer, IconButton } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
+import CircularProgress from '@mui/material/CircularProgress';
+import debounce from 'lodash.debounce';
 
-// This function is called to load data from the server side.
-export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
-  if (session == null) {
-    console.log("session is null");
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
-  }
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ChartDataLabels
+);
 
-  const getHospitalIdsByUsers = (id, users) => {
-    let hospitalIds = [];
-    for (const user of users ) {
-      if (user.userId === id) {
-        hospitalIds.push(user.hospitalId);
-      }
-    }
-    return hospitalIds;
-  }
-
-  // If it's a non admin user, we only want to show the summary for their hospital
-  const user = await readUser(session.user.email);
-  const roles = await allHospitalRoles();
-  let hospitalIds;
-  const isAdmin = user.admin != null;
-  if (!isAdmin) {
-    hospitalIds = getHospitalIdsByUsers(user.id, roles);
-  }
-
-  // We finally return all the data to the page
-  const summary = await getSummaryForAllHospitals(isAdmin, hospitalIds);
-
-  return {
-    props: {
-      user: JSON.parse(JSON.stringify(user)),
-      summary: JSON.parse(JSON.stringify(summary)),
-      error: null,
-    },
-  };
-}
-
-// Configure Chart data label plugin globally
-ChartJS.register(ChartDataLabels);
+// Configure Chart.js data label plugin globally
 ChartJS.defaults.plugins.datalabels.font.size = 16;
 ChartJS.defaults.plugins.datalabels.font.weight = "bold";
 ChartJS.defaults.plugins.datalabels.display = function(context){
   return context.dataset.data[context.dataIndex] != 0;
 };
 
-// Graph Options that are constant for all graphs
+// Define graph options (colors, borders, etc.)
 const graphOptions = {
   backgroundColor: [
     "rgba(255, 99, 132, 0.2)",
@@ -103,70 +77,27 @@ const graphOptions = {
   borderWidth: 1,
 };
 
-// Function that builds a bar graph to show number of beneficiaries per hospital
-function buildBeneficiaryGraph(data) {
-  // data is an array of hopital objects
-  const simplifiedData = data.map((hospital) => {
-    return {
-      name: hospital.name,
-      value: hospital.beneficiary.length,
-    };
-  });
 
-  // create a bar graph with graphData
-  const graphData = {
-    labels: simplifiedData.map((hospital) => hospital.name),
-    datasets: [
-      {
-        label: "Beneficiaries",
-        data: simplifiedData.map((hospital) => hospital.value),
-        ...graphOptions,
-      },
-    ],
-  };
-  return graphData;
-}
+// Placeholder for existing graph building functions
 
-// Function that builds a bar graph to show all the activities involved
-function buildActivitiesGraph(data) {
-  //First get the evaluations
-  const lowVisionScreeningCount = data.reduce(
-    (sum, item) => sum + item.lowVisionEvaluation.length,
-    0
-  );
-  const comprehensiveLowVisionEvaluationCount = data.reduce(
-    (sum, item) => sum + item.comprehensiveLowVisionEvaluation.length,
-    0
-  );
-  const visionEnhancementCount = data.reduce(
-    (sum, item) => sum + item.visionEnhancement.length,
-    0
-  );
+// Function to build Activities Graph using countsData
+function buildActivitiesGraph(countsData) {
+  if (!countsData) return null;
 
-  // Then the trainings
-  const mobileTrainingCount = data.reduce(
-    (sum, item) => sum + item.mobileTraining.length,
-    0
-  );
-  const computerTrainingCount = data.reduce(
-    (sum, item) => sum + item.computerTraining.length,
-    0
-  );
-  const orientationMobilityTrainingCount = data.reduce(
-    (sum, item) => sum + item.orientationMobilityTraining.length,
-    0
-  );
+  const lowVisionScreeningCount = countsData["Low_Vision_Evaluation"] || 0;
+  const comprehensiveLowVisionEvaluationCount = countsData["Comprehensive_Low_Vision_Evaluation"] || 0;
+  const visionEnhancementCount = countsData["Vision_Enhancement"] || 0;
+
+  const mobileTrainingCount = countsData["Mobile_Training"] || 0;
+  const computerTrainingCount = countsData["Computer_Training"] || 0;
+  const orientationMobilityTrainingCount = countsData["Orientation_Mobility_Training"] || 0;
   const trainingCount =
-    data.reduce((sum, item) => sum + item.training.length, 0) +
+    (countsData["Training"] || 0) +
     mobileTrainingCount +
     computerTrainingCount +
     orientationMobilityTrainingCount;
 
-  // Then the counselling
-  const counsellingCount = data.reduce(
-    (sum, item) => sum + item.counsellingEducation.length,
-    0
-  );
+  const counsellingCount = countsData["Counselling_Education"] || 0;
 
   const chartData = {
     labels: [
@@ -194,28 +125,36 @@ function buildActivitiesGraph(data) {
   return chartData;
 }
 
-// Function that builds a bar graph at a sublevel. This function is called
-// with both "training" and "counselling" as the breakdownType
-function buildBreakdownGraph(data, breakdownType) {
-  const types = data.reduce((types, hospital) => {
-    const hospitalTypes = hospital[breakdownType].map((item) => item.type);
-    return [...types, ...hospitalTypes];
-  }, []);
+// Function to build Breakdown Graph based on type
+function buildBreakdownGraph(countsData, breakdownType) {
+  let typeCounts = {};
 
-  const typeCounts = types.reduce((counts, type) => {
-    const count = counts[type] || 0;
-    return {
-      ...counts,
-      [type]: count + 1,
-    };
-  }, {});
+  if (breakdownType === 'training') {
+    if (!countsData['Training_Subtypes']) {
+      console.error('Training subtypes data not available in countsData');
+      return null;
+    }
+    typeCounts = countsData['Training_Subtypes'];
+  } else if (breakdownType === 'counsellingEducation') {
+    if (!countsData['Counselling_Types']) {
+      console.error('Counselling types data not available in countsData');
+      return null;
+    }
+    typeCounts = countsData['Counselling_Types'];
+  } else {
+    console.error('Invalid breakdownType:', breakdownType);
+    return null;
+  }
+
+  const labels = Object.keys(typeCounts);
+  const dataPoints = Object.values(typeCounts);
 
   const chartData = {
-    labels: Object.keys(typeCounts),
+    labels: labels,
     datasets: [
       {
-        label: "Cumulative Counts",
-        data: Object.values(typeCounts),
+        label: 'Cumulative Counts',
+        data: dataPoints,
         ...graphOptions,
       },
     ],
@@ -224,59 +163,22 @@ function buildBreakdownGraph(data, breakdownType) {
   return chartData;
 }
 
-// Function that builds a bar graph to show the number of devices dispensed
-function buildDevicesGraph(data) {
-  // The device information is stored inside the comprehensiveLowVisionEvaluation array
-  // Inside the array, there are fields dispensedSpectacle, dispensedElectronic, dispensedOptical, dispensedNonOptical
-  // We want to count the number of entries in which these fields are not empty
-  const dispensedSpectacleCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.dispensedSpectacle)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.dispensedSpectacle.split("; ").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
-  const dispensedElectronicCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.dispensedElectronic)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.dispensedElectronic.split("; ").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
-  const dispensedOpticalCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.dispensedOptical)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.dispensedOptical.split("; ").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
-  const dispensedNonOpticalCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.dispensedNonOptical)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.dispensedNonOptical.split("; ").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
+// Function to build Devices Graph
+function buildDevicesGraph(countsData) {
+  if (!countsData || countsData['Devices_Dispensed'] === undefined || countsData['Devices_Dispensed'] === null) {
+    console.error('Devices dispensed data not available in countsData');
+    return {
+      labels: [],
+      datasets: [],
+    };
+  }
+
+  const devicesCounts = countsData['Devices_Dispensed'];
+
+  const dispensedSpectacleCount = devicesCounts['Spectacle'] || 0;
+  const dispensedElectronicCount = devicesCounts['Electronic'] || 0;
+  const dispensedOpticalCount = devicesCounts['Optical'] || 0;
+  const dispensedNonOpticalCount = devicesCounts['NonOptical'] || 0;
 
   const chartData = {
     labels: [
@@ -287,7 +189,7 @@ function buildDevicesGraph(data) {
     ],
     datasets: [
       {
-        label: "Cumulative Counts",
+        label: 'Cumulative Counts',
         data: [
           dispensedSpectacleCount,
           dispensedElectronicCount,
@@ -302,119 +204,64 @@ function buildDevicesGraph(data) {
   return chartData;
 }
 
-// Function that builds a bar graph to show the number of devices recommended
-function buildRecDevicesGraph(data) {
-  // The device information is stored inside the comprehensiveLowVisionEvaluation array
-  // Inside the array, there are fields dispensedSpectacle, dispensedElectronic, dispensedOptical, dispensedNonOptical
-  // We want to count the number of entries in which these fields are not empty
-  console.log(data);
-  const dispensedSpectacleCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.recommendationSpectacle)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.recommendationSpectacle.split(",").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
-  const dispensedElectronicCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.recommendationElectronic)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.recommendationElectronic.split(",").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
-  const dispensedOpticalCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.recommendationOptical)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.recommendationOptical.split(",").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
-  const dispensedNonOpticalCount = data.reduce(
-    (sum, item) => {
-      const items = item.comprehensiveLowVisionEvaluation.filter(
-        (evaluation) => isNotNullBlankOrUndefined(evaluation.recommendationNonOptical)
-      );
-      const count = items.reduce((sum, evaluation) => {
-        return sum + evaluation.recommendationNonOptical.split(",").length;
-      }, 0);
-      return sum + count;
-    },
-    0
-  );
+function buildRecDevicesGraph(countsData) {
+  if (!countsData || !countsData['Devices_Recommended']) {
+    // Return an empty chart data object or null
+    return {
+      labels: [],
+      datasets: [],
+    };
+  }
 
-  const chartData = {
+  const devicesCounts = countsData['Devices_Recommended'];
+
+  const recommendedSpectacleCount = devicesCounts['Spectacle'] || 0;
+  const recommendedElectronicCount = devicesCounts['Electronic'] || 0;
+  const recommendedOpticalCount = devicesCounts['Optical'] || 0;
+  const recommendedNonOpticalCount = devicesCounts['NonOptical'] || 0;
+
+  return {
     labels: [
-      `Spectacle (${dispensedSpectacleCount})`,
-      `Electronic (${dispensedElectronicCount})`,
-      `Optical (${dispensedOpticalCount})`,
-      `Non-Optical (${dispensedNonOpticalCount})`,
+      `Spectacle (${recommendedSpectacleCount})`,
+      `Electronic (${recommendedElectronicCount})`,
+      `Optical (${recommendedOpticalCount})`,
+      `Non-Optical (${recommendedNonOpticalCount})`,
     ],
     datasets: [
       {
-        label: "Cumulative Counts",
+        label: 'Cumulative Counts',
         data: [
-          dispensedSpectacleCount,
-          dispensedElectronicCount,
-          dispensedOpticalCount,
-          dispensedNonOpticalCount,
+          recommendedSpectacleCount,
+          recommendedElectronicCount,
+          recommendedOpticalCount,
+          recommendedNonOpticalCount,
         ],
         ...graphOptions,
       },
     ],
   };
-
-  return chartData;
 }
 
-// Function that builds a bar graph at a sublevel. This function is called
-// with different devices types as the breakdownType (can be one of the AllowedDevices)
-const allowedDevices = ["Electronic", "Spectacle", "Optical", "NonOptical"];
-function buildDevicesBreakdownGraph(data, breakdownType) {
-  if (!allowedDevices.includes(breakdownType)) {
-    breakdownType = "Electronic";
+
+// Function to build Devices Breakdown Graph
+function buildDevicesBreakdownGraph(countsData, breakdownType) {
+  if (!countsData['Devices_Dispensed']) {
+    console.error('Devices dispensed data not available in countsData');
+    return null;
   }
-  const dispensedKey = "dispensed" + breakdownType;
-  const deviceList = data.reduce((types, hospital) => {
-    const filteredEvaluations = hospital.comprehensiveLowVisionEvaluation.filter(
-      (evaluation) => isNotNullBlankOrUndefined(evaluation[dispensedKey])
-    )
-    const deviceTypes = filteredEvaluations.map((item) => item[dispensedKey].split("; "));
-    return [...types, ...deviceTypes];
-  }, []);
 
-  const types = deviceList.reduce((accumulator, currentValue) => {
-    return accumulator.concat(currentValue);
-  }, []);
+  const devicesCounts = countsData['Devices_Dispensed_Details'] || {};
+  const typeCounts = devicesCounts[breakdownType] || {};
 
-  const typeCounts = types.reduce((counts, type) => {
-    const count = counts[type] || 0;
-    return {
-      ...counts,
-      [type]: count + 1,
-    };
-  }, {});
+  const labels = Object.keys(typeCounts);
+  const dataPoints = Object.values(typeCounts);
 
   const chartData = {
-    labels: Object.keys(typeCounts),
+    labels: labels,
     datasets: [
       {
-        label: "Cumulative Counts",
-        data: Object.values(typeCounts),
+        label: `Dispensed ${breakdownType} Devices`,
+        data: dataPoints,
         ...graphOptions,
       },
     ],
@@ -423,39 +270,24 @@ function buildDevicesBreakdownGraph(data, breakdownType) {
   return chartData;
 }
 
-// Function that builds a bar graph at a sublevel for recommended devices. This function is called
-// with different devices types as the breakdownType (can be one of the AllowedDevices)
-function buildRecDevicesBreakdownGraph(data, breakdownType) {
-  if (!allowedDevices.includes(breakdownType)) {
-    breakdownType = "Electronic";
+// Function to build Recommended Devices Breakdown Graph
+function buildRecDevicesBreakdownGraph(countsData, breakdownType) {
+  if (!countsData['Devices_Recommended']) {
+    return null;
   }
-  const dispensedKey = "recommendation" + breakdownType;
-  const deviceList = data.reduce((types, hospital) => {
-    const filteredEvaluations = hospital.comprehensiveLowVisionEvaluation.filter(
-      (evaluation) => isNotNullBlankOrUndefined(evaluation[dispensedKey])
-    )
-    const deviceTypes = filteredEvaluations.map((item) => item[dispensedKey].split(","));
-    return [...types, ...deviceTypes];
-  }, []);
 
-  const types = deviceList.reduce((accumulator, currentValue) => {
-    return accumulator.concat(currentValue);
-  }, []);
+  const devicesCounts = countsData['Devices_Recommended_Details'] || {};
+  const typeCounts = devicesCounts[breakdownType] || {};
 
-  const typeCounts = types.reduce((counts, type) => {
-    const count = counts[type] || 0;
-    return {
-      ...counts,
-      [type]: count + 1,
-    };
-  }, {});
+  const labels = Object.keys(typeCounts);
+  const dataPoints = Object.values(typeCounts);
 
   const chartData = {
-    labels: Object.keys(typeCounts),
+    labels: labels,
     datasets: [
       {
-        label: "Cumulative Counts",
-        data: Object.values(typeCounts),
+        label: `Recommended ${breakdownType} Devices`,
+        data: dataPoints,
         ...graphOptions,
       },
     ],
@@ -464,283 +296,784 @@ function buildRecDevicesBreakdownGraph(data, breakdownType) {
   return chartData;
 }
 
+function buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals) {
+  if (!countsData) return { labels: [], datasets: [] };
+
+  if (countsData.Activity_Counts_Per_Hospital && selectedHospitals.length > 1) {
+    // Multiple hospitals selected, build data per hospital
+    const labels = [];
+    const dataPoints = [];
+
+    for (const hospitalId of selectedHospitals) {
+      const hospitalCounts = countsData.Activity_Counts_Per_Hospital[hospitalId];
+      if (!hospitalCounts) continue;
+
+      const totalBeneficiaries = hospitalCounts["Unique_Beneficiaries"] || 0;
+
+      // Get hospital name from hospitals array
+      const hospital = hospitals.find((h) => h.id === parseInt(hospitalId, 10));
+      const hospitalName = hospital ? hospital.name : `Hospital ${hospitalId}`;
+
+      labels.push(hospitalName);
+      dataPoints.push(totalBeneficiaries);
+    }
+
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Number of Beneficiaries",
+          data: dataPoints,
+          backgroundColor: labels.map(() => "rgba(54, 162, 235, 0.2)"),
+          borderColor: labels.map(() => "rgba(54, 162, 235, 1)"),
+          borderWidth: 1,
+        },
+      ],
+    };
+  } else {
+    // Single hospital selected or counts per hospital not provided
+    const totalBeneficiaries = countsData["Unique_Beneficiaries"] || 0;
+
+    return {
+      labels: ["Accurate Beneficiaries"],
+      datasets: [
+        {
+          label: "Number of Beneficiaries",
+          data: [totalBeneficiaries],
+          backgroundColor: "rgba(54, 162, 235, 0.2)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
+}
+
+function buildSessionsGraph(countsData, selectedHospitals, hospitals) {
+  if (!countsData) return null;
+
+  if (countsData.Activity_Counts_Per_Hospital && selectedHospitals.length > 1) {
+    // Multiple hospitals selected, build data per hospital
+    const labels = [];
+    const dataPoints = [];
+
+    for (const hospitalId of selectedHospitals) {
+      const hospitalCounts = countsData.Activity_Counts_Per_Hospital[hospitalId];
+      if (!hospitalCounts) continue;
+
+      const activityCounts = [
+        hospitalCounts["Low_Vision_Evaluation"] || 0,
+        hospitalCounts["Comprehensive_Low_Vision_Evaluation"] || 0,
+        hospitalCounts["Vision_Enhancement"] || 0,
+        hospitalCounts["Training"] || 0,
+        hospitalCounts["Mobile_Training"] || 0,
+        hospitalCounts["Computer_Training"] || 0,
+        hospitalCounts["Orientation_Mobility_Training"] || 0,
+        hospitalCounts["Counselling_Education"] || 0,
+      ];
+      const totalSessions = activityCounts.reduce((sum, count) => sum + count, 0);
+
+      // Get hospital name from hospitals array
+      const hospital = hospitals.find((h) => h.id === parseInt(hospitalId, 10));
+      const hospitalName = hospital ? hospital.name : `Hospital ${hospitalId}`;
+
+      labels.push(hospitalName);
+      dataPoints.push(totalSessions);
+    }
+
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Number of Sessions",
+          data: dataPoints,
+          backgroundColor: labels.map(() => "rgba(75, 192, 192, 0.2)"),
+          borderColor: labels.map(() => "rgba(75, 192, 192, 1)"),
+          borderWidth: 1,
+        },
+      ],
+    };
+  } else {
+    // Single hospital selected or counts per hospital not provided
+    const activityCounts = [
+      countsData["Low_Vision_Evaluation"] || 0,
+      countsData["Comprehensive_Low_Vision_Evaluation"] || 0,
+      countsData["Vision_Enhancement"] || 0,
+      countsData["Training"] || 0,
+      countsData["Mobile_Training"] || 0,
+      countsData["Computer_Training"] || 0,
+      countsData["Orientation_Mobility_Training"] || 0,
+      countsData["Counselling_Education"] || 0,
+    ];
+    const totalSessions = activityCounts.reduce((sum, count) => sum + count, 0);
+
+    return {
+      labels: ["Total Sessions"],
+      datasets: [
+        {
+          label: "Number of Sessions",
+          data: [totalSessions],
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
+}
+
+const visualAcuityOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+    },
+    title: {
+      display: true,
+      text: 'Visual Acuity Distribution',
+    },
+    tooltip: {
+      enabled: true,
+    },
+    datalabels: {
+      // Custom formatter to display count and percentage
+      formatter: (value, context) => {
+        const dataset = context.chart.data.datasets[context.datasetIndex];
+        const total = dataset.data.reduce((acc, val) => acc + val, 0);
+        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+        return `${value} (${percentage}%)`;
+      },
+      color: '#000', // Set text color for better readability
+      anchor: 'end',
+      align: 'start',
+      offset: -5,
+      font: {
+        weight: 'bold',
+        size: 14,
+      },
+    },
+  },
+};
+
+// Function to build Training Types Graph
+function buildTrainingTypesGraph(countsData) {
+  if (!countsData || !countsData["Training_Types"]) {
+    return {
+      labels: [],
+      datasets: [
+        {
+          label: "Training Types",
+          data: [],
+          ...graphOptions,
+        },
+      ],
+    };
+  }
+
+  const trainingTypes = countsData["Training_Types"];
+  const labels = Object.keys(trainingTypes);
+  const dataPoints = Object.values(trainingTypes);
+
+  return {
+    labels: labels,
+    datasets: [
+      {
+        label: "Training Types",
+        data: dataPoints,
+        backgroundColor: labels.map(() => "rgba(54, 162, 235, 0.2)"),
+        borderColor: labels.map(() => "rgba(54, 162, 235, 1)"),
+        borderWidth: 1,
+      },
+    ],
+  };
+}
+
+// Function to build Training Subtypes Graph
+function buildTrainingSubtypesGraph(countsData, selectedType) {
+  if (
+    !countsData ||
+    !countsData["Training_Subtypes"] ||
+    !countsData["Training_Subtypes"][selectedType]
+  ) {
+    return {
+      labels: [],
+      datasets: [],
+    };
+  }
+
+  const trainingSubtypes = countsData["Training_Subtypes"][selectedType];
+  const labels = Object.keys(trainingSubtypes);
+  const dataPoints = Object.values(trainingSubtypes);
+
+  return {
+    labels: labels,
+    datasets: [
+      {
+        label: `Subtypes of ${selectedType}`,
+        data: dataPoints,
+        backgroundColor: labels.map(() => "rgba(255, 99, 132, 0.2)"),
+        borderColor: labels.map(() => "rgba(255, 99, 132, 1)"),
+        borderWidth: 1,
+      },
+    ],
+  };
+}
+
+// Helper functions to assign colors
+function getColor(index) {
+  const colors = [
+    "rgba(255, 99, 132, 0.6)",
+    "rgba(54, 162, 235, 0.6)",
+    "rgba(255, 206, 86, 0.6)",
+    "rgba(75, 192, 192, 0.6)",
+    "rgba(153, 102, 255, 0.6)",
+    "rgba(255, 159, 64, 0.6)",
+    "rgba(119, 221, 119, 0.6)",
+    "rgba(0, 191, 255, 0.6)",
+    "rgba(255, 99, 71, 0.6)",
+    "rgba(128, 0, 128, 0.6)",
+  ];
+  return colors[index % colors.length];
+}
+
+function getBorderColor(index) {
+  const colors = [
+    "rgba(255, 99, 132, 1)",
+    "rgba(54, 162, 235, 1)",
+    "rgba(255, 206, 86, 1)",
+    "rgba(75, 192, 192, 1)",
+    "rgba(153, 102, 255, 1)",
+    "rgba(255, 159, 64, 1)",
+    "rgba(119, 221, 119, 1)",
+    "rgba(0, 191, 255, 1)",
+    "rgba(255, 99, 71, 1)",
+    "rgba(128, 0, 128, 1)",
+  ];
+  return colors[index % colors.length];
+}
+
+function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals, drilledDown) {
+  if (!countsData) return null;
+
+  if (!drilledDown) {
+    if (selectedHospitals.length > 1) {
+      // Use Unique_Beneficiaries_By_Activity_Per_Hospital
+      const activityCountsPerHospital = countsData["Unique_Beneficiaries_By_Activity_Per_Hospital"] || {};
+
+      // Sum total unique beneficiaries for each hospital
+      const labels = Object.keys(activityCountsPerHospital); // Hospital names
+      const dataPoints = labels.map((hospital) => {
+        const activities = activityCountsPerHospital[hospital] || {};
+        return Object.values(activities).reduce((sum, count) => sum + count, 0); // Sum of all activities per hospital
+      });
+
+      return {
+        labels: labels, // Hospital names
+        datasets: [
+          {
+            label: "Total Unique Beneficiaries",
+            data: dataPoints,
+            backgroundColor: labels.map((_, index) => getColor(index)),
+            borderColor: labels.map((_, index) => getBorderColor(index)),
+            borderWidth: 1,
+          },
+        ],
+      };
+    } else {
+      // Not drilled down and single hospital selected: Show total unique beneficiaries for that hospital
+      const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"] || {};
+      const total = Object.values(uniqueBeneficiariesByActivity).reduce((sum, val) => sum + val, 0);
+
+      return {
+        labels: ["Total Unique Beneficiaries"],
+        datasets: [
+          {
+            label: 'Total',
+            data: [total],
+            backgroundColor: ["rgba(75, 192, 192, 0.6)"],
+            borderColor: ["rgba(75, 192, 192, 1)"],
+            borderWidth: 1,
+          },
+        ],
+      };
+    }
+  } else {
+    if (selectedHospitals.length > 1) {
+      // Drilled down: Show stacked bar chart of unique beneficiaries by activity per hospital
+      const activityCountsPerHospital = countsData["Unique_Beneficiaries_By_Activity_Per_Hospital"] || {};
+
+      const labels = Object.keys(activityCountsPerHospital); // Hospital names
+      const activities = Object.values(activityCountsPerHospital).reduce((acc, activities) => {
+        Object.keys(activities).forEach((activity) => {
+          if (!acc.includes(activity)) acc.push(activity);
+        });
+        return acc;
+      }, []); // All unique activity names
+
+      // Build dataset for stacked bar chart
+      const datasets = activities.map((activity, activityIndex) => {
+        const dataPoints = labels.map(
+          (hospital) => activityCountsPerHospital[hospital]?.[activity] || 0
+        );
+
+        return {
+          label: activity,
+          data: dataPoints,
+          backgroundColor: getColor(activityIndex),
+          borderColor: getBorderColor(activityIndex),
+          borderWidth: 1,
+        };
+      });
+
+      return {
+        labels: labels, // Hospital names
+        datasets: datasets,
+      };
+    } else {
+      // Drilled down and single hospital selected: Show unique beneficiaries by activity
+      const uniqueBeneficiariesByActivity = countsData["Unique_Beneficiaries_By_Activity"] || {};
+
+      const labels = Object.keys(uniqueBeneficiariesByActivity);
+      const dataPoints = labels.map((key) => uniqueBeneficiariesByActivity[key]);
+
+      return {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Unique Beneficiaries by Activity',
+            data: dataPoints,
+            backgroundColor: labels.map((_, index) => getColor(index)),
+            borderColor: labels.map((_, index) => getBorderColor(index)),
+            borderWidth: 1,
+          },
+        ],
+      };
+    }
+  }
+}
+
+
+// Fetch data server-side
+export async function getServerSideProps(ctx) {
+  const session = await getSession(ctx);
+
+  if (session == null) {
+    console.log("session is null");
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+      props: {
+        user: null,
+        hospitals: [],
+      },
+    };
+  }
+
+  // Fetch user data
+  const user = await readUser(session.user.email);
+  const isAdmin = Boolean(user.admin);
+  
+  let hospitals = await findAllHospital();
+
+  if (!isAdmin) {
+    hospitals = hospitals.filter((hospital) => user.hospitalRoles.map(role => role.hospitalId).includes(hospital.id));
+  }
+
+  return {
+    props: {
+      hospitals: JSON.parse(JSON.stringify(hospitals)),
+      user: JSON.parse(JSON.stringify(user)),
+      error: null,
+    },
+  };
+}
+
+// PaginatedTable Component for rendering data table with pagination
+function PaginatedTable({
+  data,
+  columnDefs,
+  page,
+  totalRecords,
+  onPageChange,
+  pageSize,
+  onPageSizeChange,
+}) {
+  const totalPages = Math.ceil(totalRecords / pageSize);
+
+  // Calculate the start and end record numbers
+  const startRecord = totalRecords === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endRecord = Math.min(page * pageSize, totalRecords);
+
+  // Generate an array of page numbers for the dropdown
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  return (
+    <div>
+      {/* AG Grid Table */}
+      <div className="ag-theme-quartz" style={{ height: "600px", width: "100%" }}>
+        <AgGridReact
+          rowData={data}
+          columnDefs={columnDefs}
+          pagination={false} // Pagination handled manually
+        />
+      </div>
+
+      {/* Pagination Controls */}
+      <div
+        className="pagination-controls"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '10px',
+          flexWrap: 'wrap', // Allows wrapping on smaller screens
+          gap: '10px', // Adds spacing between controls
+        }}
+      >
+        {/* Previous Page Button */}
+        <Button
+          variant="contained"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page === 1}
+        >
+          Previous
+        </Button>
+
+        {/* Record Range Display */}
+        <Box>
+          <span>{`${startRecord} to ${endRecord} of ${totalRecords}`}</span>
+        </Box>
+
+        {/* Page Number Dropdown */}
+        <Box display="flex" alignItems="center">
+          <span style={{ marginRight: '5px' }}>Page:</span>
+          <select
+            value={page}
+            onChange={(e) => onPageChange(parseInt(e.target.value, 10))}
+            style={{ padding: '5px' }}
+          >
+            {pageNumbers.map((num) => (
+              <option key={num} value={num}>
+                {num}
+              </option>
+            ))}
+          </select>
+          <span style={{ marginLeft: '5px' }}>of {totalPages}</span>
+        </Box>
+
+        {/* Page Size Dropdown */}
+        <Box display="flex" alignItems="center">
+          <span style={{ marginRight: '5px' }}>Page Size:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(parseInt(e.target.value, 10))}
+            style={{ padding: '5px' }}
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </Box>
+
+        {/* Next Page Button */}
+        <Button
+          variant="contained"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page === totalPages || totalRecords === 0}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Main Summary Component
 export default function Summary({
   user,
-  summary,
-  error,
+  hospitals,
+  trainingTypes,
+  trainingSubTypes,
+  
 }) {
-  // Downloaded reports reference sheet data
-  // TODO: this hardcoded information will be fetched from database in the future
-  // Your tab-separated data
-  const refData = `S.no\tPrograms\tTypes\tDescription
-  1\tScreening /Out reach activities/ Camp\tLow Vision Screening\tLow vision screening of the school of the blind and Identification of the visually impaired for assistive technology
-  2\t\tIdentification of MDVI\tBeneficiaries come under Multiple disabilities and vision impairment.
-  3\tFunctional Vision/Early Intervention/ Vision enhancement\t\tAge group less than 7 years. Training of infants,children and parents to improve the brain’s ability to use and interpret visual information especially in kids with Cortical visual impairment (CVI)
-  4\tLVD beneficiairies/Comprehensive Low Vision Evaluation - CLVE\t\tLow vision assessment / Functional vision assessment done by a Professional - Optometrist / Low vision care specialist / Rehabilitation Specialist
-  5\tAssistive devices and aids\tAssistive devices/aids/RLF tactile books/ Optical/ Non Optical/ Electronic\tDevices for individuals with low vision and total blindness
-  6\tLow vision device training\tTraining is given after dispensing devices\t
-  7\tCounseling & referrals/ Counseling and education\tEducation and counseling\tList of referrals
-  8\tOrientation & Mobility training (O and M)\t\tTraining to help the visually impaired orient to the environment around and navigate safely
-  9\tComputer training\t\tTraining programs are conducted to build proficiency in computer skills using assistive technology like screen readers, magnification and contrast modifcations
-  10\tMobile technologies \t\tEducating on various mobile app for navigation and other functions
-  11\tVisual skills training\tAll subtypes under it as a whole\tVisual skills training greater than 7 years and adults
-  12\tOther training\tCorporate skill development\tComputer Programming, Digital accessibility testing DAT
-  13\t\tBraille Training & resources and Training with Braille reader / ORBIT reader\tTraining on Braille devices for education and Braille literacy
-  14\t\tTraining for Life skills/ Money identification/ Home management / Kitchen skills\t
-  15\t\tJob Coaching /IBPS\tIntegrated training program for Institute of Banking Personnel Selection and other job coaching
-  16\t\tSpoken english training\tTraining to speak in English for both beginners and Intermediate.`;
-  const refRows = refData.split('\n').map(row => row.split('\t'));
-
-  const hospitalAbbr = {
-    "Aravind Eye Hospital, Madurai": "AEH, MDU",
-    "Aravind Eye Hospital, Coimbatore": "AEH, CBE",
-    "Aravind Eye Hospital, Pondicherry": "AEH, PY",
-    "Aravind Eye Hospital, Tirupati": "AEH, TPTY",
-    "Aravind Eye Hospital, Tirunelveli": "AEH, TVL",
-    "Sankara Nethralaya, Chennai": "SN, CHE",
-    "Sankara Nethralaya, Kolkata": "SN, KOL",
-    "Dr. Shroff's Charity Eye Hospital": "SCEH, DL",
-    "Narayana Nethralaya, Rajajinagar, Bangalore": "NN, BLR",
-    "Dr. Jawahar Lal Rohatgi Eye Hospital, Kanpur": "JLR, UP",
-    "Sitapur Eye Hospital, Sitapur, UP": "SEH, UP",
-    "Voluntary Health Services": "VHS, CHE",
-    "Community Eye Care Foundation": "CECF, PUN"
-  };
-
-  // create start date and end data states, start date is set to one year ago, end date is set to today
+  // State variables for date range
   const [startDate, setStartDate] = useState(
-    moment().subtract(1, "year").toDate()
+    moment().subtract(1, "year").format('YYYY-MM-DD')
   );
-  const [endDate, setEndDate] = useState(moment().toDate());
+  const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
 
+  const router = useRouter();
+  const {
+    selectedHospitals: qSelectedHospitals,
+    startDate: qStartDate,
+    endDate: qEndDate,
+    selectedGenders: qSelectedGenders,
+    selectedMdvi: qSelectedMdvi,
+    minAge: qMinAge,
+    maxAge: qMaxAge,
+    subTabIndex: qSubTabIndex,
+    masterTabIndex: qMasterTabIndex,
+    quarter: qQuarter
+  } = router.query;
+  
+
+  
+  // State variables for tabs
+  const [masterTabIndex, setMasterTabIndex] = useState(0); // Table/Graph
+  const [subTabIndex, setSubTabIndex] = useState(0); // Sub-tabs within Table
+  const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedHospitals, setSelectedHospitals] = useState([]);
   const [selectedHospitalNames, setSelectedHospitalNames] = useState([]);
 
-  const router = useRouter();
+  const [isChartLoading, setIsChartLoading] = useState(false);
 
-  useEffect(() => {
-    setSelectedHospitals(summary.map((item) => item.id));
-  }, [summary]);
-
-  useEffect(() => {
-    setSelectedHospitalNames(summary.map((item) => item.name));
-  }, [summary]);
-
-  const handleMultiSelectChange = (e) => {
-    const {
-      target: { value },
-    } = e;
-    setSelectedHospitalNames(value);
-    setSelectedHospitals(
-      summary
-        .filter((hospital) => value.includes(hospital.name))
-        .map((hospital) => hospital.id)
-    );
-  };
-
-  const handleAllSelect = (e, allSelect) => {
-    if (allSelect) {
-      setSelectedHospitals(summary.map((item) => item.id));
-      setSelectedHospitalNames(summary.map((item) => item.name));
-    } else {
-      setSelectedHospitals([]);
-      setSelectedHospitalNames([]);
-    }
-  };
+  // State variables for counts and graph data
+  // const [countsData, setCountsData] = useState(null);
+  const [countsData, setCountsData] = useState({
+    genderCounts: { Male: 0, Female: 0, Other: 0 },
+    ageGroupCounts: { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 },
+  });
+  const [isTableActive, setIsTableActive] = useState(true);
+  const [isGraphActive, setIsGraphActive] = useState(false);
   
-  // filter summary data based on start and end date of the training
-  const dateFilteredSummary = filterTrainingSummaryByDateRange(
-    startDate,
-    endDate,
-    summary,
-    "hospital"
-  );
+  // Pagination state variables
+  const [pageSize, setPageSize] = useState(50); // Default page size
 
-  // filter summary data based on selected hospitals
-  const filteredSummary = dateFilteredSummary.filter((item) =>
-    selectedHospitals.includes(item.id)
-  );
-  
-  // generate all the data for required graphs
-  const beneficiaryGraphData = buildBeneficiaryGraph(filteredSummary);
-  const activitiesGraphData = buildActivitiesGraph(filteredSummary);
-  const trainingBreakdownGraphData = buildBreakdownGraph(
-    filteredSummary,
-    "training"
-  );
-  const counsellingBreakdownGraphData = buildBreakdownGraph(
-    filteredSummary,
-    "counsellingEducation"
-  );
-  const devicesGraphData = buildDevicesGraph(filteredSummary);
-  const electronicDevicesGraphData =  buildDevicesBreakdownGraph(filteredSummary, "Electronic");
-  const spectacleDevicesGraphData =  buildDevicesBreakdownGraph(filteredSummary, "Spectacle");
-  const opticalDevicesGraphData =  buildDevicesBreakdownGraph(filteredSummary, "Optical");
-  const nonOpticalDevicesGraphData =  buildDevicesBreakdownGraph(filteredSummary, "NonOptical");
+  // Page numbers for each sub-tab
+  const [beneficiaryPage, setBeneficiaryPage] = useState(1);
+  const [visionEnhancementPage, setVisionEnhancementPage] = useState(1);
+  const [trainingPage, setTrainingPage] = useState(1);
+  const [comprehensivePage, setComprehensivePage] = useState(1);
+  const [counselingPage, setCounselingPage] = useState(1);
 
-  const recDevicesGraphData = buildRecDevicesGraph(filteredSummary);
-  const electronicRecDevicesGraphData =  buildRecDevicesBreakdownGraph(filteredSummary, "Electronic");
-  const spectacleRecDevicesGraphData =  buildRecDevicesBreakdownGraph(filteredSummary, "Spectacle");
-  const opticalRecDevicesGraphData =  buildRecDevicesBreakdownGraph(filteredSummary, "Optical");
-  const nonOpticalRecDevicesGraphData =  buildRecDevicesBreakdownGraph(filteredSummary, "NonOptical");
+  // Data states
+  const [comprehensiveEvaluations, setComprehensiveEvaluations] = useState([]);
+  const [counselingRecords, setCounselingRecords] = useState([]);
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [visionEnhancements, setVisionEnhancements] = useState([]);
+  const [trainings, setTrainings] = useState([]); 
 
-  async function downloadFilteredReport() {
-    if (selectedHospitalNames.length === 0) {
-      alert("No hospital was selected! Please select at least one hospital to download the report.");
-      return;
-    }
-    try {
-      startDate.setUTCHours(0, 0, 0, 0);
-      endDate.setUTCHours(23, 59, 59, 999);
-      const beneficiaryListAPI = selectedHospitals.map((id) => fetch(
-        `/api/beneficiaryList?id=${id}&startDate=${startDate.toUTCString()}&endDate=${endDate.toUTCString()}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      ));
-      let promises = await Promise.all(beneficiaryListAPI);
-      var finalResult = await Promise.all(promises.map(res => res.json ? res.json().catch(err => err) : res));
-    } catch (error) {
-      console.error("Error fetching beneficiary list:", error);
-    }
-    const beneficiaryList = finalResult.flat();
+  // Loading and counts states
+  const [isLoading, setIsLoading] = useState(false);
+  // const [totalSessions, setTotalSessions] = useState(0);
+  const [totalBeneficiaries, setTotalBeneficiaries] = useState(0);
+  const [totalVisionEnhancements, setTotalVisionEnhancements] = useState(0);
+  const [totalTrainings, setTotalTrainings] = useState(0);
+  const [totalComprehensiveEvaluations, setTotalComprehensiveEvaluations] = useState(0);
+  const [totalCounselingRecords, setTotalCounselingRecords] = useState(0);
 
-    const dateFilteredBeneficiaryData = filterTrainingSummaryByDateRange(
-      startDate,
-      endDate,
-      beneficiaryList,
-      "beneficiary"
-    );
+  // Filter states
+  const [selectedGenders, setSelectedGenders] = useState(['Male','Female', 'Other']);
+  const [selectedMdvi, setSelectedMdvi] = useState(['Yes', 'No']);
+  const [minAge, setMinAge] = useState(null);
+  const [maxAge, setMaxAge] = useState(null);
 
-    const filteredBeneficiaryData = dateFilteredBeneficiaryData.filter((item) =>
-      selectedHospitals.includes(item.hospital.id)
-    );
+  // Drawer state for filters
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-    const {
-      beneficiaryData,
-      visionEnhancementData,
-      lowVisionEvaluationData,
-      comprehensiveLowVisionEvaluationData,
-      electronicDevicesData,
-      trainingData,
-      counsellingEducationData,
-      aggregatedHospitalData,
-    } = getReportData(filteredBeneficiaryData, filteredSummary, true);
-
-    const wb = XLSX.utils.book_new();
-
-    const wref = XLSX.utils.aoa_to_sheet(refRows);
-    const wben = XLSX.utils.json_to_sheet(beneficiaryData);
-    const wved = XLSX.utils.json_to_sheet(visionEnhancementData);
-
-    const wlved = XLSX.utils.json_to_sheet([]);
-    const wclve = XLSX.utils.json_to_sheet([]);
-
-    const wed = XLSX.utils.json_to_sheet(electronicDevicesData);
-    const wtd = XLSX.utils.json_to_sheet(trainingData);
-    const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
-
-    const wahd = XLSX.utils.json_to_sheet([]);
-
-    XLSX.utils.book_append_sheet(wb, [], "Summary");
-    XLSX.utils.book_append_sheet(wb, [], "Summary of Finances");
-    XLSX.utils.book_append_sheet(wb, wahd, "Summary of Services");
-    XLSX.utils.book_append_sheet(wb, wref, "Reference");
-    XLSX.utils.book_append_sheet(wb, wclve, "CLVE_LVD Beneficiaries");
-    XLSX.utils.book_append_sheet(wb, wved, "Vision Enhancement Sheet");
-    XLSX.utils.book_append_sheet(wb, wtd, "Training Sheet");
-    XLSX.utils.book_append_sheet(wb, wced, "Counselling Education Sheet");
-    XLSX.utils.book_append_sheet(wb, wlved, "Camp_Low Vision Screening");
-    XLSX.utils.book_append_sheet(wb, wben, "Overall Beneficiary Sheet");
-    XLSX.utils.book_append_sheet(wb, wed, "Electronic Devices Break Up");
-    XLSX.utils.book_append_sheet(wb, [], "Action items from prev quarter");
-
-    setClveHeader(wclve);
-    XLSX.utils.sheet_add_json(wclve, comprehensiveLowVisionEvaluationData, {
-      skipHeader: true,
-      origin: -1,
-    });
-
-    setLveHeader(wlved);
-    XLSX.utils.sheet_add_json(wlved, lowVisionEvaluationData, {
-      skipHeader: true,
-      origin: -1,
-    });
-
-    setAhdHeader(
-      wahd,
-      filteredSummary.map((hospital) => hospital.name)
-    );
-    XLSX.utils.sheet_add_json(wahd, aggregatedHospitalData, {
-      skipHeader: true,
-      origin: -1,
-    });
-
-    // Change the column width for the reference sheet
-    const wscols = [];
-    const wrefcols = [4, 53, 66, 84]; // values obtained from manually adjusting the downloaded excel sheet
-    for (let i = 0; i < refRows[0].length; i++) {
-        wscols.push({wch: wrefcols[i]}); // Set the initial width for each column
-    }
-    wref['!cols'] = wscols;
-
-    // generate the filename based on the filter date range and the selected hospitals
-    let reportHospitalName = hospitalAbbr[selectedHospitalNames[0]];
-    if (selectedHospitalNames.length === summary.length) {
-      reportHospitalName = "ALL";
-    } else if (selectedHospitalNames.length > 1) {
-      reportHospitalName = "MULTI";
-    } else if (reportHospitalName === undefined) {
-      reportHospitalName = selectedHospitalNames[0];
-    }
-    let fileNameComponents = [];
-    fileNameComponents.push("Report");
-    fileNameComponents.push(reportHospitalName);
-    fileNameComponents.push(startDate.toISOString().split('T')[0]);
-    fileNameComponents.push(endDate.toISOString().split('T')[0]);
-    const filename = fileNameComponents.join("_") + ".xlsx";
-
-    XLSX.writeFile(wb, filename);
-  }
-
-  const handleStartDateChange = (e) => {
-    setStartDate(moment(e.target.value).toDate());
-  };
-
-  const handleEndDateChange = (e) => {
-    setEndDate(moment(e.target.value).toDate());
-  };
-
+  // State variables for graph tabs
   const [activeGraphTab, setActiveGraphTab] = useState(0);
   const [activeBeneficiaryGraphTab, setActiveBeneficiaryGraphTab] = useState(0);
   const [activeDevicesGraphTab, setActiveDevicesGraphTab] = useState(0);
   const [activeRecDevicesGraphTab, setActiveRecDevicesGraphTab] = useState(0);
   const [activeActivitiesGraphTab, setActiveActivitiesGraphTab] = useState(0);
-  const handleGraphTabChange = (event, newValue) => {
-    setActiveGraphTab(newValue);
-    setActiveBeneficiaryGraphTab(0);
-    setActiveDevicesGraphTab(0);
-    setActiveRecDevicesGraphTab(0);
-    setActiveActivitiesGraphTab(0);
-  };
 
-  const handleBeneficiaryGraphTabChange = (event, newValue) => {
-    setActiveBeneficiaryGraphTab(newValue);
-  };
+  // New state variable for drilldown
+  const [uniqueBeneficiariesDrilledDown, setUniqueBeneficiariesDrilledDown] = useState(false);
+  const [trainingDrillDown, setTrainingDrillDown] = useState({
+    active: false,
+    type: null, // Holds the currently selected Training type for drill-down
+  });
 
-  const handleDevicesGraphTabChange = (event, newValue) => {
-    setActiveDevicesGraphTab(newValue);
-  };
 
-  const handleRecDevicesGraphTabChange = (event, newValue) => {
-    setActiveRecDevicesGraphTab(newValue);
+    // Debounced function to update URL query parameters
+    const updateURL = debounce(() => {
+      const newQuery = {
+        selectedHospitals: JSON.stringify(selectedHospitals),
+        startDate: startDate,
+        endDate: endDate,
+        selectedGenders: JSON.stringify(selectedGenders),
+        selectedMdvi: JSON.stringify(selectedMdvi),
+        minAge: minAge || '',
+        maxAge: maxAge || '',
+        subTabIndex: subTabIndex.toString(),
+        masterTabIndex: masterTabIndex.toString(),
+        quarter: selectedQuarter || ''
+      };
+  
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: newQuery,
+        },
+        undefined,
+        { shallow: true }
+      );
+    }, 300); // 300ms debounce delay
+  
+    // Synchronize URL with filter states
+    useEffect(() => {
+      updateURL();
+  
+      // Cleanup the debounce on unmount
+      return () => {
+        updateURL.cancel();
+      };
+    }, [
+      selectedHospitals,
+      startDate,
+      endDate,
+      selectedGenders,
+      selectedMdvi,
+      minAge,
+      maxAge,
+      subTabIndex,
+      masterTabIndex,
+    ]);
+  
+    // Initialize filter states from URL query parameters on mount
+    useEffect(() => {
+      if (qSelectedHospitals) {
+        try {
+          const parsedHospitals = JSON.parse(qSelectedHospitals);
+          setSelectedHospitals(parsedHospitals);
+        } catch (error) {
+          console.error("Error parsing selectedHospitals from query:", error);
+          setSelectedHospitals([]);
+        }
+      }
+  
+      if (qStartDate) {
+        setStartDate(qStartDate);
+      }
+      if (qEndDate) {
+        setEndDate(qEndDate);
+      }
+      if (qSelectedGenders) {
+        try {
+          const parsedGenders = JSON.parse(qSelectedGenders);
+          setSelectedGenders(parsedGenders);
+        } catch (error) {
+          console.error("Error parsing selectedGenders from query:", error);
+          setSelectedGenders(['Male','Female', 'Other']);
+        }
+      }
+      if (qSelectedMdvi) {
+        try {
+          const parsedMdvi = JSON.parse(qSelectedMdvi);
+          setSelectedMdvi(parsedMdvi);
+        } catch (error) {
+          console.error("Error parsing selectedMdvi from query:", error);
+          setSelectedMdvi(['Yes', 'No']);
+        }
+      }
+      if (qMinAge) {
+        setMinAge(Number(qMinAge));
+      }
+      if (qMaxAge) {
+        setMaxAge(Number(qMaxAge));
+      }
+      if (qSubTabIndex) {
+        setSubTabIndex(Number(qSubTabIndex));
+      }
+      if (qMasterTabIndex) {
+        setMasterTabIndex(Number(qMasterTabIndex));
+      }
+      if (qQuarter) {
+        setSelectedQuarter(qQuarter);
+      }
+    }, [
+      qSelectedHospitals,
+      qStartDate,
+      qEndDate,
+      qSelectedGenders,
+      qSelectedMdvi,
+      qMinAge,
+      qMaxAge,
+      qSubTabIndex,
+      qMasterTabIndex,
+      qQuarter
+    ]);
+  const EditButtonRenderer = (props) => {
+    const { mrn, hospitalId } = props.data;
+  
+    return (
+      <IconButton
+        color="primary"
+        onClick={() => {
+          const url = `/user?mrn=${encodeURIComponent(mrn)}&hospitalId=${encodeURIComponent(hospitalId)}`;
+          window.location.href = url;
+        }}
+      >
+        <EditIcon />
+      </IconButton>
+    );
   };
+  
 
-  const handleActivitiesGraphTabChange = (event, newValue) => {
-    setActiveActivitiesGraphTab(newValue);
-  };
+  const downloadChartData = (chartData, filename) => {
+    if (!chartData || !chartData.labels || !chartData.datasets) {
+      console.error("Invalid chart data");
+      return;
+    }
+  
+    const { labels, datasets } = chartData;
+    const csvRows = [];
+  
+    // Add headers
+    csvRows.push(['Label', ...datasets.map(ds => ds.label)]);
+  
+    // Add data rows
+    labels.forEach((label, index) => {
+      const row = [label];
+      datasets.forEach(ds => {
+        row.push(ds.data[index]);
+      });
+      csvRows.push(row);
+    });
+  
+    // Convert to CSV string
+    const csvContent = csvRows.map(e => e.join(",")).join("\n");
+  
+    // Create a Blob from the CSV string
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+    // Create a link to download the Blob
+    const link = document.createElement("a");
+  
+    // Safely handle selectedHospitalNames
+    let sanitizedHospitalNames = 'All_Hospitals';
+    if (Array.isArray(selectedHospitalNames) && selectedHospitalNames.length > 0) {
+      if (selectedHospitalNames.length === 1) {
+        // Replace spaces with underscores for a single hospital name
+        sanitizedHospitalNames = selectedHospitalNames[0].replace(/\s+/g, '_');
+      } else {
+        // Use 'MULTI' if multiple hospitals are selected
+        sanitizedHospitalNames = 'MULTI';
+      }
+    }
+  
+    // Safely handle startDate and endDate
+    const formattedStartDate = startDate ? moment(startDate).format('YYYY-MM-DD') : 'Unknown_StartDate';
+    const formattedEndDate = endDate ? moment(endDate).format('YYYY-MM-DD') : 'Unknown_EndDate';
+  
+    // Construct the complete filename
+    const completeFilename = `${filename}_${sanitizedHospitalNames}_${formattedStartDate}_${formattedEndDate}.csv`;
+  
+    // Create the download link
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", completeFilename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
+  // Graph options
   const options={
     plugins: {
       legend: {
@@ -752,188 +1085,1728 @@ export default function Summary({
     },
   };
 
+  // Handle tab changes to set active states
+  useEffect(() => {
+    setIsTableActive(masterTabIndex === 0);
+    setIsGraphActive(masterTabIndex === 1);
+  }, [masterTabIndex]);
+
+  // Reset data when filters change
+  useEffect(() => {
+    setBeneficiaries([]);
+    setVisionEnhancements([]);
+    setTrainings([]);
+    setComprehensiveEvaluations([]);
+    setCounselingRecords([]);
+
+    setTotalBeneficiaries(0);
+    setTotalVisionEnhancements(0);
+    setTotalTrainings(0);
+    setTotalComprehensiveEvaluations(0);
+    setTotalCounselingRecords(0);
+  }, [selectedHospitals, startDate, endDate, selectedGenders, selectedMdvi, minAge, maxAge]);
+
+  // Fetch counts data when graph is active and filters change
+  useEffect(() => {
+    if (selectedHospitals.length === 0 || !isGraphActive) {
+      return;
+    }
+
+    const fetchCountsData = async () => {
+      try {
+        setIsChartLoading(true); // Start loading
+        const startDateUTC = startDate ? moment(startDate).utc().startOf('day').toISOString() : null;
+        const endDateUTC = endDate ? moment(endDate).utc().endOf('day').toISOString() : null;
+        const params = {
+          hospitalIds: selectedHospitals,
+          startDate: startDateUTC,
+          endDate: endDateUTC,
+          // genders: selectedGenders,
+          // mdvis: selectedMdvi,
+          // min_age: minAge,
+          // max_age: maxAge,
+        };
+
+        const response = await fetch(`/api/v2/dashboard/count?${buildDashboardQueryParams(params)}`);
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setCountsData(data);
+        } else {
+          console.error("Error fetching counts data:", data.error);
+          setCountsData(null);
+        }
+      } catch (error) {
+        console.error("Error fetching counts data:", error);
+        setCountsData(null);
+      }finally {
+        setIsChartLoading(false); // End loading
+      }
+    };
+
+    fetchCountsData();
+  }, [isGraphActive, selectedGenders, selectedMdvi, minAge, maxAge, selectedHospitals, startDate, endDate]);
+
+
+  // Once hospitals are loaded and selectedHospitals are set, derive selectedHospitalNames
+useEffect(() => {
+  if (hospitals && hospitals.length > 0 && selectedHospitals && selectedHospitals.length > 0) {
+    const names = hospitals
+      .filter((h) => selectedHospitals.includes(h.id))
+      .map((h) => h.name);
+    setSelectedHospitalNames(names);
+  }
+}, [hospitals, selectedHospitals]);
+
+  // Update totals when countsData changes
+  useEffect(() => {
+    if (countsData) {
+      // const totalSessions = computeTotalSessions(countsData);
+      // setTotalSessions(totalSessions);
+  
+      setTotalBeneficiaries(countsData["Unique_Beneficiaries"] || 0);
+    }
+  }, [countsData]);
+
+  // Fetch table data when table is active and filters or pagination change
+  useEffect(() => {
+    if (!isTableActive || selectedHospitals.length === 0) return;
+  
+    const fetchData = async (type, page, setData, setTotal) => {
+      setIsLoading(true);
+      try {
+        const offset = (page - 1) * pageSize;
+        const startDateUTC = new Date(startDate);
+        const endDateUTC = new Date(endDate);
+        const params = {
+          offset,
+          limit: pageSize,
+          startDate: startDateUTC.toISOString(),
+          endDate: endDateUTC.toISOString(),
+          hospitalIds: selectedHospitals,
+          genders: selectedGenders,
+          min_age: minAge,
+          max_age: maxAge,
+          mdvis: selectedMdvi
+        };
+  
+        // Log the parameters being sent
+        console.log(`Fetching data for type: ${type} with params:`, params);
+  
+        const queryString = buildDashboardQueryParams(params);
+        console.log(`Fetching /api/v2/dashboard/${type}?${queryString}`);
+  
+        const response = await fetch(`/api/v2/dashboard/${type}?${queryString}`, {
+          method: 'GET',
+          credentials: 'include', // Include credentials for authentication
+        });
+        const result = await response.json();
+  
+        // Log the API response
+        console.log(`Response for ${type}:`, result);
+  
+        if (response.ok) {
+          setData(result.records || []);
+          setTotal(result.totalRecords || 0);
+        } else {
+          console.error(`Error fetching ${type} data:`, result.error);
+          alert(`Error fetching ${type} data: ${result.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("An unexpected error occurred while fetching data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+
+    switch (subTabIndex) {
+      case 0:
+        fetchData("Beneficiary", beneficiaryPage, setBeneficiaries, setTotalBeneficiaries);
+        break;
+      case 1:
+        fetchData("Vision_Enhancement", visionEnhancementPage, setVisionEnhancements, setTotalVisionEnhancements);
+        break;
+      case 2:
+        fetchData("Training", trainingPage, setTrainings, setTotalTrainings);
+        break;
+      case 3:
+        fetchData("Comprehensive_Low_Vision_Evaluation", comprehensivePage, setComprehensiveEvaluations, setTotalComprehensiveEvaluations);
+        break;
+      case 4:
+        fetchData("Counselling_Education", counselingPage, setCounselingRecords, setTotalCounselingRecords);
+        break;
+      default:
+        break;
+    }
+  }, [
+    isTableActive,
+    subTabIndex,
+    beneficiaryPage,
+    visionEnhancementPage,
+    trainingPage,
+    comprehensivePage,
+    counselingPage,
+    selectedHospitals,
+    startDate,
+    endDate,
+    selectedGenders,
+    selectedMdvi,
+    minAge,
+    maxAge,
+    pageSize, // Include pageSize in dependencies
+  ]);
+
+  // Handle page size change
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setBeneficiaryPage(1); // Reset to the first page when page size changes
+    setVisionEnhancementPage(1);
+    setTrainingPage(1);
+    setComprehensivePage(1);
+    setCounselingPage(1);
+  };
+
+  // Handle drawer open
+  const handleDrawerOpen = () => {
+    setDrawerOpen(true);
+  };
+
+  // Handle drawer close
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+  };
+
+  // Define column definitions (placeholders)
+  
+const counselingEducationColDefs =[
+  { 
+    field: "id", 
+    headerName: "ID", 
+    filter: true, 
+    sortable: true 
+  },
+  { 
+    field: "beneficiaryId", 
+    headerName: "Beneficiary ID", 
+    filter: true, 
+    sortable: true 
+  },
+  {
+    headerName: "Beneficiary Name",
+    valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
+    filter: true,
+    sortable: true,
+  },
+  { 
+    field: "hospitalId", 
+    headerName: "Hospital ID", 
+    filter: true, 
+    sortable: true 
+  },
+  {
+    headerName: "Hospital Name",
+    valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
+    filter: true,
+    sortable: true,
+  },
+  {
+    field: "date",
+    headerName: "Date",
+    filter: 'agDateColumnFilter',
+    sortable: true,
+    valueFormatter: (params) => {
+      return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+    },
+  },
+  { 
+    field: "sessionNumber", 
+    headerName: "Session Number", 
+    filter: true, 
+    sortable: true 
+  },
+  { 
+    field: "typeCounselling", 
+    headerName: "Type of Counselling", 
+    filter: true, 
+    sortable: true 
+  },
+  { 
+    field: "type", 
+    headerName: "Type", 
+    filter: true, 
+    sortable: true 
+  },
+  { 
+    field: "vision", 
+    headerName: "Vision", 
+    filter: true, 
+    sortable: true 
+  },
+  { 
+    field: "MDVI", 
+    headerName: "MDVI", 
+    filter: true, 
+    sortable: true 
+  },
+  { 
+    field: "extraInformation", 
+    headerName: "Extra Information", 
+    filter: true, 
+    sortable: true,
+    cellStyle: { whiteSpace: 'normal', wordWrap: 'break-word' }, // For better text display
+  },
+];
+
+  const comprehensiveLowVisionEvaluationColDefs=[
+    { 
+      field: "id", 
+      headerName: "ID", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "beneficiaryId", 
+      headerName: "Beneficiary ID", 
+      filter: true, 
+      sortable: true 
+    },
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
+      filter: true,
+      sortable: true,
+    },
+    { 
+      field: "hospitalId", 
+      headerName: "Hospital ID", 
+      filter: true, 
+      sortable: true 
+    },
+    {
+      headerName: "Hospital Name",
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "date",
+      headerName: "Date",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    { 
+      field: "sessionNumber", 
+      headerName: "Session Number", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "distanceVisualAcuityRE", 
+      headerName: "Distance Visual Acuity RE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "distanceVisualAcuityLE", 
+      headerName: "Distance Visual Acuity LE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "nearVisualAcuityRE", 
+      headerName: "Near Visual Acuity RE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "nearVisualAcuityLE", 
+      headerName: "Near Visual Acuity LE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "distanceBinocularVisionBE", 
+      headerName: "Distance Binocular Vision BE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "nearBinocularVisionBE", 
+      headerName: "Near Binocular Vision BE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "colourVisionRE", 
+      headerName: "Colour Vision RE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "colourVisionLE", 
+      headerName: "Colour Vision LE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "contrastSensitivityRE", 
+      headerName: "Contrast Sensitivity RE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "contrastSensitivityLE", 
+      headerName: "Contrast Sensitivity LE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "visualFieldsRE", 
+      headerName: "Visual Fields RE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "visualFieldsLE", 
+      headerName: "Visual Fields LE", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costElectronic", 
+      headerName: "Cost Electronic", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costNonOptical", 
+      headerName: "Cost Non-Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costOptical", 
+      headerName: "Cost Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costSpectacle", 
+      headerName: "Cost Spectacle", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costToBeneficiaryElectronic", 
+      headerName: "Cost to Beneficiary Electronic", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costToBeneficiaryNonOptical", 
+      headerName: "Cost to Beneficiary Non-Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costToBeneficiaryOptical", 
+      headerName: "Cost to Beneficiary Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "costToBeneficiarySpectacle", 
+      headerName: "Cost to Beneficiary Spectacle", 
+      filter: true, 
+      sortable: true 
+    },
+    {
+      field: "dispensedDateElectronic",
+      headerName: "Dispensed Date Electronic",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    {
+      field: "dispensedDateNonOptical",
+      headerName: "Dispensed Date Non-Optical",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    {
+      field: "dispensedDateOptical",
+      headerName: "Dispensed Date Optical",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    {
+      field: "dispensedDateSpectacle",
+      headerName: "Dispensed Date Spectacle",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    { 
+      field: "dispensedElectronic", 
+      headerName: "Dispensed Electronic", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "dispensedNonOptical", 
+      headerName: "Dispensed Non-Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "dispensedOptical", 
+      headerName: "Dispensed Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "dispensedSpectacle", 
+      headerName: "Dispensed Spectacle", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "recommendationElectronic", 
+      headerName: "Recommendation Electronic", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "recommendationNonOptical", 
+      headerName: "Recommendation Non-Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "recommendationOptical", 
+      headerName: "Recommendation Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "recommendationSpectacle", 
+      headerName: "Recommendation Spectacle", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "trainingGivenElectronic", 
+      headerName: "Training Given Electronic", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "trainingGivenNonOptical", 
+      headerName: "Training Given Non-Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "trainingGivenOptical", 
+      headerName: "Training Given Optical", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "trainingGivenSpectacle", 
+      headerName: "Training Given Spectacle", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "mdvi", 
+      headerName: "MDVI", 
+      filter: true, 
+      sortable: true 
+    },
+  ];
+
+  const trainingColDefs =[
+    { 
+      field: "id", 
+      headerName: "ID", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "beneficiaryId", 
+      headerName: "Beneficiary ID", 
+      filter: true, 
+      sortable: true 
+    },
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
+      filter: true,
+      sortable: true,
+    },
+    { 
+      field: "hospitalId", 
+      headerName: "Hospital ID", 
+      filter: true, 
+      sortable: true 
+    },
+    {
+      field: "hospital.name",
+      headerName: "Hospital Name",
+      filter: true,
+      sortable: true,
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
+    },
+    {
+      field: "date",
+      headerName: "Date",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    { 
+      field: "sessionNumber", 
+      headerName: "Session Number", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "extraInformation", 
+      headerName: "Extra Information", 
+      filter: true, 
+      sortable: true,
+      cellStyle: { whiteSpace: 'normal', wordWrap: 'break-word' }, // For better text display
+    },
+    { 
+      field: "type", 
+      headerName: "Type", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "subType", 
+      headerName: "Sub-Type", 
+      filter: true, 
+      sortable: true 
+    },
+  ];
+
+  const visionEnhancementColDefs=[
+    { 
+      field: "id", 
+      headerName: "ID", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "beneficiaryId", 
+      headerName: "Beneficiary ID", 
+      filter: true, 
+      sortable: true 
+    },
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
+      filter: true,
+      sortable: true,
+    },
+    { 
+      field: "hospitalId", 
+      headerName: "Hospital ID", 
+      filter: true, 
+      sortable: true 
+    },
+    {
+      field: "hospital.name",
+      headerName: "Hospital Name",
+      filter: true,
+      sortable: true,
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
+    },
+    {
+      field: "date",
+      headerName: "Date",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    { 
+      field: "sessionNumber", 
+      headerName: "Session Number", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "extraInformation", 
+      headerName: "Extra Information", 
+      filter: true, 
+      sortable: true,
+      cellStyle: { whiteSpace: 'normal', wordWrap: 'break-word' }, // For better text display
+    },
+    { 
+      field: "Diagnosis", 
+      headerName: "Diagnosis", 
+      filter: true, 
+      sortable: true 
+    },
+    { 
+      field: "MDVI", 
+      headerName: "MDVI", 
+      filter: true, 
+      sortable: true 
+    },
+  ];
+
+  const beneficiaryColDefs = [
+    {
+      headerName: "Edit",
+      cellRenderer: EditButtonRenderer,
+      width: 150,
+      filter: false,
+      sortable: false,
+      cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+    },
+    { field: "mrn", headerName: "MRN", filter: true, sortable: true },
+    { field: "beneficiaryName", headerName: "Beneficiary Name", filter: true, sortable: true },
+    { field: "hospitalId", headerName: "Hospital ID", filter: true, sortable: true },
+    {
+      field: "hospital.name",
+      headerName: "Hospital Name",
+      filter: true,
+      sortable: true,
+      valueGetter: (params) => params.data.hospital?.name || '',
+    },
+    {
+      field: "dateOfBirth",
+      headerName: "Date of Birth",
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+      },
+    },
+    {
+      headerName: "Age",
+      field: "age",
+      valueGetter: (params) => {
+        if (params.data.dateOfBirth) {
+          const birthDate = new Date(params.data.dateOfBirth);
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          return age;
+        } else {
+          return '';
+        }
+      },
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "gender",
+      headerName: "Gender",
+      filter: true,
+      sortable: true,
+      valueFormatter: (params) => {
+        if (params.value) {
+          const gender = params.value.toLowerCase();
+          if (gender === 'male' || gender === 'm') {
+            return 'M';
+          } else if (gender === 'female' || gender === 'f') {
+            return 'F';
+          }
+        }
+        return '';
+      },
+    },
+    { field: "phoneNumber", headerName: "Phone Number", filter: true, sortable: true },
+    { field: "education", headerName: "Education", filter: true, sortable: true },
+    { field: "occupation", headerName: "Occupation", filter: true, sortable: true },
+    { field: "districts", headerName: "District", filter: true, sortable: true },
+    { field: "state", headerName: "State", filter: true, sortable: true },
+    { field: "diagnosis", headerName: "Diagnosis", filter: true, sortable: true },
+    { field: "vision", headerName: "Vision", filter: true, sortable: true },
+    {
+      field: "mDVI",
+      headerName: "MDVI",
+      filter: true,
+      sortable: true,
+      valueFormatter: (params) => (params.value ? 'Yes' : 'No'),
+    },
+    { field: "extraInformation", headerName: "Extra Information", filter: true, sortable: true },
+  ];
+  
+  // Handle sub-tab changes
+  const handleSubTabChange = (event, newValue) => {
+    setSubTabIndex(newValue);
+  };
+
+  // Handle hospital selection changes
+  const handleMultiSelectChange = (e) => {
+    const {
+      target: { value },
+    } = e;
+    setSelectedHospitalNames(value);
+    setSelectedHospitals(
+      hospitals
+        .filter((hospital) => value.includes(hospital.name))
+        .map((hospital) => hospital.id)
+    );
+  };
+
+  // Handle select all hospitals
+  const handleAllSelect = (e, allSelect) => {
+    if (allSelect) {
+      setSelectedHospitals(hospitals.map((item) => item.id));
+      setSelectedHospitalNames(hospitals.map((item) => item.name));
+    } else {
+      setSelectedHospitals([]);
+      setSelectedHospitalNames([]);
+    }
+  };
+
+  // Generate graph data
+  const electronicRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Electronic') : null;
+  const spectacleRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Spectacle') : null;
+  const opticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Optical') : null;
+  const nonOpticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'NonOptical') : null;
+  
+  const visualAcuityCategories = [
+    'Blindness',
+    'Severe visual impairment',
+    'Moderate visual impairment',
+    'Mild visual impairment',
+    'Visual Acuity normal',
+    // 'Other',
+  ];
+
+  const visualAcuityChartData = countsData && countsData.distanceBinocularVisionBE_counts ? {
+    labels: visualAcuityCategories, // Use predefined categories
+    datasets: [
+      {
+        label: 'Number of Cases',
+        data: visualAcuityCategories.map(category => countsData.distanceBinocularVisionBE_counts[category] || 0),
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.6)',      // Blindness
+          'rgba(255, 206, 86, 0.6)',      // Severe visual impairment
+          'rgba(54, 162, 235, 0.6)',      // Moderate visual impairment
+          'rgba(255, 159, 64, 0.6)',      // Mild visual impairment
+          'rgba(153, 102, 255, 0.6)',     // Visual Acuity normal
+        ],
+        borderColor: [
+          'rgba(255, 99, 132, 1)',        // Blindness
+          'rgba(255, 206, 86, 1)',        // Severe visual impairment
+          'rgba(54, 162, 235, 1)',        // Moderate visual impairment
+          'rgba(255, 159, 64, 1)',        // Mild visual impairment
+          'rgba(153, 102, 255, 1)',       // Visual Acuity normal
+        ],
+        borderWidth: 1,
+      },
+    ],
+  } : null;
+
+  // Generate Unique Beneficiaries Graph Data with Drilldown
+  // const uniqueBeneficiariesGraphData = buildUniqueBeneficiariesGraph(countsData, uniqueBeneficiariesDrilledDown);
+  const uniqueBeneficiariesGraphData = buildUniqueBeneficiariesGraph(
+    countsData,
+    selectedHospitals,
+    hospitals,
+    uniqueBeneficiariesDrilledDown
+  );
+
+// Define options with an onClick handler for Training Types chart
+const trainingTypesOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+    },
+    title: {
+      display: true,
+      text: 'Training Types Distribution',
+    },
+    tooltip: {
+      enabled: true,
+    },
+  },
+  onClick: (event, elements) => {
+    if (elements.length > 0) {
+      const chartElement = elements[0];
+      const index = chartElement.index;
+
+      const trainingGraphData = buildTrainingTypesGraph(countsData);
+
+      // Ensure labels exist and index is valid
+      if (
+        trainingGraphData.labels &&
+        trainingGraphData.labels.length > index
+      ) {
+        const selectedType = trainingGraphData.labels[index];
+        setTrainingDrillDown({ active: true, type: selectedType });
+      } else {
+        console.error("Selected type is undefined or out of bounds.");
+      }
+    }
+  },
+};
+
+// Define options for Training Subtypes chart
+const trainingSubtypesOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+    },
+    title: {
+      display: true,
+      text: `Training Subtypes Distribution for ${trainingDrillDown.type}`,
+    },
+    tooltip: {
+      enabled: true,
+    },
+  },
+};
+  
+  const uniqueBeneficiariesOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+      },
+    },
+    scales: {
+      x: {
+        stacked: uniqueBeneficiariesDrilledDown, // Enable stacking when drilled down
+        title: {
+          display: true,
+          text: 'Hospitals',
+        },
+      },
+      y: {
+        stacked: uniqueBeneficiariesDrilledDown, // Enable stacking when drilled down
+        title: {
+          display: true,
+          text: 'Number of Unique Beneficiaries',
+        },
+        beginAtZero: true,
+      },
+    },
+    onClick: (event, elements) => {
+      if (elements.length > 0) {
+        // Toggle drill-down mode
+        setUniqueBeneficiariesDrilledDown(!uniqueBeneficiariesDrilledDown);
+      }
+    },
+  };
+
+// Function to build Gender Graph using countsData
+function buildGenderGraph(countsData) {
+  if (!countsData || !countsData.genderCounts) {
+    return {
+      labels: ["Male", "Female"],
+      datasets: [
+        {
+          label: "Gender Distribution",
+          data: [0, 0, 0],
+          backgroundColor: ["rgba(54, 162, 235, 0.6)", "rgba(255, 99, 132, 0.6)", "rgba(255, 206, 86, 0.6)"],
+          borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 99, 132, 1)", "rgba(255, 206, 86, 1)"],
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
+
+  const { Male, Female } = countsData.genderCounts;
+
+  const chartData = {
+    labels: ["Male", "Female"],
+    datasets: [
+      {
+        label: "Gender Distribution",
+        data: [Male, Female],
+        backgroundColor: ["rgba(54, 162, 235, 0.6)", "rgba(255, 99, 132, 0.6)", "rgba(255, 206, 86, 0.6)"],
+        borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 99, 132, 1)", "rgba(255, 206, 86, 1)"],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  return chartData;
+}
+
+// Function to build Age Graph using countsData
+function buildAgeGraph(countsData) {
+  if (!countsData || !countsData.ageGroupCounts) {
+    return {
+      labels: ["0-18", "19-35", "36-50", "51-65", "66+"],
+      datasets: [
+        {
+          label: "Age Distribution",
+          data: [0, 0, 0, 0, 0],
+          backgroundColor: [
+            "rgba(75, 192, 192, 0.6)",
+            "rgba(153, 102, 255, 0.6)",
+            "rgba(255, 159, 64, 0.6)",
+            "rgba(255, 206, 86, 0.6)",
+            "rgba(54, 162, 235, 0.6)"
+          ],
+          borderColor: [
+            "rgba(75, 192, 192, 1)",
+            "rgba(153, 102, 255, 1)",
+            "rgba(255, 159, 64, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(54, 162, 235, 1)"
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
+
+  const ageGroups = countsData.ageGroupCounts;
+
+  const chartData = {
+    labels: Object.keys(ageGroups),
+    datasets: [
+      {
+        label: "Age Distribution",
+        data: Object.values(ageGroups),
+        backgroundColor: [
+          "rgba(75, 192, 192, 0.6)",
+          "rgba(153, 102, 255, 0.6)",
+          "rgba(255, 159, 64, 0.6)",
+          "rgba(255, 206, 86, 0.6)",
+          "rgba(54, 162, 235, 0.6)"
+        ],
+        borderColor: [
+          "rgba(75, 192, 192, 1)",
+          "rgba(153, 102, 255, 1)",
+          "rgba(255, 159, 64, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(54, 162, 235, 1)"
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  return chartData;
+}
+
+  // Handle graph tabs
   const renderGraph = () => {
+    if (isChartLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <CircularProgress />
+          <p>Loading charts...</p>
+        </div>
+      );
+    }
+
+    // If no data yet (and not loading), show a message
+    if (!countsData) {
+      return <p>Please select filters to view charts.</p>;
+    }
+
+    if (selectedHospitals.length === 0) {
+      return <p><br></br>Please select hospitals to view the graphs.</p>;
+    }
     switch (activeGraphTab) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-            return <Bar data={beneficiaryGraphData} options={options} />;
-          default:
-            return null;
+              return countsData ? (
+                <div>
+                  <Bar data={buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals)} />
+                  <Button
+                    variant="outlined"
+                    onClick={() => downloadChartData(buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals), 'Total_Beneficiaries')}
+                    style={{ marginTop: '10px' }}
+                  >
+                    Download Data
+                  </Button>
+                </div>
+              ) : (
+                <p>Loading...</p>
+              );
+            case 1:
+              return countsData ? (
+                <div>
+                  {uniqueBeneficiariesDrilledDown && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => setUniqueBeneficiariesDrilledDown(false)}
+                      style={{ marginBottom: '10px' }}
+                    >
+                      Back to Total
+                    </Button>
+                  )}
+                  <Bar
+                    data={uniqueBeneficiariesGraphData}
+                    options={uniqueBeneficiariesOptions}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      downloadChartData(
+                        uniqueBeneficiariesGraphData,
+                        'Unique_Beneficiaries'
+                      )
+                    }
+                    style={{ marginTop: '10px' }}
+                  >
+                    Download Data
+                  </Button>
+                </div>
+              ) : (
+                <p>Loading...</p>
+              );
+    
+          case 2:
+  return countsData ? (
+    <div>
+      <Bar data={buildSessionsGraph(countsData, selectedHospitals, hospitals)} />
+      <Button
+        variant="outlined"
+        onClick={() =>
+          downloadChartData(
+            buildSessionsGraph(countsData, selectedHospitals, hospitals),
+            'Total_Sessions'
+          )
         }
+        style={{ marginTop: '10px' }}
+      >
+        Download Data
+      </Button>
+    </div>
+  ) : (
+    <p>Loading...</p>
+  );
+        case 3:
+          return countsData && countsData.genderCounts ? (
+            <div>
+              <Bar data={buildGenderGraph(countsData)} options={options} />
+              <Button
+                variant="outlined"
+                onClick={() => downloadChartData(buildGenderGraph(countsData), 'Gender_Distribution')}
+                style={{ marginTop: '10px' }}
+              >
+                Download Data
+              </Button>
+            </div>
+          ) : (
+            <p>Loading...</p>
+          );
+        case 4:
+          return countsData && countsData.ageGroupCounts ? (
+            <div>
+              <Bar data={buildAgeGraph(countsData)} options={options} />
+              <Button
+                variant="outlined"
+                onClick={() => downloadChartData(buildAgeGraph(countsData), 'Age_Distribution')}
+                style={{ marginTop: '10px' }}
+              >
+                Download Data
+              </Button>
+            </div>
+          ) : (
+            <p>Loading...</p>
+          );
+        default:
+          return null;
+      }
       case 1:
         switch (activeActivitiesGraphTab) {
-          case 0:
-            return <Bar data={activitiesGraphData} options={options} />;
+          case 0: {
+            if (!countsData) {
+              return <p>Loading...</p>;
+            }
+            const activitiesChartData = buildActivitiesGraph(countsData);
+            if (activitiesChartData.labels.length === 0) {
+              return <p>No Activities data available for the selected filters.</p>;
+            }
+            return (
+              <div>
+                <Bar data={activitiesChartData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(activitiesChartData, 'All_Activities')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
+          }
           case 1:
-            return <Bar data={trainingBreakdownGraphData} options={options} />;
+            return countsData ? (
+              <div>
+                {trainingDrillDown.active && (
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      setTrainingDrillDown({ active: false, type: null })
+                    }
+                    style={{ marginBottom: '10px' }}
+                  >
+                    Back to Training Types
+                  </Button>
+                )}
+                {trainingDrillDown.active ? (
+                  buildTrainingSubtypesGraph(countsData, trainingDrillDown.type).labels.length > 0 ? (
+                    <div>
+                      <Bar
+                        data={buildTrainingSubtypesGraph(countsData, trainingDrillDown.type)}
+                        options={trainingSubtypesOptions}
+                      />
+                      <Button
+                        variant="outlined"
+                        onClick={() => downloadChartData(buildTrainingSubtypesGraph(countsData, trainingDrillDown.type), `Training_Subtypes_${trainingDrillDown.type}`)}
+                        style={{ marginTop: '10px' }}
+                      >
+                        Download Data
+                      </Button>
+                    </div>
+                  ) : (
+                    <p>No sub-type data available for {trainingDrillDown.type}.</p>
+                  )
+                ) : (
+                  <div>
+                    <Bar
+                      data={buildTrainingTypesGraph(countsData)}
+                      options={trainingTypesOptions}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => downloadChartData(buildTrainingTypesGraph(countsData), 'Training_Types')}
+                      style={{ marginTop: '10px' }}
+                    >
+                      Download Data
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           case 2:
-            return <Bar data={counsellingBreakdownGraphData} options={options} />;
+            return countsData ? (
+              <div>
+                <Bar data={buildBreakdownGraph(countsData, 'counsellingEducation')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildBreakdownGraph(countsData, 'counsellingEducation'), 'Counselling_Education')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           default:
             return null;
         }
       case 2:
         switch (activeDevicesGraphTab) {
           case 0:
-            return <Bar data={devicesGraphData} options={options} />;
+            return countsData ? (
+              <div>
+                <Bar data={buildDevicesGraph(countsData)} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesGraph(countsData), 'Dispensed_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           case 1:
-            return <Bar data={electronicDevicesGraphData} options={options} />;
+            return countsData ? (
+              <div>
+                <Bar data={buildDevicesBreakdownGraph(countsData, 'Electronic')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Electronic'), 'Dispensed_Electronic_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           case 2:
-            return <Bar data={spectacleDevicesGraphData} options={options} />;
+            return countsData ? (
+              <div>
+                <Bar data={buildDevicesBreakdownGraph(countsData, 'Spectacle')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Spectacle'), 'Dispensed_Spectacle_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           case 3:
-              return <Bar data={opticalDevicesGraphData} options={options} />;
+            return countsData ? (
+              <div>
+                <Bar data={buildDevicesBreakdownGraph(countsData, 'Optical')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Optical'), 'Dispensed_Optical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           case 4:
-              return <Bar data={nonOpticalDevicesGraphData} options={options} />;
+            return countsData ? (
+              <div>
+                <Bar data={buildDevicesBreakdownGraph(countsData, 'NonOptical')} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'NonOptical'), 'Dispensed_NonOptical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
           default:
             return null;
         }
-        case 3:
-          switch (activeRecDevicesGraphTab) {
-            case 0:
-              return <Bar data={recDevicesGraphData} options={options} />;
-            case 1:
-              return <Bar data={electronicRecDevicesGraphData} options={options} />;
-            case 2:
-              return <Bar data={spectacleRecDevicesGraphData} options={options} />;
-            case 3:
-                return <Bar data={opticalRecDevicesGraphData} options={options} />;
-            case 4:
-                return <Bar data={nonOpticalRecDevicesGraphData} options={options} />;
-            default:
-              return null;
-          }
-      default:
-        return null;
-    }
-  };
-
-  const enableGraphs = (user.admin || user.hospitalRole[0].admin) ||
-    (user.hospitalRole.length != 0 && !user.hospitalRole[0].admin);
+      case 3:
+        switch (activeRecDevicesGraphTab) {
+          case 0:
+            return (
+              <div>
+              {(!countsData || !countsData['Devices_Recommended']) ? (
+                <p>Loading recommended devices data...</p>
+              ) : (
+                <div>
+                  <Bar data={buildRecDevicesGraph(countsData)} />
+                  <Button
+                    variant="outlined"
+                    onClick={() => downloadChartData(buildRecDevicesGraph(countsData), 'Recommended_Devices')}
+                    style={{ marginTop: '10px' }}
+                  >
+                    Download Data
+                  </Button>
+                </div>
+              )}
+            </div>
+            );
+          case 1:
+            return (
+              <div>
+                <Bar data={electronicRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(electronicRecDevicesGraphData, 'Recommended_Electronic_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
+          case 2:
+            return (
+              <div>
+                <Bar data={spectacleRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(spectacleRecDevicesGraphData, 'Recommended_Spectacle_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
+          case 3:
+            return (
+              <div>
+                <Bar data={opticalRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(opticalRecDevicesGraphData, 'Recommended_Optical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
+          case 4:
+            return (
+              <div>
+                <Bar data={nonOpticalRecDevicesGraphData} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(nonOpticalRecDevicesGraphData, 'Recommended_NonOptical_Devices')}
+                  style={{ marginTop: '10px' }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            );
+          default:
+            return null;
+        }
+    case 4:
+      return visualAcuityChartData ? (
+        <div>
+          <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
+            <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
+          </Box>
+          <Button
+            variant="outlined"
+            onClick={() => downloadChartData(visualAcuityChartData, 'Visual_Acuity_Distribution')}
+            style={{ marginTop: '10px' }}
+          >
+            Download Data
+          </Button>
+        </div>
+      ) : (
+        <p>No Visual Acuity data available.</p>
+      );
+    default:
+      return null;
+  }
+};
 
   return (
     <Layout>
-    <div className="content">
-      <Navigation user={user} />
-      <Container className="p-3">
-        <h1 className="text-center mt-4 mb-4">Visualization and Reports</h1>
-        <div className="row">
-          <div className="col-md-2 ">
-            {(user.admin || user.hospitalRole[0].admin) && (
-              <button
-                onClick={() => router.push("/customizedReport")}
-                className="btn btn-success border-0 btn-block"
-              >
-                More Customization
-              </button>
-            )}
+      <div className="content">
+        <Navigation user={user} />
+        <Container className="p-3">
+          {/* Filters and Drawer */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <GraphCustomizer
+              user={user}
+              summary={hospitals}
+              selectedHospitals={selectedHospitalNames}
+              handleHospitalSelection={handleMultiSelectChange}
+              startDate={startDate}
+              endDate={endDate}
+              handleAllSelect={handleAllSelect}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+              selectedQuarter={selectedQuarter}     
+              setSelectedQuarter={setSelectedQuarter} 
+            />
+
+            {/* All Filters Button */}
+            <Button
+              variant="contained"
+              startIcon={<MenuIcon />}
+              onClick={handleDrawerOpen}
+              sx={{ marginLeft: 0, width: '160px', height:'55px' }}
+            >
+              All Filters
+            </Button>
+          </Box>
+
+          {/* Drawer component to hold filters */}
+          <Drawer anchor="right" open={drawerOpen} onClose={handleDrawerClose}>
+            <Box
+              sx={{ width: 310 }}
+              role="presentation"
+            >
+              <ReportCustomizer
+                user={user}
+                summary={hospitals}
+                trainingTypes={trainingTypes}
+                trainingSubTypes={trainingSubTypes}
+                startDate={startDate}
+                endDate={endDate}
+                selectedHospitals={selectedHospitalNames}
+                selectedGenders={selectedGenders}
+                setSelectedGenders={setSelectedGenders}
+                selectedMdvi={selectedMdvi}
+                setSelectedMdvi={setSelectedMdvi}
+                minAge={minAge}
+                setMinAge={setMinAge}
+                maxAge={maxAge}
+                setMaxAge={setMaxAge}
+                onClose={handleDrawerClose}
+              />
+            </Box>
+          </Drawer>
+
+          {/* Master Tabs - Toggle between Table and Charts */}
+          <Tabs
+            value={masterTabIndex}
+            onChange={(event, newValue) => setMasterTabIndex(newValue)}
+            indicatorColor="primary"
+            textColor="primary"
+            centered
+          >
+            <Tab label="Table" />
+            <Tab label="Charts" />
+          </Tabs>
+
+          {/* Render Table or Charts based on selected Master Tab */}
+          {masterTabIndex === 0 && (
+            <div>
+              {/* Sub-Tabs within Table */}
+              <Tabs value={subTabIndex} onChange={handleSubTabChange} centered>
+                <Tab label="Beneficiaries" />
+                <Tab label="Vision Enhancement" />
+                <Tab label="Training" />
+                <Tab label="Comprehensive Low Vision Evaluation" />
+                <Tab label="Counselling" />
+              </Tabs>
+
+         {/* Beneficiaries Tab */}
+    {subTabIndex === 0 && (
+      isLoading ? (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <CircularProgress />
+          <p>Loading beneficiaries...</p>
+        </div>
+      ) : beneficiaries.length > 0 ? (
+        <PaginatedTable
+          data={beneficiaries}
+          columnDefs={beneficiaryColDefs}
+          page={beneficiaryPage}
+          totalRecords={totalBeneficiaries}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          onPageChange={(newPage) => setBeneficiaryPage(newPage)}
+        />
+      ) : (
+        <p>No Beneficiary records found for the selected filters.</p>
+      )
+    )}
+
+    {/* Vision Enhancement Tab */}
+    {subTabIndex === 1 && (
+      isLoading ? (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <CircularProgress />
+          <p>Loading vision enhancements...</p>
+        </div>
+      ) : visionEnhancements.length > 0 ? (
+        <PaginatedTable
+          data={visionEnhancements}
+          columnDefs={visionEnhancementColDefs}
+          page={visionEnhancementPage}
+          totalRecords={totalVisionEnhancements}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          onPageChange={(newPage) => setVisionEnhancementPage(newPage)}
+        />
+      ) : (
+        <p>No Vision Enhancement records found for the selected filters.</p>
+      )
+    )}
+
+                 {/* Training Tab */}
+      {subTabIndex === 2 && (
+        isLoading ? (
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <CircularProgress />
+            <p>Loading trainings ...</p>
           </div>
-          {(user.admin || user.hospitalRole[0].admin) && (
-            <div className="offset-md-8 col-md-2">
-              <button
-                className="btn btn-success border-0 btn-block text-align-right"
-                onClick={downloadFilteredReport}
-              >
-                <Download></Download> Download Report
-              </button>
+        ) : trainings.length > 0 ? (
+          <PaginatedTable
+            data={trainings}
+            columnDefs={trainingColDefs} // Placeholder for Training column definitions
+            page={trainingPage}
+            totalRecords={totalTrainings}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            onPageChange={(newPage) => setTrainingPage(newPage)}
+          />
+        ) : (
+          <p>No Training records found for the selected filters.</p>
+        )
+      )}
+
+      {/* Comprehensive Low Vision Evaluation Tab */}
+      {subTabIndex === 3 && (
+        isLoading ? (
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <CircularProgress />
+            <p>Loading CLVEs ...</p>
+          </div>
+        ) : comprehensiveEvaluations.length > 0 ? (
+          <PaginatedTable
+            data={comprehensiveEvaluations}
+            columnDefs={comprehensiveLowVisionEvaluationColDefs} // Placeholder for Comprehensive Low Vision Evaluation column definitions
+            page={comprehensivePage}
+            totalRecords={totalComprehensiveEvaluations}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            onPageChange={(newPage) => setComprehensivePage(newPage)}
+          />
+        ) : (
+          <p>No Comprehensive Low Vision Evaluation records found for the selected filters.</p>
+        )
+      )}
+
+      {/* Counselling Tab */}
+      {subTabIndex === 4 && (
+        isLoading ? (
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <CircularProgress />
+            <p>Loading counsellings ...</p>
+          </div>
+        ) : counselingRecords.length > 0 ? (
+          <PaginatedTable
+            data={counselingRecords}
+            columnDefs={counselingEducationColDefs} // Placeholder for Counseling Education column definitions
+            page={counselingPage}
+            totalRecords={totalCounselingRecords}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            onPageChange={(newPage) => setCounselingPage(newPage)}
+          />
+        ) : (
+          <p>No Counselling records found for the selected filters.</p>
+        )
+      )}
+    </div>
+  )
+}
+          {masterTabIndex === 1 && (
+            <div>
+              {/* Graph Customization */}
+              <div className="row justify-content-center">
+                <div className="col-md-9">
+                  <Paper className="text-center">
+                    {/* Sub-Tabs for different Graphs */}
+                    <Tabs
+                      value={activeGraphTab}
+                      onChange={(event, newValue) => setActiveGraphTab(newValue)}
+                      indicatorColor="primary"
+                      textColor="primary"
+                      centered
+                    >
+                      <Tab label="Beneficiaries" />
+                      <Tab label="Activities" />
+                      <Tab label="Dispensed Devices" />
+                      <Tab label="Recommended Devices" />
+                      <Tab label="Visual Acuity" />
+                    </Tabs>
+
+                    {/* Beneficiary Graph Sub-Tabs */}
+                    {activeGraphTab === 0 && (
+                      <Tabs
+                        value={activeBeneficiaryGraphTab}
+                        onChange={(event, newValue) => setActiveBeneficiaryGraphTab(newValue)}
+                        indicatorColor="primary"
+                        textColor="primary"
+                        centered
+                      >
+                        <Tab label="Accurate Beneficiaries" />
+                        <Tab label="Unique Beneficiaries" />
+                        <Tab label="Total Sessions" />
+                        <Tab label="Gender" />
+                        <Tab label="Age" />
+                      </Tabs>
+                    )}
+
+                    {/* Activities Graph Sub-Tabs */}
+                    {activeGraphTab === 1 && (
+                      <Tabs
+                        value={activeActivitiesGraphTab}
+                        onChange={(event, newValue) => setActiveActivitiesGraphTab(newValue)}
+                        indicatorColor="primary"
+                        textColor="primary"
+                        centered
+                      >
+                        <Tab label="All Activities" />
+                        <Tab label="Training Activities" />
+                        <Tab label="Counselling Activities" />
+                      </Tabs>
+                    )}
+
+                    {/* Dispensed Devices Graph Sub-Tabs */}
+                    {activeGraphTab === 2 && (
+                      <Tabs
+                        value={activeDevicesGraphTab}
+                        onChange={(event, newValue) => setActiveDevicesGraphTab(newValue)}
+                        indicatorColor="primary"
+                        textColor="primary"
+                        centered
+                      >
+                        <Tab label="All Devices" />
+                        <Tab label="Electronic" />
+                        <Tab label="Spectacle" />
+                        <Tab label="Optical" />
+                        <Tab label="Non-Optical" />
+                      </Tabs>
+                    )}
+
+                    {/* Recommended Devices Graph Sub-Tabs */}
+                    {activeGraphTab === 3 && (
+                      <Tabs
+                        value={activeRecDevicesGraphTab}
+                        onChange={(event, newValue) => setActiveRecDevicesGraphTab(newValue)}
+                        indicatorColor="primary"
+                        textColor="primary"
+                        centered
+                      >
+                        <Tab label="All Devices" />
+                        <Tab label="Electronic" />
+                        <Tab label="Spectacle" />
+                        <Tab label="Optical" />
+                        <Tab label="Non-Optical" />
+                      </Tabs>
+                    )}
+
+                    {/* Render the selected graph */}
+                    {renderGraph()}
+                  </Paper>
+                </div>
+              </div>
             </div>
           )}
-        </div>
+        </Container>
         <br />
-        {enableGraphs && (
-          <div className="row">
-            <div className="col-md-3">
-              <GraphCustomizer
-                user={user}
-                summary={summary}
-                selectedHospitals={selectedHospitalNames}
-                handleHospitalSelection={handleMultiSelectChange}
-                startDate={startDate}
-                handleStartDateChange={handleStartDateChange}
-                endDate={endDate}
-                handleEndDateChange={handleEndDateChange}
-                handleAllSelect={handleAllSelect}
-              />
-            </div>
-            <div className="col-md-9">
-              <Paper>
-                <Tabs
-                  value={activeGraphTab}
-                  onChange={handleGraphTabChange}
-                  indicatorColor="primary"
-                  textColor="primary"
-                  centered
-                >
-                  <Tab label="Beneficiaries" />
-                  <Tab label="Activities" />
-                  <Tab label="Dispensed Devices" />
-                  <Tab label="Recommended Devices" />
-                </Tabs>
-                {activeGraphTab == 0 ?
-                <Tabs
-                  value={activeBeneficiaryGraphTab}
-                  onChange={handleBeneficiaryGraphTabChange}
-                  indicatorColor="primary"
-                  textColor="primary"
-                  centered
-                >
-                  <Tab label="All Beneficiaries" />
-                </Tabs>
-                : <></>
-                }
-                {activeGraphTab == 1 ?
-                <Tabs
-                  value={activeActivitiesGraphTab}
-                  onChange={handleActivitiesGraphTabChange}
-                  indicatorColor="primary"
-                  textColor="primary"
-                  centered
-                >
-                  <Tab label="All Activities" />
-                  <Tab label="Training Activities" />
-                  <Tab label="Counselling Activities" />
-                </Tabs>
-                : <></>
-                }
-                {activeGraphTab == 2 ?
-                <Tabs
-                  value={activeDevicesGraphTab}
-                  onChange={handleDevicesGraphTabChange}
-                  indicatorColor="primary"
-                  textColor="primary"
-                  centered
-                >
-                  <Tab label="All Devices" />
-                  <Tab label="Electronic" />
-                  <Tab label="Spectacle" />
-                  <Tab label="Optical" />
-                  <Tab label="Non-Optical" />
-                </Tabs>
-                : <></>
-                }
-                {activeGraphTab == 3 ?
-                <Tabs
-                  value={activeRecDevicesGraphTab}
-                  onChange={handleRecDevicesGraphTabChange}
-                  indicatorColor="primary"
-                  textColor="primary"
-                  centered
-                >
-                  <Tab label="All Devices" />
-                  <Tab label="Electronic" />
-                  <Tab label="Spectacle" />
-                  <Tab label="Optical" />
-                  <Tab label="Non-Optical" />
-                </Tabs>
-                : <></>
-                }
-                {renderGraph()}
-              </Paper>
-            </div>
-          </div>
-        )}
-      </Container>
-      <br />
-    </div>
+      </div>
     </Layout>
   );
 }

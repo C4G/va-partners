@@ -1,8 +1,7 @@
-import prisma from "client";
+import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import { updateUserLastModified } from "@/global/update-user-last-modified";
-import { read } from "xlsx-js-style";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions)
@@ -11,11 +10,13 @@ export default async function handler(req, res) {
     res.status(401).json({ message: "You must be logged in." })
     return
   }
-  await updateUserLastModified(prisma, 'beneficiary', req.method, session.user.email);
+  await updateUserLastModified('beneficiary', req.method, session.user.email);
   if (req.method === "POST") {
     return await addData(req, res);
   } else if (req.method == "GET") {
     return await readData(req, res);
+  } else if (req.method == "DELETE") {
+    return await deleteData(req, res);
   } else if (req.method == "PATCH") {
     return await updateData(req, res);
   } else {
@@ -25,11 +26,14 @@ export default async function handler(req, res) {
   }
 }
 
-export const readBeneficiaryMrn = async (mrn) => {
+export const readBeneficiaryMrn = async (mrn, hospitalId) => {
   try {
     const beneficiary = await prisma.beneficiary.findUnique({
       where: {
-        mrn: mrn,
+        mrn_hospitalId: {
+          mrn,
+          hospitalId: parseInt(hospitalId),
+        },
         deleted: false,
       },
       include: {
@@ -102,8 +106,8 @@ async function readData(req, res) {
     var beneficiary;
     if (req.query.otherParam != null) {
       beneficiary = await readBeneficiaryOtherParam(req.query.otherParam);
-    } else if (req.query.mrn != null) {
-      beneficiary = await readBeneficiaryMrn(req.query.mrn);
+    } else if (req.query.mrn != null && req.query.hospitalId != null) {
+      beneficiary = await readBeneficiaryMrn(req.query.mrn, req.query.hospitalId);
     } else if (req.query.beneficiaryName != '') {
       beneficiary = await prisma.beneficiary.findMany({
         where: {
@@ -141,7 +145,10 @@ async function addData(req, res) {
   if (
     (await prisma.beneficiary.findUnique({
       where: {
-        mrn: body.mrn,
+        mrn_hospitalId: {
+          mrn: body.mrn,
+          hospitalId:  parseInt(body.hospitalId),
+        },
       },
     })) != null
   ) {
@@ -189,14 +196,19 @@ async function addData(req, res) {
 }
 
 async function updateData(req, res) {
-  if (req.body.mrn) {
+  if (req.body.mrn && req.body.hospitalId) {
     try {
-      const { mrn, ...data } = req.body;
+      const { mrn, hospitalId, ...data } = req.body;
       if (data.dateOfBirth != undefined){
         data.dateOfBirth = (new Date(data.dateOfBirth)).toISOString();
       }
       const updatedUser = await prisma.beneficiary.update({
-        where: { mrn },
+        where: { 
+          mrn_hospitalId: {
+            mrn,
+            hospitalId: parseInt(hospitalId),
+          },
+        },
         data,
       });
       res.status(200).json(updatedUser);
@@ -217,6 +229,26 @@ async function updateData(req, res) {
       console.log(error);
       res.status(400).json({ error: "Failed to update user data." });
     }
+  }
+}
+
+async function deleteData(req, res) {
+  const body = req.body;
+  try {
+    const beneficiary = await prisma.beneficiary.delete({
+      where: { 
+        mrn_hospitalId: {
+          mrn: body.mrn,
+          hospitalId: parseInt(body.hospitalId),
+        },
+      },
+    });
+    return res.status(200).json(beneficiary, { success: true });
+  } catch (error) {
+    console.log("Request error " + error);
+    res
+      .status(500)
+      .json({ error: "Error deleting user" + error, success: false });
   }
 }
 

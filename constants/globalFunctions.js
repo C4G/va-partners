@@ -1,4 +1,3 @@
-import React from 'react';
 import { Checkbox, ListItemText, MenuItem, ListSubheader, Typography } from "@mui/material";
 
 export const createMenu = (values, checkbox, selected = []) => {

@@ -7,7 +7,7 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import Navigation from "./navigation/Navigation";
 import moment from "moment";
-import { required } from "../global/required";
+import { required } from "../comps/required";
 
 // http://localhost:3000/beneficiaryinformation
 export async function getServerSideProps(ctx) {
@@ -166,11 +166,8 @@ function RequiredFields(props) {
         extraInformation: extraInfo,
       }),
     });
-    let json = await response.json();
-    //alert("beneficiary " + JSON.stringify(json))
-    //Router.reload()
     if (response.ok) {
-      router.push("/user?mrn=" + mrn);
+      router.push("/user?mrn=" + mrn + "&hospitalId=" + hospitalId);
     } else {
       setLoading(false);
       alert(
@@ -278,13 +275,13 @@ function RequiredFields(props) {
       <label htmlFor="gender">Gender{required()}</label>
       <select className="form-select" id="gender" required>
         <option value="">Select Gender</option>
-        <option key="M" value="M">
+        <option key="Male" value="Male">
           Male
         </option>
-        <option key="F" value="F">
+        <option key="Female" value="Female">
           Female
         </option>
-        <option key="O" value="Other">
+        <option key="Other" value="Other">
           Other
         </option>
       </select>
@@ -466,40 +463,6 @@ function RequiredFields(props) {
       </div>
     );
   });
-
-  async function search(e) {
-    e.preventDefault();
-    let nameSearch = document.getElementById("searchName").value;
-    const beneficiary = await fetch(
-      "/api/beneficiary?beneficiaryName=" + nameSearch,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-    const beneficiaryJson = await beneficiary.json();
-    if (beneficiaryJson == null || beneficiaryJson.error != null) {
-      alert("Can't find beneficiary name in db " + nameSearch);
-      return;
-    }
-    beneficiaryJson.forEach((b) => {
-      let container = document.getElementById("searchNameDiv");
-      let tr = document.createElement("tr");
-      let tdName = document.createElement("td");
-      let tdMRN = document.createElement("td");
-      let tdDOB = document.createElement("td");
-      let tdHospitalName = document.createElement("td");
-      tdName.innerText = b.beneficiaryName;
-      tdMRN.innerText = b.mrn;
-      tdDOB.innerText = b.dateOfBirth;
-      tdHospitalName.innerText = b.hospital.name;
-      tr.appendChild(tdName);
-      tr.appendChild(tdMRN);
-      tr.appendChild(tdDOB);
-      tr.appendChild(tdHospitalName);
-      container.appendChild(tr);
-    });
-  }
 
   return (
     <div>

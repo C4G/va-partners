@@ -4,9 +4,19 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  Other
+  Male
+  Female
+}
+
+enum HospitalTier {
+  NIL_CASH_GRANT
+  RECEIVE_CASH_GRANT
 }
 
 model User {
@@ -16,7 +26,6 @@ model User {
   lastUpdateDate DateTime?
   admin          Admin?
   hospitalRole   HospitalRole[]
-  lPageEntries   Landing_Page[]
 }
 
 model Admin {
@@ -26,13 +35,12 @@ model Admin {
 }
 
 model Hospital {
-  id               Int                @id @default(autoincrement())
-  name             String?            @unique
-  deleted          Boolean?           @default(false)
-  hospitalRole     HospitalRole[]
-  Beneficiary      Beneficiary[]
-  Camps            Camps[]
-  School_Screening School_Screening[]
+  id           Int            @id @default(autoincrement())
+  name         String?        @unique
+  deleted      Boolean?       @default(false)
+  hospitalRole HospitalRole[]
+  Beneficiary  Beneficiary[]
+  tier         HospitalTier   @default(NIL_CASH_GRANT)
 }
 
 model HospitalRole {
@@ -45,10 +53,10 @@ model HospitalRole {
 }
 
 model Beneficiary {
-  mrn                                 String                                @id @unique
+  mrn                                 String
   beneficiaryName                     String
   dateOfBirth                         DateTime
-  gender                              String
+  gender                              Gender
   phoneNumber                         String?
   education                           String?
   occupation                          String?
@@ -70,6 +78,8 @@ model Beneficiary {
   Comprehensive_Low_Vision_Evaluation Comprehensive_Low_Vision_Evaluation[]
   Low_Vision_Evaluation               Low_Vision_Evaluation[]
   Training                            Training[]
+
+  @@id([mrn, hospitalId])
 }
 
 model Beneficiary_Mirror {
@@ -89,12 +99,13 @@ model Beneficiary_Mirror {
 model Computer_Training {
   id               Int         @id @default(autoincrement())
   beneficiaryId    String
+  hospitalId       Int
   date             DateTime?
   sessionNumber    Int?
   extraInformation String      @db.Text
   visionType       String?
   typeOfTraining   String?
-  beneficiary      Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary      Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Computer_Training_Mirror {
@@ -108,12 +119,13 @@ model Computer_Training_Mirror {
 model Mobile_Training {
   id               Int         @id @default(autoincrement())
   beneficiaryId    String
+  hospitalId       Int
   date             DateTime?
   sessionNumber    Int?
   extraInformation String      @db.Text
   vision           String?
   typeOfTraining   String?
-  beneficiary      Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary      Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Mobile_Training_Mirror {
@@ -127,12 +139,13 @@ model Mobile_Training_Mirror {
 model Orientation_Mobility_Training {
   id               Int         @id @default(autoincrement())
   beneficiaryId    String
+  hospitalId       Int
   date             DateTime?
   sessionNumber    Int?
   extraInformation String      @db.Text
   vision           String?
   typeOfTraining   String?
-  beneficiary      Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary      Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Orientation_Mobility_Training_Mirror {
@@ -146,12 +159,13 @@ model Orientation_Mobility_Training_Mirror {
 model Vision_Enhancement {
   id               Int         @id @default(autoincrement())
   beneficiaryId    String
+  hospitalId       Int
   date             DateTime?
   sessionNumber    Int?
   extraInformation String      @db.Text
   Diagnosis        String?
   MDVI             String?
-  beneficiary      Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary      Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Vision_Enhancement_Mirror {
@@ -165,6 +179,7 @@ model Vision_Enhancement_Mirror {
 model Low_Vision_Evaluation {
   id                        Int         @id @default(autoincrement())
   beneficiaryId             String
+  hospitalId                Int
   diagnosis                 String?
   date                      DateTime?
   sessionNumber             Int?
@@ -180,11 +195,12 @@ model Low_Vision_Evaluation {
   recommendationOptical     String?
   mdvi                      String?
   recommendationSpectacle   String?
-  beneficiary               Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary               Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Comprehensive_Low_Vision_Evaluation {
   beneficiaryId               String
+  hospitalId                  Int
   distanceVisualAcuityRE      String?
   distanceVisualAcuityLE      String?
   nearVisualAcuityRE          String?
@@ -227,7 +243,7 @@ model Comprehensive_Low_Vision_Evaluation {
   trainingGivenNonOptical     String?
   trainingGivenOptical        String?
   trainingGivenSpectacle      String?
-  beneficiary                 Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary                 Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Comprehensive_Low_Vision_Evaluation_Mirror {
@@ -239,12 +255,13 @@ model Comprehensive_Low_Vision_Evaluation_Mirror {
 model Training {
   id               Int         @id @default(autoincrement())
   beneficiaryId    String
+  hospitalId       Int
   date             DateTime?
   sessionNumber    Int?
   extraInformation String      @db.Text
   type             String?
   subType          String?
-  beneficiary      Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary      Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Training_Type {
@@ -270,6 +287,7 @@ model Counselling_Type {
 model Counselling_Education {
   id               Int         @id @default(autoincrement())
   beneficiaryId    String
+  hospitalId       Int
   date             DateTime?
   sessionNumber    Int?
   typeCounselling  String?
@@ -277,7 +295,7 @@ model Counselling_Education {
   MDVI             String?
   vision           String?
   type             String?
-  beneficiary      Beneficiary @relation(fields: [beneficiaryId], references: [mrn])
+  beneficiary      Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 
 model Counselling_Education_Mirror {
@@ -287,53 +305,6 @@ model Counselling_Education_Mirror {
   typeCounselling          Boolean
   extraInformationRequired String  @db.Text
   hospitalName             String?
-}
-
-model Camps {
-  id                Int       @id @default(autoincrement())
-  date              DateTime?
-  schoolName        String?
-  studentName       String?
-  age               Int?
-  gender            String?
-  diagnosis         String?
-  visualAcuityRE    String?
-  visualAcuityLE    String?
-  unaidedNearVision String?
-  refractionVALE    String?
-  LVA               String?
-  LVANear           String?
-  nonOpticalAid     String?
-  actionNeeded      String?
-  hospitalId        Int?
-  hospital          Hospital? @relation(fields: [hospitalId], references: [id])
-}
-
-model School_Screening {
-  id                    Int       @id @default(autoincrement())
-  date                  DateTime?
-  typeCamp              String?
-  screeningPlace        String?
-  organiser             String?
-  contactNumber         Int?
-  address               String?
-  screenedTotal         Int?
-  refractiveErrors      Int?
-  spectaclesDistributed Int?
-  checked               String?
-  refer                 Int?
-  staff                 Int?
-  lowVision             Int?
-  hospitalId            Int?
-  hospital              Hospital? @relation(fields: [hospitalId], references: [id])
-}
-
-model Landing_Page {
-  id           Int       @id @default(autoincrement())
-  userId       Int
-  creationDate DateTime?
-  content      String?
-  user         User      @relation(fields: [userId], references: [id])
 }
 
 model Feedback {

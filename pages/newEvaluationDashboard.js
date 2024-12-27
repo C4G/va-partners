@@ -13,15 +13,12 @@ import { readTrainingSubType } from "./api/trainingSubType";
 
 export default function NewEvaluationDashboard(props) {
   // State variable for form fields
-  const service = props.user[props.service];
   const counsellingTypeList = props.counsellingTypeList;
   const trainingTypeList = props.trainingTypeList;
   const trainingSubTypeList = props.trainingSubTypeList;
 
   const [loading, setLoading] = useState(false);
-  const [mobileTrainingData, setMobileTrainingData] = useState([]);
   const [trainingData, setTrainingData] = useState([]);
-  const [computerTrainingData, setComputerTrainingData] = useState([]);
   const [visionTrainingData, setVisionTrainingData] = useState([]);
   const [
     comprehensiveLowVisionEvaluationData,
@@ -29,17 +26,10 @@ export default function NewEvaluationDashboard(props) {
   ] = useState([]);
   const [lowVisionEvaluationData, setLowVisionEvaluationData] = useState([]);
   const [counsellingEducationData, setCounsellingEducationData] = useState([]);
-  const [orientationMobilityData, setOrientationMobilityData] = useState([]);
 
-  useEffect(() => {
-    setMobileTrainingData(props.user.Mobile_Training);
-  }, [props.user.Mobile_Training]);
   useEffect(() => {
     setTrainingData(props.user.Training);
   }, [props.user.Training]);
-  useEffect(() => {
-    setComputerTrainingData(props.user.Computer_Training);
-  }, [props.user.Computer_Training]);
   useEffect(() => {
     setVisionTrainingData(props.user.Vision_Enhancement);
   }, [props.user.Vision_Enhancement]);
@@ -54,12 +44,10 @@ export default function NewEvaluationDashboard(props) {
   useEffect(() => {
     setCounsellingEducationData(props.user.Counselling_Education);
   }, [props.user.Counselling_Education]);
-  useEffect(() => {
-    setOrientationMobilityData(props.user.Orientation_Mobility_Training);
-  }, [props.user.Orientation_Mobility_Training]);
 
   const updateMDVIForBeneficiary = async (data) => {
     data["mrn"] = props.user.mrn;
+    data["hospitalId"] = props.user.hospitalId;
 
     const response = await fetch(`api/beneficiary`, {
       method: "PATCH",
@@ -76,11 +64,12 @@ export default function NewEvaluationDashboard(props) {
     }
   };
 
-  const callMe = async (data, url, setter, cur_data) => {
+  const callMe = async (data, url) => {
     data["sessionNumber"] = parseInt(data["sessionNumber"]);
     // parse date
     data["date"] = new Date(data["date"]);
     data["beneficiaryId"] = props.user.mrn;
+    data["hospitalId"] = props.user.hospitalId;
     if (data["type"] == "Other" && data["subType"] == null) {
       data["type"] = data["typeOther"];
     } else if (data["subType"] == "Other") {
@@ -105,22 +94,10 @@ export default function NewEvaluationDashboard(props) {
     Router.reload();
   };
 
-  const handleSubmitMobileTraining = async (data) => {
-    // Submit the MobileTraining data to the API
-    const url = "/api/mobileTraining";
-    callMe(data, url, setMobileTrainingData, mobileTrainingData);
-  };
-
   const handleSubmitTraining = async (data) => {
     // Submit the MobileTraining data to the API
     const url = "/api/training";
     callMe(data, url, setTrainingData, trainingData);
-  };
-
-  const handleSubmitComputerTraining = async (data) => {
-    // Submit the ComputerTraining data to the API
-    const url = "/api/computerTraining";
-    callMe(data, url, setComputerTrainingData, computerTrainingData);
   };
 
   const handleSubmitVisionTraining = async (data) => {
@@ -145,12 +122,6 @@ export default function NewEvaluationDashboard(props) {
     // Submit the VisionTraining data to the API
     const url = "/api/counsellingEducation";
     callMe(data, url, setCounsellingEducationData, counsellingEducationData);
-  };
-
-  const handleSubmitOrientationMobility = async (data) => {
-    // Submit the VisionTraining data to the API
-    const url = "/api/orientationMobileTraining";
-    callMe(data, url, setOrientationMobilityData, orientationMobilityData);
   };
 
   if (!props.user) {
@@ -303,7 +274,7 @@ export async function getServerSideProps(ctx) {
     };
   }
   const currentUser = await readUser(session.user.email);
-  const user = await readBeneficiaryMrn(ctx.query.mrn);
+  const user = await readBeneficiaryMrn(ctx.query.mrn, ctx.query.hospitalId);
   const service = ctx.query.service;
 
   if (!user) {

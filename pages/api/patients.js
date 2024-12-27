@@ -1,7 +1,7 @@
-import prisma from "client";
+import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import { updateUserLastModified } from "@/global/update-user-last-modified";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions)
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     res.status(401).json({ message: "You must be logged in." })
     return
   }
-  await updateUserLastModified(prisma, 'patients', req.method, session.user.email);
+  await updateUserLastModified('patients', req.method, session.user.email);
   const functionName = req.query.functionName;
   if (req.method === "POST") {
     if (functionName == "computer-training") {
@@ -25,10 +25,6 @@ export default async function handler(req, res) {
       return await addDataVisionEnhancement(req, res);
     } else if (functionName == "counselling-education") {
       return await addDataCounsellingEducation(req, res);
-    } else if (functionName == "camps") {
-      return await addDataCamps(req, res);
-    } else if (functionName == "school-screenings") {
-      return await addDataSchoolScreenings(req, res);
     }
   } else if (req.method == "GET") {
     return await readData(req, res);
@@ -217,67 +213,6 @@ async function addDataCounsellingEducation(req, res) {
         Districts: body.Districts,
         Diagnosis: body.Diagnosis,
         typeCounselling: body.typeCounselling,
-      },
-    });
-    return res.status(200).json(newEntry, { success: true });
-  } catch (error) {
-    console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
-  }
-}
-
-async function addDataCamps(req, res) {
-  const body = req.body;
-  try {
-    const newEntry = await prisma.camps.create({
-      data: {
-        date: body.date,
-        hospitalId: body.hospitalId,
-        schoolName: body.schoolName,
-        studentName: body.studentName,
-        age: body.age,
-        gender: body.gender,
-        Diagnosis: body.Diagnosis,
-        visualAcuityRE: body.visualAcuityRE,
-        visualAcuityLE: body.visualAcuityLE,
-        unaidedNearVision: body.unaidedNearVision,
-        refractionVALE: body.refractionVALE,
-        LVA: body.LVA,
-        LVANear: body.LVANear,
-        nonOpticalAid: body.nonOpticalAid,
-        actionNeeded: body.actionNeeded,
-      },
-    });
-    return res.status(200).json(newEntry, { success: true });
-  } catch (error) {
-    console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
-  }
-}
-
-async function addDataSchoolScreenings(req, res) {
-  const body = req.body;
-  try {
-    const newEntry = await prisma.school_Screening.create({
-      data: {
-        date: body.date,
-        hospitalId: body.hospitalId,
-        typeCamp: body.typeCamp,
-        screeningPlace: body.screeningPlace,
-        organiser: body.organiser,
-        contactNumber: body.contactNumber,
-        address: body.address,
-        screenedTotal: body.screenedTotal,
-        refractiveErrors: body.refractiveErrors,
-        spectaclesDistributed: body.spectaclesDistributed,
-        checked: body.checked,
-        refer: body.refer,
-        staff: body.staff,
-        lowVision: body.lowVision,
       },
     });
     return res.status(200).json(newEntry, { success: true });

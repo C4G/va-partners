@@ -1,11 +1,4 @@
-import Link from "next/link";
-import styles from "@/styles/Home.module.css";
-import Head from "next/head";
-import Image from "next/image";
-import { useRouter } from "next/router";
-import { Inter } from "@next/font/google";
-import { useSession, signIn, signOut, getSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import moment from "moment";
 
 export default function HistoricalVisionEnhancementForm(props) {
@@ -14,7 +7,7 @@ export default function HistoricalVisionEnhancementForm(props) {
 
   const [editMode, setEditMode] = useState(false);
 
-  const handleClick = (e) => {
+  const handleClick = () => {
     setEditMode(true);
   };
 

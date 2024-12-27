@@ -1,7 +1,7 @@
-import prisma from "client";
+import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import { updateUserLastModified } from "@/global/update-user-last-modified";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions)
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     res.status(401).json({ message: "You must be logged in." })
     return
   }
-  await updateUserLastModified(prisma, 'comprehensiveLowVisionEvaluation', req.method, session.user.email);
+  await updateUserLastModified('comprehensiveLowVisionEvaluation', req.method, session.user.email);
   if (req.method === "POST") {
     return await addData(req, res);
   } else if (req.method == "DELETE") {
@@ -42,7 +42,7 @@ async function updateData(req, res) {
   }
 }
 
-async function readData(req, res) {}
+async function readData() {}
 
 async function deleteData(req, res) {
   const body = req.body;
@@ -63,7 +63,14 @@ async function addData(req, res) {
   const body = req.body;
   const create = {
     data: {
-      beneficiaryId: body.beneficiaryId,
+      beneficiary: {
+        connect: { 
+          mrn_hospitalId: {
+            mrn: body.beneficiaryId, 
+            hospitalId: body.hospitalId,
+          },
+        },
+      },
       mdvi: body.mdvi,
       diagnosis: body.diagnosis,
       date: body.date,

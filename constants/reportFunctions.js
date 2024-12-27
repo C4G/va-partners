@@ -1,7 +1,7 @@
 import XLSX from "xlsx-js-style";
 import { isNotNullEmptyOrUndefined, union, difference, intersect } from "./globalFunctions";
 import moment from "moment";
-import { calculateAge } from "@/global/calculate-age";
+import { calculateAge } from "utils/global/calculate-age";
 
 function getFormattedDate(date) {
   const day = date.getDate();
@@ -35,11 +35,11 @@ const clveMainHeader = [
   "Diagnosis",
   "Districts",
   "State",
-  "Acuity",
+  "Distance Acuity",
   "",
   "",
   "",
-  "Near Visual Acuity",
+  "Near Acuity",
   "",
   "",
   "",
@@ -59,11 +59,12 @@ const clveMainHeader = [
   "",
   "Cost of all the aids dispensed",
   "Cost to the Beneficiary",
+  "Comments",
 ];
 
 // Escel sub-header for CLVE sheet
 let clveSubHeader = [];
-addEmptyElements(clveSubHeader, "", 11);
+addEmptyElements(clveSubHeader, "", 10);
 clveSubHeader.push("Notation");
 clveSubHeader.push("RE");
 clveSubHeader.push("LE");
@@ -79,7 +80,7 @@ clveSubHeader.push("RE");
 clveSubHeader.push("LE");
 clveSubHeader.push("RE");
 clveSubHeader.push("LE");
-addEmptyElements(clveSubHeader, "", 2);
+addEmptyElements(clveSubHeader, "", 3);
 
 // Excel header for Low Vision Screening Sheet
 const lveMainHeader = [
@@ -223,7 +224,7 @@ function getBeneficiaryJson(commonData, beneficiary) {
 
   // Sort beneficiary CLVE data in descending order of session numbers so that latest devices can be extracted
   const sortedBeneficiaryClve = beneficiary[
-    "comprehensiveLowVisionEvaluation"
+    "Comprehensive_Low_Vision_Evaluation"
   ].sort((a, b) => b.sessionNumber - a.sessionNumber);
 
   beneficiaryJson["Dispensed Spectacle"] = getLatestDispensedDevice(
@@ -294,6 +295,7 @@ function getClveJson(commonData, clveData) {
     clveData["costToBeneficiaryNonOptical"] +
     clveData["costToBeneficiaryElectronic"] +
     clveData["costToBeneficiarySpectacle"];
+  clveJson["Comments"] = clveData["extraInformation"];
 
   return clveJson;
 }
@@ -366,11 +368,25 @@ function getCeJson(commonData, ceData) {
 }
 
 // Populates data for Aggregated Hospital Data Sheet
-function getAggregatedHospitalData(
+export function getAggregatedHospitalData(
   filteredBeneficiaryData,
   filteredSummary,
-  includeAllBeneficiaries
+  includeAllBeneficiaries,
+  // selectedGenders,
+  // selectedMdvi,
+  // minAge,
+  // maxAge,
+  // selectedTrainingTypes,
+  // selectedTrainingSubTypes
 ) {
+  // filteredBeneficiaryData = filteredBeneficiaryData.filter(
+  //   (item) =>
+  //     selectedGenders.includes(item.gender) &&
+  //     selectedMdvi.includes(item.mDVI) &&
+  //     minAge <= calculateAge(item.dateOfBirth) &&
+  //     calculateAge(item.dateOfBirth) <= maxAge
+  // );
+
   let aggregatedHospitalData = [];
 
   // Blank row
@@ -417,16 +433,19 @@ function getAggregatedHospitalData(
   let ceSessionsTotal = 0;
   let ceBeneficiariesTotal = 0;
 
+  // training
+  let trainingRow = { Programs1: "Training", Programs2: "" };
+  let trainingSessionsTotal = 0;
+  let trainingBeneficiariesTotal = 0;
+
   // List of unique training types from training data
   const trainingTypes = Array.from(
     new Set(
       filteredBeneficiaryData
         .map((beneficiary) => {
-          return (
-            beneficiary.training
-              // .filter((training) => isNotNullEmptyOrUndefined(training.type))
-              .map((training) => training.type)
-          );
+          return beneficiary.training 
+            ? beneficiary.training.map((training) => training.type) 
+            : []; // Return an empty array if training is undefined
         })
         .flat(Infinity)
     )
@@ -591,6 +610,8 @@ function getAggregatedHospitalData(
   };
   let totalBeneficiariesTotal = 0;
 
+  let uniqueBeneficiaries = 0;
+
   // If all beneficiaries are not to be included in the report,
   // remove those beneficiaries from filteredSummary which do not meet selected criteria
   if (!includeAllBeneficiaries) {
@@ -600,7 +621,7 @@ function getAggregatedHospitalData(
     filteredSummary = filteredSummary.map((hospital) => {
       return {
         ...hospital,
-        beneficiary: hospital.beneficiary.filter((beneficiary) =>
+        beneficiary: hospital.beneficiary?.filter((beneficiary) =>
           filteredBeneficiaryIds.includes(beneficiary.mrn)
         ),
         comprehensiveLowVisionEvaluation:
@@ -624,6 +645,7 @@ function getAggregatedHospitalData(
     });
   }
 
+  
   // Add checks for empty arrays
   for (let hospital of filteredSummary) {
     // Low Vision Screening data
@@ -640,7 +662,7 @@ function getAggregatedHospitalData(
 
     // MDVI data
     mdviRow[hospital.name + " Sessions"] = "";
-    mdviRow[hospital.name + " Beneficiaries"] = hospital.beneficiary.filter(
+    mdviRow[hospital.name + " Beneficiaries"] = hospital.beneficiary?.filter(
       (beneficiary) =>
         beneficiary.mDVI === "Yes" || beneficiary.mDVI === "At Risk"
     ).length;
@@ -695,6 +717,18 @@ function getAggregatedHospitalData(
     ceSessionsTotal += ceRow[hospital.name + " Sessions"];
     ceBeneficiariesTotal += ceRow[hospital.name + " Beneficiaries"];
 
+    // Training data
+    trainingRow[hospital.name + " Sessions"] = hospital.training.length;
+    trainingRow[hospital.name + " Beneficiaries"] = Array.from(
+      new Set(
+        hospital.training.map(
+          (evaluation) => evaluation.beneficiaryId
+        )
+      )
+    ).length;
+    trainingSessionsTotal += trainingRow[hospital.name + " Sessions"];
+    trainingBeneficiariesTotal += trainingRow[hospital.name + " Beneficiaries"];
+
     let trainingIdx = 0;
     // Populate row corresponding to each training type identified earlier
     for (let trainingType of trainingTypes) {
@@ -722,9 +756,6 @@ function getAggregatedHospitalData(
 
     // Total # of Sessions
     const hospitalTotalSessions = hospital.training.length
-                                + hospital.computerTraining.length
-                                + hospital.mobileTraining.length
-                                + hospital.orientationMobilityTraining.length
                                 + hospital.counsellingEducation.length
                                 + hospital.visionEnhancement.length
                                 + hospital.lowVisionEvaluation.length
@@ -771,6 +802,14 @@ function getAggregatedHospitalData(
       )
     );
 
+    uniqueBeneficiaries =
+    screeningsBeneficiaries.size +
+    visionEnhancementBeneficiaries.size +
+    clveBeneficiaries.size +
+    counsellingBeneficiaries.size +
+    trainingBeneficiaries.size;
+
+    
     // Screenings Only
     screeningsOnlyRow[hospital.name + " Sessions"] = "";
     screeningsOnlyRow[hospital.name + " Beneficiaries"] = Array.from(
@@ -919,6 +958,7 @@ function getAggregatedHospitalData(
     trainingDevicesCounselingOnlyTotal += trainingDevicesCounselingOnlyRow[hospital.name + " Beneficiaries"];
 
     // Total Beneficiaries
+    totalBeneficiariesRow[hospital.name + " Sessions"] = "";
     totalBeneficiariesRow[hospital.name + " Beneficiaries"] =
       + screeningsOnlyRow[hospital.name + " Beneficiaries"]
       + screeningsAndCLVERow[hospital.name + " Beneficiaries"]
@@ -963,6 +1003,9 @@ function getAggregatedHospitalData(
 
     ceRow["Number of Sessions"] = ceSessionsTotal;
     ceRow["Number of Beneficiaries"] = ceBeneficiariesTotal;
+
+    trainingRow["Number of Sessions"] = trainingSessionsTotal;
+    trainingRow["Number of Beneficiaries"] = trainingBeneficiariesTotal;
 
     for (let trainingTypeRow of trainingTypesList) {
       trainingTypeRow["tRow"]["Number of Sessions"] =
@@ -1040,52 +1083,64 @@ function getAggregatedHospitalData(
     totalBeneficiariesRow["Number of Beneficiaries"] = totalBeneficiariesTotal;
 
   }
+
+  const evaluationsTotal = screeningsOnlyBeneficiariesTotal + visionEnhancementOnlyBeneficiariesTotal + clveOnlyBeneficiariesTotal + screeningsAndCLVETotal
+                          + visionCLVETotal + screeningsVisionEnhancementBeneficiariesTotal + screeningsCLVEVisionTotal;
+  const servicesTotal = trainingOnlyTotal + counselingOnlyTotal + devicesOnlyTotal + trainingCounselingOnlyTotal + trainingDevicesOnlyTotal + counselingDevicesOnlyTotal + trainingDevicesCounselingOnlyTotal;
+  const evalAndServicesTotal = screeningsCLVEVisionDevicesTotal + screeningsCLVEVisionCounselingTotal + screeningsCLVEVisionTrainingTotal + screeningsCLVEVisionDevicesCounselingTotal + screeningsCLVEVisionDevicesTrainingTotal + screeningsCLVEVisionCounselingTrainingTotal + screeningsCLVEVisionDevicesCounselingTrainingTotal;
   // Add rows to the aggregated hospital data
   aggregatedHospitalData.push(lveRow);
   aggregatedHospitalData.push(veRow);
   aggregatedHospitalData.push(clveRow);
   aggregatedHospitalData.push(ceRow);
+  aggregatedHospitalData.push(trainingRow);
   aggregatedHospitalData.push(...trainingTypesList.map((item) => item.tRow));
   aggregatedHospitalData.push(overallTrainingRow);
   aggregatedHospitalData.push(devicesRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push({ Programs1: "Accurate Beneficiary Count (no double counting)", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push({ Programs1: "Evaluations Only: ", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(screeningsOnlyRow);
-  aggregatedHospitalData.push(visionEnhancementOnlyRow);
-  aggregatedHospitalData.push(clveOnlyRow);
-  aggregatedHospitalData.push(screeningsAndCLVERow);
-  aggregatedHospitalData.push(visionCLVERow);
-  aggregatedHospitalData.push(screeningsVisionEnhancementRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionRow);
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push({ Programs1: "Services Only: ", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(trainingOnlyRow);
-  aggregatedHospitalData.push(counselingOnlyRow);
-  aggregatedHospitalData.push(devicesOnlyRow);
-  aggregatedHospitalData.push(trainingCounselingOnlyRow);
-  aggregatedHospitalData.push(trainingDevicesOnlyRow);
-  aggregatedHospitalData.push(counselingDevicesOnlyRow);
-  aggregatedHospitalData.push(trainingDevicesCounselingOnlyRow);
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push({ Programs1: "Evaluation(s) + Services: ", Programs2: "" });
-  aggregatedHospitalData.push(blankRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionCounselingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionTrainingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesTrainingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionCounselingTrainingRow);
-  aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingTrainingRow);
+  if (filteredSummary.length !== 1 || evaluationsTotal !== 0) {
+    aggregatedHospitalData.push(blankRow);
+    aggregatedHospitalData.push({ Programs1: "Evaluations Only: ", Programs2: "" });
+    aggregatedHospitalData.push(blankRow);
+  }
+  if (filteredSummary.length !== 1 || screeningsOnlyBeneficiariesTotal !== 0) aggregatedHospitalData.push(screeningsOnlyRow);
+  if (filteredSummary.length !== 1 || visionEnhancementOnlyBeneficiariesTotal !== 0) aggregatedHospitalData.push(visionEnhancementOnlyRow);
+  if (filteredSummary.length !== 1 || clveOnlyBeneficiariesTotal !== 0) aggregatedHospitalData.push(clveOnlyRow);
+  if (filteredSummary.length !== 1 || screeningsAndCLVETotal !== 0) aggregatedHospitalData.push(screeningsAndCLVERow);
+  if (filteredSummary.length !== 1 || visionCLVETotal !== 0) aggregatedHospitalData.push(visionCLVERow);
+  if (filteredSummary.length !== 1 || screeningsVisionEnhancementBeneficiariesTotal !== 0) aggregatedHospitalData.push(screeningsVisionEnhancementRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionRow);
+  if (filteredSummary.length !== 1 || servicesTotal !== 0) {
+    aggregatedHospitalData.push(blankRow);
+    aggregatedHospitalData.push({ Programs1: "Services Only: ", Programs2: "" });
+    aggregatedHospitalData.push(blankRow);
+  }
+  if (filteredSummary.length !== 1 || trainingOnlyTotal !== 0) aggregatedHospitalData.push(trainingOnlyRow);
+  if (filteredSummary.length !== 1 || counselingOnlyTotal !== 0) aggregatedHospitalData.push(counselingOnlyRow);
+  if (filteredSummary.length !== 1 || devicesOnlyTotal !== 0) aggregatedHospitalData.push(devicesOnlyRow);
+  if (filteredSummary.length !== 1 || trainingCounselingOnlyTotal !== 0) aggregatedHospitalData.push(trainingCounselingOnlyRow);
+  if (filteredSummary.length !== 1 || trainingDevicesOnlyTotal !== 0) aggregatedHospitalData.push(trainingDevicesOnlyRow);
+  if (filteredSummary.length !== 1 || counselingDevicesOnlyTotal !== 0) aggregatedHospitalData.push(counselingDevicesOnlyRow);
+  if (filteredSummary.length !== 1 || trainingDevicesCounselingOnlyTotal !== 0) aggregatedHospitalData.push(trainingDevicesCounselingOnlyRow);
+  if (filteredSummary.length !== 1 || evalAndServicesTotal !== 0) {
+    aggregatedHospitalData.push(blankRow);
+    aggregatedHospitalData.push({ Programs1: "Evaluation(s) + Services: ", Programs2: "" });
+    aggregatedHospitalData.push(blankRow);
+  }
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionCounselingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionCounselingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionTrainingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesCounselingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesTrainingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionCounselingTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionCounselingTrainingRow);
+  if (filteredSummary.length !== 1 || screeningsCLVEVisionDevicesCounselingTrainingTotal !== 0) aggregatedHospitalData.push(screeningsCLVEVisionDevicesCounselingTrainingRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push(totalBeneficiariesRow);
   aggregatedHospitalData.push(blankRow);
   aggregatedHospitalData.push(mdviRow);
 
-  return aggregatedHospitalData;
+  return {aggregatedHospitalData, otSessionsTotal, totalBeneficiariesTotal,uniqueBeneficiaries,} 
 }
 
 // Sorting function
@@ -1128,50 +1183,35 @@ export function filterTrainingSummaryByDateRange(
   summary,
   summaryType
 ) {
+  if (!Array.isArray(summary)) {
+    console.error(`Expected an array for ${summaryType} data, but received`, summary);
+    return []; // Return an empty array if summary is not an array
+  }
+
   const filteredSummary = summary.map((element) => {
-    const visionEnhancement = element.visionEnhancement.filter((training) => {
+    const visionEnhancement = (element.visionEnhancement || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const training = element.training.filter((training) => {
+    const training = (element.training || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const computerTraining = element.computerTraining.filter((training) => {
+    const counsellingEducation = (element.counsellingEducation || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const mobileTraining = element.mobileTraining.filter((training) => {
+    const comprehensiveLowVisionEvaluation = (element.comprehensiveLowVisionEvaluation || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
 
-    const orientationMobilityTraining = element.orientationMobilityTraining.filter((training) => {
+    const lowVisionEvaluation = (element.lowVisionEvaluation || []).filter((training) => {
       return filterByDate(training, startDate, endDate);
     });
-
-    const counsellingEducation = element.counsellingEducation.filter(
-      (training) => {
-        return filterByDate(training, startDate, endDate);
-      }
-    );
-
-    const comprehensiveLowVisionEvaluation =
-      element.comprehensiveLowVisionEvaluation.filter((training) => {
-        return filterByDate(training, startDate, endDate);
-      });
-
-    const lowVisionEvaluation = element.lowVisionEvaluation.filter(
-      (training) => {
-        return filterByDate(training, startDate, endDate);
-      }
-    );
 
     let filteredElement = {
       ...element,
       training,
-      orientationMobilityTraining,
-      mobileTraining,
-      computerTraining,
       visionEnhancement,
       counsellingEducation,
       comprehensiveLowVisionEvaluation,
@@ -1198,32 +1238,32 @@ export function filterTrainingSummaryByDateRange(
 export function setClveHeader(wclve) {
   XLSX.utils.sheet_add_aoa(wclve, [clveMainHeader, clveSubHeader]);
   wclve["!merges"] = [
-    mergeHeaderCells({ col: 0, rowSpan: 1 }), // {s: {r: 0, c: 0}, e: {r: 1, c: 0}}, Title: Index
-    mergeHeaderCells({ col: 1, rowSpan: 1 }), // Date
-    mergeHeaderCells({ col: 2, rowSpan: 1 }), // MRN
-    mergeHeaderCells({ col: 3, rowSpan: 1 }), // Name of the Patient
-    mergeHeaderCells({ col: 4, rowSpan: 1 }), // Age
-    mergeHeaderCells({ col: 5, rowSpan: 1 }), // Gender
-    mergeHeaderCells({ col: 6, rowSpan: 1 }), // Education
-    mergeHeaderCells({ col: 7, rowSpan: 1 }), // Occupation
-    mergeHeaderCells({ col: 8, rowSpan: 1 }), // Diagnosis
-    mergeHeaderCells({ col: 9, rowSpan: 1 }), // District
-    mergeHeaderCells({ col: 10, rowSpan: 1 }), // State
-    mergeHeaderCells({ col: 11, colSpan: 3 }), // { s: { r: 0, c: 11 }, e: { r: 0, c: 14 } }, Title: Acuity
-    mergeHeaderCells({ col: 15, colSpan: 3 }), // { s: { r: 0, c: 15 }, e: { r: 0, c: 18 } }, Title: Near Visual Acuity
-    mergeHeaderCells({ col: 19, rowSpan: 1 }), // Recommended Optical Aid
-    mergeHeaderCells({ col: 20, rowSpan: 1 }), // Recommended Non-Optical Aid
-    mergeHeaderCells({ col: 21, rowSpan: 1 }), // Recommended Electronic Aid
-    mergeHeaderCells({ col: 22, rowSpan: 1 }), // Spectacles (Refractive Error Only)
-    mergeHeaderCells({ col: 23, rowSpan: 1 }), // Dispensed Optical Aid
-    mergeHeaderCells({ col: 24, rowSpan: 1 }), // Dispensed Non-Optical Aid
-    mergeHeaderCells({ col: 25, rowSpan: 1 }), // Dispensed Electronic Aid
-    mergeHeaderCells({ col: 26, rowSpan: 1 }), // Dispensed Spectacles (Refractive Error Only)
-    mergeHeaderCells({ col: 27, colSpan: 1 }), // { s: { r: 0, c: 27 }, e: { r: 0, c: 28 } }, Title: Color Vision
-    mergeHeaderCells({ col: 29, colSpan: 1 }), // { s: { r: 0, c: 29 }, e: { r: 0, c: 30 } }, Title: Contrast Sensitivity
-    mergeHeaderCells({ col: 31, colSpan: 1 }), // { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } }, Title: Visual Fields
-    mergeHeaderCells({ col: 33, rowSpan: 1 }), // Cost of all the aids dispensed
-    mergeHeaderCells({ col: 34, rowSpan: 1 }), // Cost to the Beneficiary
+    mergeHeaderCells({ col: 0, rowSpan: 1 }), // Date
+    mergeHeaderCells({ col: 1, rowSpan: 1 }), // MRN
+    mergeHeaderCells({ col: 2, rowSpan: 1 }), // Name of the Patient
+    mergeHeaderCells({ col: 3, rowSpan: 1 }), // Age
+    mergeHeaderCells({ col: 4, rowSpan: 1 }), // Gender
+    mergeHeaderCells({ col: 5, rowSpan: 1 }), // Education
+    mergeHeaderCells({ col: 6, rowSpan: 1 }), // Occupation
+    mergeHeaderCells({ col: 7, rowSpan: 1 }), // Diagnosis
+    mergeHeaderCells({ col: 8, rowSpan: 1 }), // District
+    mergeHeaderCells({ col: 9, rowSpan: 1 }), // State
+    mergeHeaderCells({ col: 10, colSpan: 3 }), // { s: { r: 0, c: 11 }, e: { r: 0, c: 14 } }, Title: Acuity
+    mergeHeaderCells({ col: 14, colSpan: 3 }), // { s: { r: 0, c: 15 }, e: { r: 0, c: 18 } }, Title: Near Visual Acuity
+    mergeHeaderCells({ col: 18, rowSpan: 1 }), // Recommended Optical Aid
+    mergeHeaderCells({ col: 19, rowSpan: 1 }), // Recommended Non-Optical Aid
+    mergeHeaderCells({ col: 20, rowSpan: 1 }), // Recommended Electronic Aid
+    mergeHeaderCells({ col: 21, rowSpan: 1 }), // Spectacles (Refractive Error Only)
+    mergeHeaderCells({ col: 22, rowSpan: 1 }), // Dispensed Optical Aid
+    mergeHeaderCells({ col: 23, rowSpan: 1 }), // Dispensed Non-Optical Aid
+    mergeHeaderCells({ col: 24, rowSpan: 1 }), // Dispensed Electronic Aid
+    mergeHeaderCells({ col: 25, rowSpan: 1 }), // Dispensed Spectacles (Refractive Error Only)
+    mergeHeaderCells({ col: 26, colSpan: 1 }), // { s: { r: 0, c: 27 }, e: { r: 0, c: 28 } }, Title: Color Vision
+    mergeHeaderCells({ col: 28, colSpan: 1 }), // { s: { r: 0, c: 29 }, e: { r: 0, c: 30 } }, Title: Contrast Sensitivity
+    mergeHeaderCells({ col: 30, colSpan: 1 }), // { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } }, Title: Visual Fields
+    mergeHeaderCells({ col: 32, rowSpan: 1 }), // Cost of all the aids dispensed
+    mergeHeaderCells({ col: 33, rowSpan: 1 }), // Cost to the Beneficiary
+    mergeHeaderCells({ col: 34, rowSpan: 1 }), // Comments
   ];
 
   return wclve;
@@ -1285,19 +1325,19 @@ export function setAhdHeader(wahd, hospitals) {
 export function getReportData(
   filteredBeneficiaryData,
   filteredSummary,
-  includeAllBeneficiaries
+  includeAllBeneficiaries,
 ) {
-  let beneficiaryData = [];
-  let visionEnhancementData = [];
-  let lowVisionEvaluationData = [];
-  let comprehensiveLowVisionEvaluationData = [];
-  let electronicDevicesData = [];
-  let trainingData = [];
-  let counsellingEducationData = [];
-  let aggregatedHospitalData = getAggregatedHospitalData(
+  const beneficiaryData = [];
+  const visionEnhancementData = [];
+  const lowVisionEvaluationData = [];
+  const comprehensiveLowVisionEvaluationData = [];
+  const electronicDevicesData = [];
+  const trainingData = [];
+  const counsellingEducationData = [];
+  const { aggregatedHospitalData } = getAggregatedHospitalData(
     filteredBeneficiaryData,
     filteredSummary,
-    includeAllBeneficiaries
+    includeAllBeneficiaries,
   );
 
 
@@ -1313,7 +1353,7 @@ export function getReportData(
     beneficiaryData.push(beneficiaryJson);
 
     // CLVE sheet and electronic devices sheet:
-    let beneficiaryCLVE = beneficiary["comprehensiveLowVisionEvaluation"];
+    let beneficiaryCLVE = beneficiary["Comprehensive_Low_Vision_Evaluation"];
     for (let clveData of beneficiaryCLVE) {
       // CLVE row addition
       let clveJson = getClveJson(commonData, clveData);
@@ -1337,28 +1377,28 @@ export function getReportData(
     }
 
     // Vision Enhancement Sheet
-    let beneficiaryVE = beneficiary["visionEnhancement"];
+    let beneficiaryVE = beneficiary["Vision_Enhancement"];
     for (let veData of beneficiaryVE) {
       let veJson = getVeJson(commonData, veData);
       visionEnhancementData.push(veJson);
     }
 
     // Low Vision Enhancement Sheet
-    let beneficiaryLVE = beneficiary["lowVisionEvaluation"];
+    let beneficiaryLVE = beneficiary["Low_Vision_Evaluation"];
     for (let lveData of beneficiaryLVE) {
       let lveJson = getLveJson(commonData, lveData);
       lowVisionEvaluationData.push(lveJson);
     }
 
     // Training Sheet
-    let beneficiaryT = beneficiary["training"];
+    let beneficiaryT = beneficiary["Training"];
     for (let tData of beneficiaryT) {
       let tJson = getTrainingJson(commonData, tData);
       trainingData.push(tJson);
     }
 
     // Counseling Education Sheet
-    let beneficiaryCE = beneficiary["counsellingEducation"];
+    let beneficiaryCE = beneficiary["Counselling_Education"];
     for (let ceData of beneficiaryCE) {
       let ceJson = getCeJson(commonData, ceData);
       counsellingEducationData.push(ceJson);

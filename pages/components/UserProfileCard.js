@@ -31,54 +31,56 @@ export default function UserProfileCard({
         <hr />
 
         <table>
-          <tr>
-            <td>MRN:</td>
-            <td>{MRN}</td>
-          </tr>
-          <tr>
-            <td>Beneficiary Name:</td>
-            <td>{beneficiaryName}</td>
-          </tr>
-          <tr>
-            <td>Hospital Name:</td>
-            <td>{hospitalName}</td>
-          </tr>
-          <tr>
-            <td>Gender:</td>
-            <td>{gender}</td>
-          </tr>
-          <tr>
-            <td>MDVI:</td>
-            <td>{mdvi}</td>
-          </tr>
-          <tr>
-            <td>Phone Number:</td>
-            <td>{phoneNumber}</td>
-          </tr>
-          <tr>
-            <td>Date of Birth:</td>
-            <td>{dob}</td>
-          </tr>
-          <tr>
-            <td>Occupation:</td>
-            <td>{occupation}</td>
-          </tr>
-          <tr>
-            <td>Education:</td>
-            <td>{education}</td>
-          </tr>
-          <tr>
-            <td>Districts:</td>
-            <td>{districts}</td>
-          </tr>
-          <tr>
-            <td>State:</td>
-            <td>{state}</td>
-          </tr>
-          <tr>
-            <td>Extra Information:</td>
-            <td>{extraInformation}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td>MRN:</td>
+              <td>{MRN}</td>
+            </tr>
+            <tr>
+              <td>Beneficiary Name:</td>
+              <td>{beneficiaryName}</td>
+            </tr>
+            <tr>
+              <td>Hospital Name:</td>
+              <td>{hospitalName}</td>
+            </tr>
+            <tr>
+              <td>Gender:</td>
+              <td>{gender}</td>
+            </tr>
+            <tr>
+              <td>MDVI:</td>
+              <td>{mdvi}</td>
+            </tr>
+            <tr>
+              <td>Phone Number:</td>
+              <td>{phoneNumber}</td>
+            </tr>
+            <tr>
+              <td>Date of Birth:</td>
+              <td>{dob}</td>
+            </tr>
+            <tr>
+              <td>Occupation:</td>
+              <td>{occupation}</td>
+            </tr>
+            <tr>
+              <td>Education:</td>
+              <td>{education}</td>
+            </tr>
+            <tr>
+              <td>Districts:</td>
+              <td>{districts}</td>
+            </tr>
+            <tr>
+              <td>State:</td>
+              <td>{state}</td>
+            </tr>
+            <tr>
+              <td>Extra Information:</td>
+              <td>{extraInformation}</td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </div>

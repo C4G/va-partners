@@ -93,3 +93,9 @@ the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=
 from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Prisma
+
+> [!CAUTION]
+> **DO NOT MANUALLY CHANGE SCHEMA** - Create a migration instead - this ensures the schema/data is correct across staging/production database.
+- [Prisma Getting Started](https://www.prisma.io/docs/getting-started) - learn how prisma operates and works

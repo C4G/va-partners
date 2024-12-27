@@ -1,13 +1,22 @@
+// TODO: Fix handling of Date. In some scenarios, you can pick a date in the future.
+// and it will set it a day before. This is due to the timezone difference
+// likely between the client and server. TrainingFormCLVE.js seems to
+// handle this correctly. This may be due to the fact they use the moment library.
+// However, they don't use moment.utc() so it's unclear why it works for them.
+
 import { useState } from "react";
 import { Form, Row, Col, Button } from "react-bootstrap";
-import { required } from "../../global/required";
+import {
+  Select,
+  FormControl,
+} from "@mui/material";
+import { createMenu } from "@/constants/globalFunctions";
+import { VEDiagnosis } from "@/constants/generalConstants";
+import { required } from "../../comps/required";
 
 const TrainingForm = ({
-  existingTrainings = [],
   addNewTraining,
   customFields,
-  title,
-  api,
   submitButtonTest,
   typeList,
   mdvi,
@@ -17,17 +26,46 @@ const TrainingForm = ({
   loading,
   onSubmit,
 }) => {
+  const ITEM_HEIGHT = 48;
+  const ITEM_PADDING_TOP = 8;
+  const MenuProps = {
+    PaperProps: {
+      style: {
+        maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+        width: 600,
+      },
+    },
+  };
+  
   if (mdviValue === null || mdviValue === undefined || mdviValue === "")
     mdviValue = "No";
   const [mdviVal, setMdviVal] = useState(mdviValue);
+  const [diagnosis, setDiagnosis] = useState([]);
+  const [otherDiagnosis, setOtherDiagnosis] = useState("");
+
+  const diagnosisOptions = createMenu(VEDiagnosis, true, diagnosis);
+
+  const handleDiagnosisChange = (e) => {
+    const {
+      target: { value },
+    } = e;
+    setDiagnosis(value);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(true);
+
     const customData = customFields.reduce((acc, field) => {
       acc[field] = e.target[field].value;
       return acc;
     }, {});
+
+    const allDiagnosis = diagnosis.reduce(
+      (curr, selected) => `${curr} ${selected === "Other" ? otherDiagnosis.trim() : selected}`,
+      ""
+    ).trim();
+
     const newTraining = {
       date: e.target.date.value,
       sessionNumber: e.target.sessionNumber.value,
@@ -37,7 +75,7 @@ const TrainingForm = ({
       subTypeOther:
         e.target.subTypeOther == null ? null : e.target.subTypeOther.value,
       MDVI: mdvi ? mdviVal : null,
-      Diagnosis: e.target.Diagnosis == null ? null : e.target.Diagnosis.value,
+      Diagnosis: allDiagnosis.length > 0 ? allDiagnosis : null,
       extraInformation: e.target.extraInformation.value,
       ...customData,
     };
@@ -133,34 +171,63 @@ const TrainingForm = ({
               </Form.Group>
             ))}
           {mdvi == true && (
-            <Row>
-              <Col>
-                <Form.Group controlId="MDVI">
-                  <Form.Label>MDVI</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={mdviVal}
-                    onChange={(e) => setMdviVal(e.target.value)}
-                  >
-                    <option key="Yes" value="Yes">
-                      Yes
-                    </option>
-                    <option selected key="No" value="No">
-                      No
-                    </option>
-                    <option key="At Risk" value="At Risk">
-                      At Risk
-                    </option>
-                  </Form.Control>
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group controlId="Diagnosis">
-                  <Form.Label>Diagnosis</Form.Label>
-                  <Form.Control as="textarea" rows={1} autoComplete="off" />
-                </Form.Group>
-              </Col>
-            </Row>
+            <>
+              <Row>
+                <Col>
+                  <Form.Group controlId="MDVI">
+                    <Form.Label>MDVI</Form.Label>
+                    <Form.Control
+                      as="select"
+                      value={mdviVal}
+                      onChange={(e) => setMdviVal(e.target.value)}
+                    >
+                      <option key="Yes" value="Yes">
+                        Yes
+                      </option>
+                      <option selected key="No" value="No">
+                        No
+                      </option>
+                      <option key="At Risk" value="At Risk">
+                        At Risk
+                      </option>
+                    </Form.Control>
+                  </Form.Group>
+                </Col>
+                <Col>
+                  <Form.Label>Diagnosis { required() }</Form.Label>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={diagnosis}
+                      onChange={(e) => {
+                        handleDiagnosisChange(e);
+                      }}
+                      required
+                      multiple
+                      renderValue={(selected) => selected.join(", ")}
+                      MenuProps={MenuProps}
+                    >
+                      {diagnosisOptions}
+                    </Select>
+                  </FormControl>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  {diagnosis.includes("Other") && (
+                      <Form.Group controlId="diagnosisOther">
+                        <Form.Label>Other Diagnosis {required()}</Form.Label>
+                        <Form.Control
+                          type="input"
+                          required
+                          autoComplete="off"
+                          value={otherDiagnosis}
+                          onChange={(e) => setOtherDiagnosis(e.target.value)}
+                        />
+                      </Form.Group>
+                  )}
+                </Col>
+              </Row>
+            </>
           )}
           {typeList != null && (
             <Form.Group controlId="type">
