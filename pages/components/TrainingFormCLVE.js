@@ -95,9 +95,8 @@ const TrainingFormCLVE = ({
     return isValid;
   }
 
-  const handleSubmit = (e, formData) => {
+  const handleSubmit = (formData) => {
     const isValid = validateForm();
-    e.preventDefault();
     if (!isValid) {
       alert('Please complete all required fields!');
       return;
@@ -278,7 +277,7 @@ const TrainingFormCLVE = ({
       contrastSensitivityLE: formData.contrastSensitivityLE,
       visualFieldsRE: formData.visualFieldsRE,
       visualFieldsLE: formData.visualFieldsLE,
-      extraInformation: formData.extraInformation,
+      extraInformation: formData.extraInformation ?? '',
       ...customDataDistance,
       ...customDataNear,
     };
@@ -534,7 +533,7 @@ const TrainingFormCLVE = ({
         </div>
       </div>
       <hr />
-      <Form onSubmit={(e) => handleSubmit(e, formData)} className="mt-3" id="clve_form">
+      <Form className="mt-3" id="clve_form">
         <div className={section !== "visionEvaluation" ? 'd-none' : 'd-block'}>
           <Row>
             <Col>
@@ -1353,7 +1352,8 @@ const TrainingFormCLVE = ({
             <Button
               disabled={loading}
               className="btn btn-success border-0 btn-block"
-              type="submit"
+              type="button"
+              onClick={() => handleSubmit(formData)}
             >
               Submit Evaluation
             </Button>
