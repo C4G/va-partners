@@ -235,12 +235,15 @@ function RequiredFields(props) {
     for (const hospital of props.user.hospitalRole) {
       const name = props.hospitals.find(
         (h) => h.id == hospital.hospitalId
-      ).name;
-      hospitalOptions.push(
-        <option key={name} value={hospital.hospitalId}>
-          {name} (ID {hospital.hospitalId})
-        </option>
-      );
+      )?.name;
+      if (name) {
+
+        hospitalOptions.push(
+          <option key={name} value={hospital.hospitalId}>
+            {name} (ID {hospital.hospitalId})
+          </option>
+        );
+      }
     }
     hospitalName = (
       <div className="form-group">
