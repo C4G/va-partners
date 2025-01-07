@@ -80,10 +80,10 @@ function GraphCustomizer({
 }) {
   // Define quarters covering 3 months each
   const quarters = [
-    { label: 'Q1', startMonth: 0, endMonth: 2 },  // Jan - Mar
-    { label: 'Q2', startMonth: 3, endMonth: 5 },  // Apr - Jun
-    { label: 'Q3', startMonth: 6, endMonth: 8 },  // Jul - Sep
     { label: 'Q4', startMonth: 9, endMonth: 11 }, // Oct - Dec
+    { label: 'Q3', startMonth: 6, endMonth: 8 },  // Jul - Sep
+    { label: 'Q2', startMonth: 3, endMonth: 5 },  // Apr - Jun
+    { label: 'Q1', startMonth: 0, endMonth: 2 },  // Jan - Mar
   ];
 
   const currentMonth = moment().month();
@@ -91,21 +91,21 @@ function GraphCustomizer({
     (q) => currentMonth >= q.startMonth && currentMonth <= q.endMonth
   );
 
+  // Rotate quarters array so current quarter is first, then past quarters
   const availableQuarters = [
-    ...quarters.slice(currentQuarterIndex, currentQuarterIndex + 1),
-    ...quarters.slice(0, currentQuarterIndex).reverse(),
+    ...quarters.slice(currentQuarterIndex, quarters.length),
+    ...quarters.slice(0, currentQuarterIndex)
   ];
 
-  const updatedAvailableQuarters = availableQuarters.map((quarter, index) => {
-    if (index === 0) {
-      return { ...quarter, label: `${quarter.label} (Current)` };
-    } else {
-      return quarter;
-    }
-  });
+  const initialQuarterIndex = availableQuarters.findIndex(
+    (q) => currentMonth >= q.startMonth && currentMonth <= q.endMonth
+  );
 
   const setQuarter = (year, quarterIndex) => {
-    const q = quarters[quarterIndex];
+    if (initialQuarterIndex < quarterIndex) {
+      year -= 1;
+    }
+    const q = availableQuarters[quarterIndex];
     const start = moment()
       .year(year)
       .month(q.startMonth)
@@ -120,29 +120,15 @@ function GraphCustomizer({
     setEndDate(end);
 
     let quarterLabel = q.label;
-    if (quarterIndex === currentQuarterIndex) {
-      quarterLabel = `${q.label} (Current)`;
-    }
     setSelectedQuarter(quarterLabel);
   };
 
   // If no quarter is selected, default to the current quarter
   useEffect(() => {
     if (!selectedQuarter) {
-      setQuarter(moment().year(), currentQuarterIndex);
+      setQuarter(moment().year(), initialQuarterIndex);
     }
-  }, [currentQuarterIndex, selectedQuarter]);
-
-  // Whenever selectedQuarter changes (from query or UI), update the start/end dates accordingly
-  useEffect(() => {
-    if (selectedQuarter) {
-      const quarterLabelClean = selectedQuarter.replace(' (Current)', '');
-      const selectedIndex = quarters.findIndex((q) => q.label === quarterLabelClean);
-      if (selectedIndex !== -1) {
-        setQuarter(moment().year(), selectedIndex); 
-      }
-    }
-  }, [selectedQuarter]);
+  }, [selectedQuarter, initialQuarterIndex]);
 
   const handleQuarterSelection = (event) => {
     let quarterLabel = event.target.value;
@@ -150,34 +136,9 @@ function GraphCustomizer({
       setSelectedQuarter('');
       return;
     }
-    // Remove ' (Current)' if present
-    quarterLabel = quarterLabel.replace(' (Current)', '');
-    const selectedIndex = quarters.findIndex((q) => q.label === quarterLabel);
+    const selectedIndex = availableQuarters.findIndex((q) => q.label === quarterLabel);
     setQuarter(moment().year(), selectedIndex);
   };
-
-  const isDateInQuarterRange = (startDate, endDate) =>
-    quarters.some((q) => {
-      const start = moment()
-        .year(moment(startDate).year())
-        .month(q.startMonth)
-        .startOf('month');
-      const end = moment()
-        .year(moment(endDate).year())
-        .month(q.endMonth)
-        .endOf('month');
-      return (
-        moment(startDate).isBetween(start, end, undefined, '[]') &&
-        moment(endDate).isBetween(start, end, undefined, '[]')
-      );
-    });
-
-  useEffect(() => {
-    const isInQuarter = isDateInQuarterRange(startDate, endDate);
-    if (!isInQuarter && selectedQuarter) {
-      setSelectedQuarter('');
-    }
-  }, [startDate, endDate, selectedQuarter]);
 
   const downloadFilteredReport = async () => {
     try {
@@ -441,9 +402,9 @@ function GraphCustomizer({
               <MenuItem value="">
                 <em>None</em>
               </MenuItem>
-              {updatedAvailableQuarters.map((quarter) => (
+              {availableQuarters.map((quarter, index) => (
                 <MenuItem key={quarter.label} value={quarter.label}>
-                  {quarter.label}
+                  {quarter.label + (index === 0 ? ' (Current)' : '')}
                 </MenuItem>
               ))}
             </Select>
