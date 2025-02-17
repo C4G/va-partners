@@ -329,7 +329,7 @@ function Users(props) {
             <br />
             <form action="#" method="POST" onSubmit={(e) => addUser(e)}>
               <table className="row">
-                <tr className="row">
+                <tr className="row padding-bottom">
                   <td
                     htmlFor="manager"
                     className="col-md-5 flex-container-vertical"
@@ -349,7 +349,7 @@ function Users(props) {
                   </td>
                 </tr>
                 <br/>
-                <tr className="row">
+                <tr className="row padding-bottom">
                   <td
                     htmlFor="hospitalSelect"
                     className="col-md-5 flex-container-vertical"
@@ -392,7 +392,7 @@ function Users(props) {
                   </td>
                 </tr>
                 <br />
-                <tr className="row padding">
+                <tr className="row">
                   <td htmlFor="email" className="col-md-5 vertical-align">
                     User Email
                   </td>

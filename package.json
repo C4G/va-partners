@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "test": "npx jest --runInBand --passWithNoTests"
+    "test": "npx jest --runInBand --passWithNoTests",
+    "init": "docker compose up -d --force-recreate && npx prisma migrate dev && npx prisma db seed"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
