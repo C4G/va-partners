@@ -1,16 +1,16 @@
 import prisma from "@/utils/api/client";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions)
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
-    res.status(401).json({ message: "You must be logged in." })
-    return
+    res.status(401).json({ message: "You must be logged in." });
+    return;
   }
-  await updateUserLastModified('beneficiary', req.method, session.user.email);
+  await updateUserLastModified("beneficiary", req.method, session.user.email);
   if (req.method === "POST") {
     return await addData(req, res);
   } else if (req.method == "GET") {
@@ -53,7 +53,7 @@ export const readBeneficiaryMrn = async (mrn, hospitalId) => {
     console.log(error);
     return { error: "Couldn't read from db" };
   }
-}
+};
 
 export const readBeneficiaryOtherParam = async (otherParam) => {
   try {
@@ -65,7 +65,7 @@ export const readBeneficiaryOtherParam = async (otherParam) => {
       },
     });
 
-    const hospitalIds = hospitalList.map(hospital => hospital.id);
+    const hospitalIds = hospitalList.map((hospital) => hospital.id);
 
     const beneficiaries = await prisma.beneficiary.findMany({
       where: {
@@ -91,7 +91,7 @@ export const readBeneficiaryOtherParam = async (otherParam) => {
     });
 
     // Map the hospital name into the response for easier access in the frontend
-    return beneficiaries.map(beneficiary => ({
+    return beneficiaries.map((beneficiary) => ({
       ...beneficiary,
       hospitalName: beneficiary.hospital.name, // Add hospital name to each beneficiary
     }));
@@ -99,7 +99,7 @@ export const readBeneficiaryOtherParam = async (otherParam) => {
     console.log(error);
     return { error: "Couldn't read from db" };
   }
-}
+};
 
 async function readData(req, res) {
   try {
@@ -107,8 +107,11 @@ async function readData(req, res) {
     if (req.query.otherParam != null) {
       beneficiary = await readBeneficiaryOtherParam(req.query.otherParam);
     } else if (req.query.mrn != null && req.query.hospitalId != null) {
-      beneficiary = await readBeneficiaryMrn(req.query.mrn, req.query.hospitalId);
-    } else if (req.query.beneficiaryName != '') {
+      beneficiary = await readBeneficiaryMrn(
+        req.query.mrn,
+        req.query.hospitalId
+      );
+    } else if (req.query.beneficiaryName != "") {
       beneficiary = await prisma.beneficiary.findMany({
         where: {
           beneficiaryName: {
@@ -147,7 +150,7 @@ async function addData(req, res) {
       where: {
         mrn_hospitalId: {
           mrn: body.mrn,
-          hospitalId:  parseInt(body.hospitalId),
+          hospitalId: parseInt(body.hospitalId),
         },
       },
     })) != null
@@ -198,18 +201,18 @@ async function addData(req, res) {
 async function updateData(req, res) {
   if (req.body.mrn && req.body.hospitalId) {
     try {
-      const { mrn, hospitalId, ...data } = req.body;
-      if (data.dateOfBirth != undefined){
-        data.dateOfBirth = (new Date(data.dateOfBirth)).toISOString();
+      const { mrn, hospitalId, newHospitalId, newMrn, ...data } = req.body;
+      if (data.dateOfBirth != undefined) {
+        data.dateOfBirth = new Date(data.dateOfBirth).toISOString();
       }
       const updatedUser = await prisma.beneficiary.update({
-        where: { 
+        where: {
           mrn_hospitalId: {
             mrn,
             hospitalId: parseInt(hospitalId),
           },
         },
-        data,
+        data: { ...data, hospitalId: newHospitalId, mrn: newMrn },
       });
       res.status(200).json(updatedUser);
     } catch (error) {
@@ -230,13 +233,14 @@ async function updateData(req, res) {
       res.status(400).json({ error: "Failed to update user data." });
     }
   }
+  res.status(404).json({ error: "mrn and hospitalId is required" });
 }
 
 async function deleteData(req, res) {
   const body = req.body;
   try {
     const beneficiary = await prisma.beneficiary.delete({
-      where: { 
+      where: {
         mrn_hospitalId: {
           mrn: body.mrn,
           hospitalId: parseInt(body.hospitalId),
@@ -286,7 +290,7 @@ export async function findAllBeneficiary(isAdmin, hospitalIds) {
       },
       where: {
         deleted: false,
-        hospitalId: {in: hospitalIds}
+        hospitalId: { in: hospitalIds },
       },
     });
   }
