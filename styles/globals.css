@@ -546,3 +546,7 @@ footer will be floating and page will be too short for styling) */
   box-sizing: border-box;
   margin-bottom: 16px;
 }
+
+.padding-bottom {
+  padding-bottom: 8px;
+}

@@ -1,24 +1,29 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
-import { getSession } from "next-auth/react";
-import { Pencil, Check2 } from "react-bootstrap-icons";
-import Navigation from "./navigation/Navigation";
-import BeneficiaryServicesTable from "./components/BeneficiaryServicesTable";
-import UserProfileCard from "./components/UserProfileCard";
-import { getTrainingTypes } from "@/pages/api/trainingType";
 import { getCounsellingType } from "@/pages/api/counsellingType";
 import { getTrainingSubTypes } from "@/pages/api/trainingSubType";
-import { findAllHospital } from "./api/hospital";
-import { readUser } from "./api/user";
-import ConsentForm from "./components/ConsentForm";
+import { getTrainingTypes } from "@/pages/api/trainingType";
+import { getSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
+import { useState } from "react";
+import { Check2, Pencil } from "react-bootstrap-icons";
 import { readBeneficiaryMrn } from "./api/beneficiary";
 import { readBeneficiaryMirror } from "./api/beneficiaryMirror";
+import { findAllHospital } from "./api/hospital";
+import { readUser } from "./api/user";
+import BeneficiaryServicesTable from "./components/BeneficiaryServicesTable";
+import ConsentForm from "./components/ConsentForm";
+import UserProfileCard from "./components/UserProfileCard";
+import Navigation from "./navigation/Navigation";
 
 function UserPage(props) {
   const router = useRouter();
   const [formData, setFormData] = useState(props.user);
   const [editableField, setEditableField] = useState("");
   const [consentName, setConsentName] = useState("");
+
+  const searchParams = useSearchParams();
+  const prevHospitalId = searchParams.get("hospitalId");
+  const prevMrn = searchParams.get("mrn");
 
   const hospitalOptions = [];
   for (let i = 0; i < props.hospitals.length; i++) {
@@ -48,7 +53,9 @@ function UserPage(props) {
         alert("An error occurred while saving user data. Please try again.");
       }
     } else {
-      alert("Please ensure that you have entered the beneficiary's name correctly. Try again!");
+      alert(
+        "Please ensure that you have entered the beneficiary's name correctly. Try again!"
+      );
       setConsentName("");
     }
   };
@@ -77,7 +84,10 @@ function UserPage(props) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ mrn: props.user.mrn, hospitalId: props.user.hospitalId }),
+      body: JSON.stringify({
+        mrn: props.user.mrn,
+        hospitalId: props.user.hospitalId,
+      }),
     });
 
     if (response.ok) {
@@ -117,7 +127,10 @@ function UserPage(props) {
     let fieldValue = formData[field];
     if (field === "hospitalName") {
       fieldValue = parseInt(document.getElementById("hospitalName").value);
-      field = "hospitalId";
+      field = "newHospitalId";
+    }
+    if (field === "mrn") {
+      field = "newMrn";
     }
 
     const response = await fetch(`/api/beneficiary`, {
@@ -125,11 +138,22 @@ function UserPage(props) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ mrn: props.user.mrn, [field]: fieldValue }),
+      body: JSON.stringify({
+        mrn: prevMrn,
+        hospitalId: prevHospitalId,
+        [field]: fieldValue,
+      }),
     });
 
     if (response.ok) {
+      const data = await response.json();
+      const currentParams = new URLSearchParams(searchParams);
+      currentParams.set("mrn", data.mrn);
+      currentParams.set("hospitalId", data.hospitalId);
+      await router.push(`?${currentParams.toString()}`);
+
       setEditableField("");
+      alert("The user has been updated!");
     } else {
       alert("An error occurred while saving user data. Please try again.");
     }
@@ -365,7 +389,10 @@ function UserPage(props) {
     return canEdit && editableField === field ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form onSubmit={(e) => handleSubmit(e, field)} className="d-inline ms-2">
+          <form
+            onSubmit={(e) => handleSubmit(e, field)}
+            className="d-inline ms-2"
+          >
             <div className="row">
               <div className="col-md-9 nopadding">
                 <select
@@ -380,7 +407,10 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding">
+                <button
+                  type="submit"
+                  className="btn text-primary ms-2 nopadding"
+                >
                   <Check2 />
                 </button>
               </div>
@@ -412,7 +442,10 @@ function UserPage(props) {
     return canEdit && editableField === field ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form onSubmit={(e) => handleSubmit(e, field)} className="d-inline ms-2">
+          <form
+            onSubmit={(e) => handleSubmit(e, field)}
+            className="d-inline ms-2"
+          >
             <div className="row">
               <div className="col-md-9 nopadding">
                 <input
@@ -425,7 +458,10 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding">
+                <button
+                  type="submit"
+                  className="btn text-primary ms-2 nopadding"
+                >
                   <Check2 />
                 </button>
               </div>
@@ -470,7 +506,10 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
+                <button
+                  type="submit"
+                  className="btn text-primary ms-2 nopadding text-align-right"
+                >
                   <Check2 />
                 </button>
               </div>
@@ -498,7 +537,10 @@ function UserPage(props) {
     return editableField === "extraInformation" ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form onSubmit={(e) => handleSubmit(e, "extraInformation")} className="d-inline ms-2">
+          <form
+            onSubmit={(e) => handleSubmit(e, "extraInformation")}
+            className="d-inline ms-2"
+          >
             <div className="row">
               <div className="col-md-9 nopadding">
                 <textarea
@@ -510,7 +552,10 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
+                <button
+                  type="submit"
+                  className="btn text-primary ms-2 nopadding text-align-right"
+                >
                   <Check2 />
                 </button>
               </div>
@@ -562,7 +607,9 @@ function UserPage(props) {
                   ></button>
                 </div>
                 <div className="modal-body">
-                  Please confirm that you wish to delete this beneficiary permanently. This will remove all training data associated with this beneficiary.
+                  Please confirm that you wish to delete this beneficiary
+                  permanently. This will remove all training data associated
+                  with this beneficiary.
                 </div>
                 <div className="modal-footer">
                   <button
@@ -578,7 +625,7 @@ function UserPage(props) {
             </div>
           </div>
         </div>
-        
+
         <hr className="horizontal-line" />
         <div className="row">
           <div className="col-md-5">
@@ -590,23 +637,31 @@ function UserPage(props) {
               hospitalName={renderSelectField("hospitalName", "text", true)}
               education={renderField(
                 "education",
-                props.beneficiaryMirror.educationRequired ? "text" : props.beneficiaryMirror,
+                props.beneficiaryMirror.educationRequired
+                  ? "text"
+                  : props.beneficiaryMirror,
                 true
               )}
               districts={renderField(
                 "districts",
-                props.beneficiaryMirror.occupationRequired ? "text" : props.beneficiaryMirror,
+                props.beneficiaryMirror.occupationRequired
+                  ? "text"
+                  : props.beneficiaryMirror,
                 true
               )}
               state={renderField(
                 "state",
-                props.beneficiaryMirror.stateRequired ? "text" : props.beneficiaryMirror,
+                props.beneficiaryMirror.stateRequired
+                  ? "text"
+                  : props.beneficiaryMirror,
                 true
               )}
               beneficiaryName={renderField("beneficiaryName", "text", true)}
               occupation={renderField(
                 "occupation",
-                props.beneficiaryMirror.occupationRequired ? "text" : props.beneficiaryMirror,
+                props.beneficiaryMirror.occupationRequired
+                  ? "text"
+                  : props.beneficiaryMirror,
                 true
               )}
               extraInformation={renderExtraInformation()}
@@ -621,7 +676,9 @@ function UserPage(props) {
         <br />
         <div className="row">
           <div className="col-md-5">
-            <ConsentForm consent={renderConsentField("consent", "text", true)} />
+            <ConsentForm
+              consent={renderConsentField("consent", "text", true)}
+            />
           </div>
         </div>
       </div>
@@ -666,4 +723,3 @@ export async function getServerSideProps(ctx) {
 }
 
 export default UserPage;
-

@@ -710,6 +710,7 @@ function RequiredFields(props) {
                       type="text"
                       className="form-control"
                       id="createHospitalName"
+                      placeholder="Hospital Name"
                       // style={{ marginLeft: "170px" }}
                     />
                     <label
@@ -1286,7 +1287,7 @@ function RequiredFields(props) {
             </div>
           )}
           {section === "trainings" && (
-            <div className="container mt-4">
+            <div className="container mt-4 p-4">
               <h2 className="text-center mt-4 mb-4">
                 <strong>Add Types</strong>
               </h2>
