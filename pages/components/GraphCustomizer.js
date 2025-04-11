@@ -102,9 +102,14 @@ function GraphCustomizer({
   );
 
   const setQuarter = (year, quarterIndex) => {
-    if (initialQuarterIndex < quarterIndex) {
+    const currentQuarterLabel = availableQuarters[initialQuarterIndex].label;
+    const selectedQuarterLabel = availableQuarters[quarterIndex].label;
+    
+    // Only decrement year if selected quarter is after current quarter in the year
+    if (parseInt(selectedQuarterLabel[1]) > parseInt(currentQuarterLabel[1])) {
       year -= 1;
     }
+    
     const q = availableQuarters[quarterIndex];
     const start = moment()
       .year(year)
