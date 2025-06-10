@@ -31,7 +31,7 @@ model User {
 model Admin {
   id     Int  @id @default(autoincrement())
   userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Hospital {
@@ -48,8 +48,8 @@ model HospitalRole {
   userId     Int
   hospitalId Int
   admin      Boolean
-  user       User     @relation(fields: [userId], references: [id])
-  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 }
 
 model Beneficiary {
