@@ -48,9 +48,7 @@ function RequiredFields(props) {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const today = moment(new Date()).format("YYYY-MM-DD");
-  const [beneficiaryNameVal, setBeneficiaryNameVal] = useState(
-    props.beneficiaryName
-  );
+  const [beneficiaryNameVal, setBeneficiaryNameVal] = useState(props.beneficiaryName);
 
   const checkInput = (e) => {
     const onlyDigits = e.target.value.replace(/\D/g, "");
@@ -60,17 +58,13 @@ function RequiredFields(props) {
   async function submitInfo(e) {
     setLoading(true);
     e.preventDefault();
-    let mrn =
-      document.getElementById("mrn") != null
-        ? document.getElementById("mrn").value.trim()
-        : null;
+    let mrn = document.getElementById("mrn") != null ? document.getElementById("mrn").value.trim() : null;
     let beneficiaryName =
       document.getElementById("beneficiaryName") != null
         ? document.getElementById("beneficiaryName").value.trim()
         : null;
     let hospitalId =
-      document.getElementById("hospitalName") != null &&
-      document.getElementById("hospitalName").value != ""
+      document.getElementById("hospitalName") != null && document.getElementById("hospitalName").value != ""
         ? parseInt(document.getElementById("hospitalName").value)
         : null;
     let dateOfBirth =
@@ -78,42 +72,18 @@ function RequiredFields(props) {
         ? new Date(Date.parse(document.getElementById("dateOfBirth").value))
         : null;
     let gender =
-      document.getElementById("gender") != null &&
-      document.getElementById("gender").value != ""
+      document.getElementById("gender") != null && document.getElementById("gender").value != ""
         ? document.getElementById("gender").value
         : null;
     let phoneNumber =
-      document.getElementById("phoneNumber") != null
-        ? document.getElementById("phoneNumber").value
-        : null;
-    let education =
-      document.getElementById("education") != null
-        ? document.getElementById("education").value
-        : null;
-    let occupation =
-      document.getElementById("occupation") != null
-        ? document.getElementById("occupation").value
-        : null;
-    let districts =
-      document.getElementById("districts") != null
-        ? document.getElementById("districts").value
-        : null;
-    let state =
-      document.getElementById("state") != null
-        ? document.getElementById("state").value
-        : null;
-    let diagnosis =
-      document.getElementById("diagnosis") != null
-        ? document.getElementById("diagnosis").value
-        : null;
-    let vision =
-      document.getElementById("vision") != null
-        ? document.getElementById("vision").value
-        : null;
-    let mDVI =
-      document.getElementById("mDVI") != null
-        ? document.getElementById("mDVI").value
-        : null;
+      document.getElementById("phoneNumber") != null ? document.getElementById("phoneNumber").value : null;
+    let education = document.getElementById("education") != null ? document.getElementById("education").value : null;
+    let occupation = document.getElementById("occupation") != null ? document.getElementById("occupation").value : null;
+    let districts = document.getElementById("districts") != null ? document.getElementById("districts").value : null;
+    let state = document.getElementById("state") != null ? document.getElementById("state").value : null;
+    let diagnosis = document.getElementById("diagnosis") != null ? document.getElementById("diagnosis").value : null;
+    let vision = document.getElementById("vision") != null ? document.getElementById("vision").value : null;
+    let mDVI = document.getElementById("mDVI") != null ? document.getElementById("mDVI").value : null;
 
     console.log(
       "mrn" +
@@ -170,9 +140,7 @@ function RequiredFields(props) {
       router.push("/user?mrn=" + mrn + "&hospitalId=" + hospitalId);
     } else {
       setLoading(false);
-      alert(
-        "Beneficiary could not be added. MRN " + mrn + " already exists in the system."
-      );
+      alert("Beneficiary could not be added. MRN " + mrn + " already exists in the system.");
     }
   }
 
@@ -233,11 +201,8 @@ function RequiredFields(props) {
   } else {
     const hospitalOptions = [];
     for (const hospital of props.user.hospitalRole) {
-      const name = props.hospitals.find(
-        (h) => h.id == hospital.hospitalId
-      )?.name;
+      const name = props.hospitals.find((h) => h.id == hospital.hospitalId)?.name;
       if (name) {
-
         hospitalOptions.push(
           <option key={name} value={hospital.hospitalId}>
             {name} (ID {hospital.hospitalId})
@@ -253,7 +218,7 @@ function RequiredFields(props) {
         </label>
 
         <select className="form-select" id="hospitalName" required>
-            {hospitalOptions}
+          {hospitalOptions}
         </select>
       </div>
     );
@@ -263,13 +228,7 @@ function RequiredFields(props) {
   const dateOfBirth = (
     <div>
       <label htmlFor="dateOfBirth">Date Of Birth{required()}</label>
-      <input
-        type="date"
-        className="form-control"
-        id="dateOfBirth"
-        max={today}
-        required
-      />
+      <input type="date" className="form-control" id="dateOfBirth" max={today} required />
     </div>
   );
 
@@ -448,21 +407,13 @@ function RequiredFields(props) {
     </div>
   );
 
-  let extraInformation = JSON.parse(
-    props.requiredBeneficiaryFields.extraInformationRequired
-  );
+  let extraInformation = JSON.parse(props.requiredBeneficiaryFields.extraInformationRequired);
   const exInfo = [];
   extraInformation.forEach((data) => {
     exInfo.push(
       <div>
         <label htmlFor={data.name}>{data.name}</label>
-        <input
-          type="text"
-          className="form-control"
-          name="extraField"
-          id={data.name}
-          autoComplete="off"
-        />
+        <input type="text" className="form-control" name="extraField" id={data.name} autoComplete="off" />
       </div>
     );
   });
@@ -471,7 +422,7 @@ function RequiredFields(props) {
     <div>
       <Navigation user={props.user} />
       <div className="container">
-        <h1 className="text-center mt-4 mb-4">Register Beneficiary</h1>
+        <h1 className="mt-4 mb-4 text-center">Register Beneficiary</h1>
         <div className="beneficiary-child-container">
           <form action="#" method="POST" onSubmit={(e) => submitInfo(e)}>
             <div className="row">
@@ -499,11 +450,7 @@ function RequiredFields(props) {
               {exInfo}
             </div>
             <br />
-            <button
-              disabled={loading}
-              type="submit"
-              className="btn btn-success border-0 btn-block"
-            >
+            <button disabled={loading} type="submit" className="btn btn-success btn-block border-0">
               Submit
             </button>
           </form>

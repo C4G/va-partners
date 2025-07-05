@@ -2,43 +2,86 @@ import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
-import moment from 'moment';
+import moment from "moment";
 
 const distanceBinocularVisionMapping = {
-  '4.0 LogMAR': 'Blindness', '3.5 LogMAR': 'Blindness', '2.7 LogMAR': 'Blindness',
-  '2.3 LogMAR': 'Blindness', '2.0 LogMAR': 'Blindness', '1.92 LogMAR': 'Blindness',
-  '1.8 LogMAR': 'Blindness', '1.7 LogMAR': 'Blindness', '1.6 LogMAR': 'Blindness',
-  '1.52 LogMAR': 'Blindness', '1.4 LogMAR': 'Blindness', '1.3 LogMAR': 'Severe visual impairment',
-  '1.22 LogMAR': 'Severe visual impairment', '1.1 LogMAR': 'Severe visual impairment',
-  '1.0 LogMAR': 'Moderate visual impairment', '0.92 LogMAR': 'Moderate visual impairment',
-  '0.8 LogMAR': 'Moderate visual impairment', '0.7 LogMAR': 'Moderate visual impairment',
-  '0.6 LogMAR': 'Moderate visual impairment', '0.5 LogMAR': 'Mild visual impairment',
-  '0.4 LogMAR': 'Mild visual impairment', '0.3 LogMAR': 'Visual Acuity normal',
-  '0.22 LogMAR': 'Visual Acuity normal', '0.1 LogMAR': 'Visual Acuity normal',
-  '0.0 LogMAR': 'Visual Acuity normal', 'PL- 6m': 'Blindness',
-  'PL+: PR inaccurate 6m': 'Blindness', 'PL+: PR accurate 6m': 'Blindness',
-  'HMCF 6m': 'Blindness', 'CFCF 6m': 'Blindness', '6/600 6m': 'Blindness',
-  '6/480 6m': 'Blindness', '6/380 6m': 'Blindness', '6/300 6m': 'Blindness',
-  '6/240 6m': 'Blindness', '6/190 6m': 'Blindness', '6/150 6m': 'Blindness',
-  '6/126 6m': 'Severe visual impairment', '6/95 6m': 'Severe visual impairment',
-  '6/75 6m': 'Severe visual impairment', '6/60 6m': 'Moderate visual impairment',
-  '6/48 6m': 'Moderate visual impairment', '6/38 6m': 'Moderate visual impairment',
-  '6/30 6m': 'Moderate visual impairment', '6/24 6m': 'Moderate visual impairment',
-  '6/19 6m': 'Mild visual impairment', '6/15 6m': 'Mild visual impairment',
-  '6/12 6m': 'Visual Acuity normal', '6/9.5 6m': 'Visual Acuity normal',
-  '6/7.5 6m': 'Visual Acuity normal', '6/6.0 6m': 'Visual Acuity normal',
-  'PL- 20ft': 'Blindness', 'PL+: PR inaccurate 20ft': 'Blindness',
-  'PL+: PR accurate 20ft': 'Blindness', 'HMCF 20ft': 'Blindness', 'CFCF 20ft': 'Blindness',
-  '20/2000 20ft': 'Blindness', '20/1600 20ft': 'Blindness', '20/1250 20ft': 'Blindness',
-  '20/1000 20ft': 'Blindness', '20/800 20ft': 'Blindness', '20/630 20ft': 'Blindness',
-  '20/500 20ft': 'Blindness', '20/400 20ft': 'Severe visual impairment',
-  '20/320 20ft': 'Severe visual impairment', '20/250 20ft': 'Severe visual impairment',
-  '20/200 20ft': 'Moderate visual impairment', '20/160 20ft': 'Moderate visual impairment',
-  '20/125 20ft': 'Moderate visual impairment', '20/100 20ft': 'Moderate visual impairment',
-  '20/80 20ft': 'Moderate visual impairment', '20/63 20ft': 'Mild visual impairment',
-  '20/50 20ft': 'Mild visual impairment', '20/40 20ft': 'Visual Acuity normal',
-  '20/32 20ft': 'Visual Acuity normal', '20/25 20ft': 'Visual Acuity normal',
-  '20/20 20ft': 'Visual Acuity normal',
+  "4.0 LogMAR": "Blindness",
+  "3.5 LogMAR": "Blindness",
+  "2.7 LogMAR": "Blindness",
+  "2.3 LogMAR": "Blindness",
+  "2.0 LogMAR": "Blindness",
+  "1.92 LogMAR": "Blindness",
+  "1.8 LogMAR": "Blindness",
+  "1.7 LogMAR": "Blindness",
+  "1.6 LogMAR": "Blindness",
+  "1.52 LogMAR": "Blindness",
+  "1.4 LogMAR": "Blindness",
+  "1.3 LogMAR": "Severe visual impairment",
+  "1.22 LogMAR": "Severe visual impairment",
+  "1.1 LogMAR": "Severe visual impairment",
+  "1.0 LogMAR": "Moderate visual impairment",
+  "0.92 LogMAR": "Moderate visual impairment",
+  "0.8 LogMAR": "Moderate visual impairment",
+  "0.7 LogMAR": "Moderate visual impairment",
+  "0.6 LogMAR": "Moderate visual impairment",
+  "0.5 LogMAR": "Mild visual impairment",
+  "0.4 LogMAR": "Mild visual impairment",
+  "0.3 LogMAR": "Visual Acuity normal",
+  "0.22 LogMAR": "Visual Acuity normal",
+  "0.1 LogMAR": "Visual Acuity normal",
+  "0.0 LogMAR": "Visual Acuity normal",
+  "PL- 6m": "Blindness",
+  "PL+: PR inaccurate 6m": "Blindness",
+  "PL+: PR accurate 6m": "Blindness",
+  "HMCF 6m": "Blindness",
+  "CFCF 6m": "Blindness",
+  "6/600 6m": "Blindness",
+  "6/480 6m": "Blindness",
+  "6/380 6m": "Blindness",
+  "6/300 6m": "Blindness",
+  "6/240 6m": "Blindness",
+  "6/190 6m": "Blindness",
+  "6/150 6m": "Blindness",
+  "6/126 6m": "Severe visual impairment",
+  "6/95 6m": "Severe visual impairment",
+  "6/75 6m": "Severe visual impairment",
+  "6/60 6m": "Moderate visual impairment",
+  "6/48 6m": "Moderate visual impairment",
+  "6/38 6m": "Moderate visual impairment",
+  "6/30 6m": "Moderate visual impairment",
+  "6/24 6m": "Moderate visual impairment",
+  "6/19 6m": "Mild visual impairment",
+  "6/15 6m": "Mild visual impairment",
+  "6/12 6m": "Visual Acuity normal",
+  "6/9.5 6m": "Visual Acuity normal",
+  "6/7.5 6m": "Visual Acuity normal",
+  "6/6.0 6m": "Visual Acuity normal",
+  "PL- 20ft": "Blindness",
+  "PL+: PR inaccurate 20ft": "Blindness",
+  "PL+: PR accurate 20ft": "Blindness",
+  "HMCF 20ft": "Blindness",
+  "CFCF 20ft": "Blindness",
+  "20/2000 20ft": "Blindness",
+  "20/1600 20ft": "Blindness",
+  "20/1250 20ft": "Blindness",
+  "20/1000 20ft": "Blindness",
+  "20/800 20ft": "Blindness",
+  "20/630 20ft": "Blindness",
+  "20/500 20ft": "Blindness",
+  "20/400 20ft": "Severe visual impairment",
+  "20/320 20ft": "Severe visual impairment",
+  "20/250 20ft": "Severe visual impairment",
+  "20/200 20ft": "Moderate visual impairment",
+  "20/160 20ft": "Moderate visual impairment",
+  "20/125 20ft": "Moderate visual impairment",
+  "20/100 20ft": "Moderate visual impairment",
+  "20/80 20ft": "Moderate visual impairment",
+  "20/63 20ft": "Mild visual impairment",
+  "20/50 20ft": "Mild visual impairment",
+  "20/40 20ft": "Visual Acuity normal",
+  "20/32 20ft": "Visual Acuity normal",
+  "20/25 20ft": "Visual Acuity normal",
+  "20/20 20ft": "Visual Acuity normal",
 };
 
 const trainingCategories = [
@@ -67,21 +110,21 @@ const trainingCategories = [
 ];
 
 const specificCounselingCategories = [
-  'Counseled and Shortlisted for Smart vision glasses',
-  'Counseled and Shortlisted for Smartphone',
-  'Educational guidance',
-  'Life skills training/ Home management / Kitchen skills',
-  'Referral to computer applications & technology training',
-  'Referral to mobile technology training',
-  'Referral to orientation and mobility – training',
-  'Referral to Vision-Aid online training programs',
-  'Referral to vocational training',
-  'Self-care and Activities of daily living',
-  'Counseling to the parents/ family/caretaker',
-  'Other',
-  'Referral to a special school',
-  'Referral to Genetic Counseling',
-  'Referral to Vision-Aid for Job Placement',
+  "Counseled and Shortlisted for Smart vision glasses",
+  "Counseled and Shortlisted for Smartphone",
+  "Educational guidance",
+  "Life skills training/ Home management / Kitchen skills",
+  "Referral to computer applications & technology training",
+  "Referral to mobile technology training",
+  "Referral to orientation and mobility – training",
+  "Referral to Vision-Aid online training programs",
+  "Referral to vocational training",
+  "Self-care and Activities of daily living",
+  "Counseling to the parents/ family/caretaker",
+  "Other",
+  "Referral to a special school",
+  "Referral to Genetic Counseling",
+  "Referral to Vision-Aid for Job Placement",
 ];
 
 function calculateAge(dateOfBirth) {
@@ -117,17 +160,18 @@ async function readData(req, res) {
     let parsedHospitalIds = [];
     if (hospitalIds) {
       parsedHospitalIds = Array.isArray(hospitalIds)
-        ? hospitalIds.map(Number).filter(id => !isNaN(id))
-        : [Number(hospitalIds)].filter(id => !isNaN(id));
+        ? hospitalIds.map(Number).filter((id) => !isNaN(id))
+        : [Number(hospitalIds)].filter((id) => !isNaN(id));
     }
     if (parsedHospitalIds.length === 0) {
-      return res.status(400).json({ error: 'hospitalIds is required and must be valid integers' });
+      return res.status(400).json({ error: "hospitalIds is required and must be valid integers" });
     }
 
     // Date range
-    const parsedStartDate = startDate ? moment.utc(startDate).startOf('day').toDate() : null;
-    const parsedEndDate = endDate ? moment.utc(endDate).endOf('day').toDate() : null;
-    const dateRangeCondition = (parsedStartDate && parsedEndDate) ? { gte: parsedStartDate, lte: parsedEndDate } : undefined;
+    const parsedStartDate = startDate ? moment.utc(startDate).startOf("day").toDate() : null;
+    const parsedEndDate = endDate ? moment.utc(endDate).endOf("day").toDate() : null;
+    const dateRangeCondition =
+      parsedStartDate && parsedEndDate ? { gte: parsedStartDate, lte: parsedEndDate } : undefined;
 
     // Filters
     const genderFilters = genders ? (Array.isArray(genders) ? genders : [genders]) : [];
@@ -193,7 +237,7 @@ async function readData(req, res) {
     // Pre-fetch beneficiaries once
     const selectedBeneficiaries = await prisma.Beneficiary.findMany({
       where: beneficiaryFilters,
-      select: { mrn: true, hospitalId: true, dateOfBirth: true, gender: true }
+      select: { mrn: true, hospitalId: true, dateOfBirth: true, gender: true },
     });
 
     const totalBeneficiariesCount = selectedBeneficiaries.length;
@@ -201,7 +245,7 @@ async function readData(req, res) {
     let uniqueBenefIds = new Set();
     if (dateRangeCondition) {
       // We need to find those with activity in the date range
-      const activityPromises = subtypes.map(st =>
+      const activityPromises = subtypes.map((st) =>
         modelMap[st].findMany({
           where: {
             beneficiary: beneficiaryFilters,
@@ -232,7 +276,7 @@ async function readData(req, res) {
     };
 
     // Compute subtype counts
-    const subtypeCountPromises = subtypes.map(st =>
+    const subtypeCountPromises = subtypes.map((st) =>
       modelMap[st].count({
         where: {
           beneficiary: beneficiaryFilters,
@@ -262,7 +306,7 @@ async function readData(req, res) {
       }
 
       // subtype per hospital
-      const subtypePerHospitalPromises = subtypes.map(st =>
+      const subtypePerHospitalPromises = subtypes.map((st) =>
         modelMap[st].findMany({
           where: {
             beneficiary: beneficiaryFilters,
@@ -373,14 +417,20 @@ async function readData(req, res) {
         const dField = `dispensed${type}`;
         const rField = `recommendation${type}`;
         if (record[dField]) {
-          const devices = record[dField].split(";").map(d => d.trim()).filter(Boolean);
+          const devices = record[dField]
+            .split(";")
+            .map((d) => d.trim())
+            .filter(Boolean);
           for (const dev of devices) {
             devicesDispensedCounts[type]++;
             devicesDispensedDetails[type][dev] = (devicesDispensedDetails[type][dev] || 0) + 1;
           }
         }
         if (record[rField]) {
-          const devices = record[rField].split(",").map(d => d.trim()).filter(Boolean);
+          const devices = record[rField]
+            .split(",")
+            .map((d) => d.trim())
+            .filter(Boolean);
           for (const dev of devices) {
             devicesRecommendedCounts[type]++;
             devicesRecommendedDetails[type][dev] = (devicesRecommendedDetails[type][dev] || 0) + 1;
@@ -394,36 +444,34 @@ async function readData(req, res) {
     formattedCounts["Devices_Dispensed_Details"] = devicesDispensedDetails;
     formattedCounts["Devices_Recommended_Details"] = devicesRecommendedDetails;
 
-    let filteredBeneficiaries = selectedBeneficiaries.filter(b => 
-  uniqueBenefIds.has(`${b.mrn}-${b.hospitalId}`)
-);
+    let filteredBeneficiaries = selectedBeneficiaries.filter((b) => uniqueBenefIds.has(`${b.mrn}-${b.hospitalId}`));
 
-// Now compute gender and age from filteredBeneficiaries, not selectedBeneficiaries.
-const genderCountsFormatted = { Male: 0, Female: 0, Other: 0 };
-const ageGroups = { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 };
+    // Now compute gender and age from filteredBeneficiaries, not selectedBeneficiaries.
+    const genderCountsFormatted = { Male: 0, Female: 0, Other: 0 };
+    const ageGroups = { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 };
 
-for (const b of filteredBeneficiaries) {
-  const g = b.gender
-  if (g === "Male") genderCountsFormatted.Male++;
-  else if (g === "Female") genderCountsFormatted.Female++;
-  else genderCountsFormatted.Other++;
+    for (const b of filteredBeneficiaries) {
+      const g = b.gender;
+      if (g === "Male") genderCountsFormatted.Male++;
+      else if (g === "Female") genderCountsFormatted.Female++;
+      else genderCountsFormatted.Other++;
 
-  const age = calculateAge(b.dateOfBirth);
-  if (age !== null) {
-    if (age <= 18) ageGroups["0-18"]++;
-    else if (age <= 35) ageGroups["19-35"]++;
-    else if (age <= 50) ageGroups["36-50"]++;
-    else if (age <= 65) ageGroups["51-65"]++;
-    else ageGroups["66+"]++;
-  }
-}
+      const age = calculateAge(b.dateOfBirth);
+      if (age !== null) {
+        if (age <= 18) ageGroups["0-18"]++;
+        else if (age <= 35) ageGroups["19-35"]++;
+        else if (age <= 50) ageGroups["36-50"]++;
+        else if (age <= 65) ageGroups["51-65"]++;
+        else ageGroups["66+"]++;
+      }
+    }
 
-formattedCounts["genderCounts"] = genderCountsFormatted;
-formattedCounts["ageGroupCounts"] = ageGroups;
+    formattedCounts["genderCounts"] = genderCountsFormatted;
+    formattedCounts["ageGroupCounts"] = ageGroups;
 
     // Visual Acuity
     const distanceBinocularCounts = await prisma.Comprehensive_Low_Vision_Evaluation.groupBy({
-      by: ['distanceBinocularVisionBE'],
+      by: ["distanceBinocularVisionBE"],
       where: {
         beneficiary: beneficiaryFilters,
         ...(dateRangeCondition && { date: dateRangeCondition }),
@@ -432,15 +480,15 @@ formattedCounts["ageGroupCounts"] = ageGroups;
     });
 
     const distanceBinocularVisionBE_counts = {
-      'Blindness': 0,
-      'Severe visual impairment': 0,
-      'Moderate visual impairment': 0,
-      'Mild visual impairment': 0,
-      'Visual Acuity normal': 0,
+      Blindness: 0,
+      "Severe visual impairment": 0,
+      "Moderate visual impairment": 0,
+      "Mild visual impairment": 0,
+      "Visual Acuity normal": 0,
     };
 
     for (const record of distanceBinocularCounts) {
-      const category = distanceBinocularVisionMapping[record.distanceBinocularVisionBE] || 'Other';
+      const category = distanceBinocularVisionMapping[record.distanceBinocularVisionBE] || "Other";
       if (Object.prototype.hasOwnProperty.call(distanceBinocularVisionBE_counts, category)) {
         distanceBinocularVisionBE_counts[category] += record._count.distanceBinocularVisionBE;
       }
@@ -449,7 +497,7 @@ formattedCounts["ageGroupCounts"] = ageGroups;
 
     // Unique Beneficiaries By Activity
     // Already have activities from previous queries? We can re-use or fetch again:
-    const uniqueByActivityPromises = activitySubtypes.map(act =>
+    const uniqueByActivityPromises = activitySubtypes.map((act) =>
       activityModelMap[act].findMany({
         where: {
           beneficiary: beneficiaryFilters,
@@ -479,7 +527,7 @@ formattedCounts["ageGroupCounts"] = ageGroups;
 
     const uniqueByActivityBenefIdsResults = uniqueByActivityResultsArr.map((records, idx) => ({
       activity: activitySubtypes[idx],
-      records
+      records,
     }));
 
     const uniqueByActivityPerHospital = {};
@@ -506,7 +554,7 @@ formattedCounts["ageGroupCounts"] = ageGroups;
       parsedEndDate,
     });
   } catch (error) {
-    console.error('Error in readData:', error);
+    console.error("Error in readData:", error);
     return res.status(500).json({ error: error.message });
   }
 }

@@ -20,12 +20,8 @@ export default function HistoricalCounselingForm(props) {
 
   const [editMode, setEditMode] = useState(false);
 
-  const [showOther, setShowOther] = useState(
-    counselingTypeList.includes(data.type) ? false : true
-  );
-  const [otherType, setOtherType] = useState(
-    counselingTypeList.includes(data.type) ? "" : data.type
-  );
+  const [showOther, setShowOther] = useState(counselingTypeList.includes(data.type) ? false : true);
+  const [otherType, setOtherType] = useState(counselingTypeList.includes(data.type) ? "" : data.type);
 
   useEffect(() => {
     if (showOther && editMode) {
@@ -72,7 +68,7 @@ export default function HistoricalCounselingForm(props) {
         alert("Failed to delete data!");
       }
     }
-  }
+  };
 
   const saveCounselingData = async () => {
     let trainingData = { ...data };
@@ -96,12 +92,10 @@ export default function HistoricalCounselingForm(props) {
   };
 
   return data == undefined ? (
-    <div className="text-align-left">
-      No historical data is present for this date!
-    </div>
+    <div className="text-align-left">No historical data is present for this date!</div>
   ) : (
     <div>
-      <table className="table beneficiary-table table-bordered row">
+      <table className="beneficiary-table table-bordered row table">
         <thead className="thead-dark">
           <tr className="row">
             <th scope="col" className="col-md-4">
@@ -118,9 +112,7 @@ export default function HistoricalCounselingForm(props) {
               Date
             </th>
             <td className="col-md-8">
-              {!editMode &&
-                data.date !== null &&
-                moment(data.date).format("DD MMMM YYYY")}
+              {!editMode && data.date !== null && moment(data.date).format("DD MMMM YYYY")}
               {!editMode && data.date !== null && ""}
               {editMode && (
                 <input
@@ -157,12 +149,7 @@ export default function HistoricalCounselingForm(props) {
               {!editMode && data.type}
               {editMode && (
                 <FormControl fullWidth size="small">
-                  <Select
-                    onChange={(e) => handleChange(e)}
-                    value={data.type}
-                    name="type"
-                    MenuProps={MenuProps}
-                  >
+                  <Select onChange={(e) => handleChange(e)} value={data.type} name="type" MenuProps={MenuProps}>
                     {counselingTypeOptions}
                   </Select>
                 </FormControl>
@@ -205,26 +192,17 @@ export default function HistoricalCounselingForm(props) {
         </tbody>
       </table>
       {props.evaluationData.editable && !editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={handleClick}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={handleClick}>
           Edit
         </button>
       )}
       {editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={saveCounselingData}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={saveCounselingData}>
           Save
         </button>
       )}
       {!editMode && (
-        <button
-          className="btn btn-danger border-0 ms-3 btn-block"
-          onClick={deleteCounselingData}
-        >
+        <button className="btn btn-danger ms-3 btn-block border-0" onClick={deleteCounselingData}>
           Delete
         </button>
       )}

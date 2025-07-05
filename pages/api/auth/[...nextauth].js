@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth";
 
 export const authOptions = {
   // Configure one or more authentication providers
@@ -23,5 +23,5 @@ export default NextAuth(authOptions);
 
 // Use it in server contexts
 export function auth(...args) {
-  return getServerSession(...args, authOptions)
+  return getServerSession(...args, authOptions);
 }

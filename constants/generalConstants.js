@@ -30,5 +30,5 @@ export const VEDiagnosis = [
   "Peripheral Capillary Hemangioma",
   "Sclerocornea",
   "Leber's Congenital Amaurosis",
-  "Other"
-]
+  "Other",
+];

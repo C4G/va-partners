@@ -140,10 +140,6 @@ export const electronicDevices = [
   "Other",
 ];
 
-export const electronicDevicesSubheadings = [
-  "Electronic Devices",
-  "Softwares",
-  "Other",
-];
+export const electronicDevicesSubheadings = ["Electronic Devices", "Softwares", "Other"];
 
 export const electronicDevicesIndices = [0, 15, 21, 22];

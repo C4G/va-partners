@@ -4,7 +4,7 @@ import { useState } from "react";
 import SearchBar from "./components/SearchBar";
 import UserList from "./components/UserList";
 import Navigation from "./navigation/Navigation";
-import Layout from './components/layout';
+import Layout from "./components/layout";
 import { useRouter } from "next/router";
 import { getSession } from "next-auth/react";
 import { readUser } from "./api/user";
@@ -39,21 +39,18 @@ function HomePage(props) {
   const searchUsers = async (searchInput, choice, showOther) => {
     setSearchTerm(searchInput);
     setSearchOther(showOther);
-    var hospitalIds = props.user.hospitalRole.map(role => role.hospitalId);
+    var hospitalIds = props.user.hospitalRole.map((role) => role.hospitalId);
     if (showOther) {
       try {
-        const beneficiary = await fetch(
-          "/api/beneficiary?otherParam=" + searchInput,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        const beneficiary = await fetch("/api/beneficiary?otherParam=" + searchInput, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
         const beneficiaryJson = await beneficiary.json();
         let filteredBeneficiaryJson;
         if (props.user.admin == null) {
           // dont show beneficiaries from hospitals other than the ones managed by the professional/manager
-          filteredBeneficiaryJson = beneficiaryJson.filter(item => hospitalIds.includes(item.hospitalId));
+          filteredBeneficiaryJson = beneficiaryJson.filter((item) => hospitalIds.includes(item.hospitalId));
         } else {
           // show all for admins
           filteredBeneficiaryJson = beneficiaryJson;
@@ -70,18 +67,15 @@ function HomePage(props) {
       }
     } else {
       try {
-        const beneficiary = await fetch(
-          "/api/beneficiary?beneficiaryName=" + searchInput,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        const beneficiary = await fetch("/api/beneficiary?beneficiaryName=" + searchInput, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
         const beneficiaryJson = await beneficiary.json();
         let filteredBeneficiaryJson;
         if (props.user.admin == null) {
           // dont show beneficiaries from hospitals other than the ones managed by the professional/manager
-          filteredBeneficiaryJson = beneficiaryJson.filter(item => hospitalIds.includes(item.hospitalId));
+          filteredBeneficiaryJson = beneficiaryJson.filter((item) => hospitalIds.includes(item.hospitalId));
         } else {
           // show all for admins
           filteredBeneficiaryJson = beneficiaryJson;
@@ -113,46 +107,38 @@ function HomePage(props) {
 
   return (
     <Layout>
-    <div className="content">
-      <Navigation user={props.user} />
-      <div className="container">
-        <h1 className="text-center mt-4 mb-4">Search / Register</h1>
-        <div className="beneficiary-child-container">
-          <SearchBar onSearch={searchUsers} />
-          {users.length > 0 && choice === "search" && (
-            <UserList users={users} />
-          )}
-          {users.length === 0 && searched && choice === "search" && (
-            <div>
-              <br />
-              <p>
-                No beneficiary matches your search term! Please try again or
-                register a new beneficiary.
-              </p>
-            </div>
-          )}
-          {users.length > 0 && choice === "register" && (
-            <div>
-              <p>
-                The beneficiary you are trying to register might already exist
-                as displayed below. Would you still like to continue?
-              </p>
-              <button
-                className="btn btn-success border-0 btn-block"
-                onClick={() => goToRegisterBeneficiary()}
-              >
-                Continue
-              </button>
-              <br />
-              <br />
-              <UserList users={users} />
-            </div>
-          )}
-          <br />
+      <div className="content">
+        <Navigation user={props.user} />
+        <div className="container">
+          <h1 className="mt-4 mb-4 text-center">Search / Register</h1>
+          <div className="beneficiary-child-container">
+            <SearchBar onSearch={searchUsers} />
+            {users.length > 0 && choice === "search" && <UserList users={users} />}
+            {users.length === 0 && searched && choice === "search" && (
+              <div>
+                <br />
+                <p>No beneficiary matches your search term! Please try again or register a new beneficiary.</p>
+              </div>
+            )}
+            {users.length > 0 && choice === "register" && (
+              <div>
+                <p>
+                  The beneficiary you are trying to register might already exist as displayed below. Would you still
+                  like to continue?
+                </p>
+                <button className="btn btn-success btn-block border-0" onClick={() => goToRegisterBeneficiary()}>
+                  Continue
+                </button>
+                <br />
+                <br />
+                <UserList users={users} />
+              </div>
+            )}
+            <br />
+          </div>
         </div>
+        <br />
       </div>
-      <br />
-    </div>
     </Layout>
   );
 }

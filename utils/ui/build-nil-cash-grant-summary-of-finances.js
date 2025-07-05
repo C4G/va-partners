@@ -1,4 +1,4 @@
-import XLSX from 'xlsx-js-style';
+import XLSX from "xlsx-js-style";
 
 const NIL_CASH_GRANT_SUMMARY_OF_FINANCES = `\tRevised Summary of finances sheet\t\t\t\tAll figures in INR\tGuide
 \tPlease fill in the summary of funds received and spent.
@@ -40,6 +40,6 @@ S.no\tDevice description\tSupplier\tOpening balance\tQuantity\tClosing balance\t
 \tNumber of devices needed for next quarter
 `;
 export const buildNilCashGrantSummaryOfFinances = () => {
-  const sheetData = NIL_CASH_GRANT_SUMMARY_OF_FINANCES.split('\n').map(row => row.split('\t'));
+  const sheetData = NIL_CASH_GRANT_SUMMARY_OF_FINANCES.split("\n").map((row) => row.split("\t"));
   return XLSX.utils.aoa_to_sheet(sheetData);
-}
+};

@@ -9,9 +9,9 @@ import {
   TextField,
   Box,
   IconButton,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CloseIcon from '@mui/icons-material/Close';
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CloseIcon from "@mui/icons-material/Close";
 
 function ReportCustomizer(props) {
   const {
@@ -29,30 +29,28 @@ function ReportCustomizer(props) {
   const updateGender = (event) => {
     const gender = event.target.name;
     const isChecked = event.target.checked;
-    setSelectedGenders((prev = []) =>
-      isChecked ? [...prev, gender] : prev.filter((g) => g !== gender)
-    );
+    setSelectedGenders((prev = []) => (isChecked ? [...prev, gender] : prev.filter((g) => g !== gender)));
   };
 
   const updateMdvi = (event) => {
     const mdviValue = event.target.name; // 'Yes' or 'No'
     const isChecked = event.target.checked;
-    setSelectedMdvi((prev = []) =>
-      isChecked ? [...prev, mdviValue] : prev.filter((m) => m !== mdviValue)
-    );
+    setSelectedMdvi((prev = []) => (isChecked ? [...prev, mdviValue] : prev.filter((m) => m !== mdviValue)));
   };
 
   const resetToDefault = () => {
-    setSelectedGenders(['Male', 'Female', 'Other']);
-    setSelectedMdvi(['Yes', 'No']);
+    setSelectedGenders(["Male", "Female", "Other"]);
+    setSelectedMdvi(["Yes", "No"]);
     setMinAge(null);
     setMaxAge(null);
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '320px', padding: '16px', margin: '0 auto' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>All Filters</Typography>
+    <div style={{ width: "100%", maxWidth: "320px", padding: "16px", margin: "0 auto" }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+          All Filters
+        </Typography>
         <IconButton onClick={onClose}>
           <CloseIcon />
         </IconButton>
@@ -61,20 +59,16 @@ function ReportCustomizer(props) {
       {/* Gender Filter */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography><strong>Gender</strong></Typography>
+          <Typography>
+            <strong>Gender</strong>
+          </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {['Male', 'Female', 'Other'].map((gender) => (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {["Male", "Female", "Other"].map((gender) => (
               <FormControlLabel
                 key={gender}
-                control={
-                  <Checkbox
-                    name={gender}
-                    checked={selectedGenders.includes(gender)}
-                    onChange={updateGender}
-                  />
-                }
+                control={<Checkbox name={gender} checked={selectedGenders.includes(gender)} onChange={updateGender} />}
                 label={gender}
               />
             ))}
@@ -85,10 +79,12 @@ function ReportCustomizer(props) {
       {/* Age Filter */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography><strong>Age</strong></Typography>
+          <Typography>
+            <strong>Age</strong>
+          </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <TextField
               label="Minimum Age"
               type="number"
@@ -110,20 +106,16 @@ function ReportCustomizer(props) {
       {/* MDVI Filter */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography><strong>MDVI</strong></Typography>
+          <Typography>
+            <strong>MDVI</strong>
+          </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {['Yes', 'No'].map((mdvi) => (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {["Yes", "No"].map((mdvi) => (
               <FormControlLabel
                 key={mdvi}
-                control={
-                  <Checkbox
-                    name={mdvi}
-                    checked={selectedMdvi.includes(mdvi)}
-                    onChange={updateMdvi}
-                  />
-                }
+                control={<Checkbox name={mdvi} checked={selectedMdvi.includes(mdvi)} onChange={updateMdvi} />}
                 label={mdvi}
               />
             ))}
@@ -132,13 +124,7 @@ function ReportCustomizer(props) {
       </Accordion>
 
       {/* Reset to Default Button */}
-      <Button
-        variant="outlined"
-        color="secondary"
-        onClick={resetToDefault}
-        fullWidth
-        sx={{ mt: 1 }}
-      >
+      <Button variant="outlined" color="secondary" onClick={resetToDefault} fullWidth sx={{ mt: 1 }}>
         Reset to Default
       </Button>
     </div>

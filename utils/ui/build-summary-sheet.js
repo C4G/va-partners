@@ -1,4 +1,4 @@
-import XLSX from 'xlsx-js-style';
+import XLSX from "xlsx-js-style";
 
 const SUMMARY_DATA = `Partner Name\txxx
 Report filled by\txxx
@@ -40,6 +40,6 @@ Feed back regarding Vision-Aid Resource center
 UPLOAD ONE OR MORE PHOTOS OF THE WORK USING THE INSERT -> PICTURES OPTION with Description of the event / Success story 
 `;
 export const buildSummarySheet = () => {
-  const sheetData = SUMMARY_DATA.split('\n').map(row => row.split('\t'));
+  const sheetData = SUMMARY_DATA.split("\n").map((row) => row.split("\t"));
   return XLSX.utils.aoa_to_sheet(sheetData);
-}
+};

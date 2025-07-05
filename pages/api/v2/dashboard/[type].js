@@ -1,16 +1,22 @@
-// /** 
-// * API Endpoints for Dashboard "beneficiary", "vision-enhancement", "training", 
+// /**
+// * API Endpoints for Dashboard "beneficiary", "vision-enhancement", "training",
 // * "comprehensive-low-vision-evaluation", and "counseling" functionality.
 // * Uses Next.js Dynamic Routes to consolodate into one module.
 // */
 
 import prisma from "@/utils/api/client";
-import moment from 'moment';
+import moment from "moment";
 
 export default async function handler(req, res) {
   const { type } = req.query;
-  const validTypes = ["Beneficiary", "Vision_Enhancement", "Training", 
-      "Comprehensive_Low_Vision_Evaluation", "Counselling_Education", "Low_Vision_Evaluation"];
+  const validTypes = [
+    "Beneficiary",
+    "Vision_Enhancement",
+    "Training",
+    "Comprehensive_Low_Vision_Evaluation",
+    "Counselling_Education",
+    "Low_Vision_Evaluation",
+  ];
   if (!validTypes.includes(type)) {
     return res.status(400).json({ error: "Bad request" });
   }
@@ -26,16 +32,14 @@ export async function readData(req, res) {
   try {
     const { type } = req.query;
     const { hospitalIds, offset, limit, startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
-    
+
     // Parse hospitalIds
     let parsedHospitalIds;
     if (Array.isArray(hospitalIds)) {
-      parsedHospitalIds = hospitalIds.map(id => parseInt(id, 10)) 
-    }
-    else if (typeof hospitalIds === 'string') {
-      parsedHospitalIds = [parseInt(hospitalIds, 10)]; 
-    }
-    else {
+      parsedHospitalIds = hospitalIds.map((id) => parseInt(id, 10));
+    } else if (typeof hospitalIds === "string") {
+      parsedHospitalIds = [parseInt(hospitalIds, 10)];
+    } else {
       parsedHospitalIds = undefined;
     }
 
@@ -44,8 +48,8 @@ export async function readData(req, res) {
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
 
     // **Updated Date Parsing Using moment.utc**
-    const parsedStartDate = startDate ? moment.utc(startDate).startOf('day').toDate() : undefined;
-    const parsedEndDate = endDate ? moment.utc(endDate).endOf('day').toDate() : undefined;
+    const parsedStartDate = startDate ? moment.utc(startDate).startOf("day").toDate() : undefined;
+    const parsedEndDate = endDate ? moment.utc(endDate).endOf("day").toDate() : undefined;
 
     const parsedMinAge = min_age ? parseInt(min_age, 10) : undefined;
     const parsedMaxAge = max_age ? parseInt(max_age, 10) : undefined;
@@ -54,7 +58,7 @@ export async function readData(req, res) {
     let parsedGenders = [];
     if (Array.isArray(genders)) {
       parsedGenders = genders;
-    } else if (typeof genders === 'string') {
+    } else if (typeof genders === "string") {
       parsedGenders = [genders];
     }
 
@@ -62,7 +66,7 @@ export async function readData(req, res) {
     let parsedMdvis = [];
     if (Array.isArray(mdvis)) {
       parsedMdvis = mdvis;
-    } else if (typeof mdvis === 'string') {
+    } else if (typeof mdvis === "string") {
       parsedMdvis = [mdvis];
     }
 
@@ -81,11 +85,7 @@ export async function readData(req, res) {
         );
       }
       if (parsedMaxAge !== undefined) {
-        maxDOB = new Date(
-          currentDate.getFullYear() - parsedMaxAge,
-          currentDate.getMonth(),
-          currentDate.getDate()
-        );
+        maxDOB = new Date(currentDate.getFullYear() - parsedMaxAge, currentDate.getMonth(), currentDate.getDate());
       }
 
       dobFilter = {
@@ -94,22 +94,25 @@ export async function readData(req, res) {
       };
     }
 
-    const range = (parsedStartDate || parsedEndDate) ? { 
-      gte: parsedStartDate,
-      lte: parsedEndDate,
-    } : undefined;
+    const range =
+      parsedStartDate || parsedEndDate
+        ? {
+            gte: parsedStartDate,
+            lte: parsedEndDate,
+          }
+        : undefined;
 
     let records, totalRecords;
     if (type === "Beneficiary") {
       const subtypes = [
-        'Training',
-        'Computer_Training',
-        'Mobile_Training',
-        'Orientation_Mobility_Training',
-        'Vision_Enhancement',
-        'Counselling_Education',
-        'Comprehensive_Low_Vision_Evaluation',
-        'Low_Vision_Evaluation'
+        "Training",
+        "Computer_Training",
+        "Mobile_Training",
+        "Orientation_Mobility_Training",
+        "Vision_Enhancement",
+        "Counselling_Education",
+        "Comprehensive_Low_Vision_Evaluation",
+        "Low_Vision_Evaluation",
       ];
 
       records = await prisma.Beneficiary.findMany({
@@ -120,13 +123,13 @@ export async function readData(req, res) {
           ...(parsedMdvis.length > 0 && { mDVI: { in: parsedMdvis } }),
           ...(dobFilter && { dateOfBirth: dobFilter }),
           ...(range && {
-            OR: subtypes.map(subtype => ({
-              [subtype]: { some: { date: range } }
-            }))
-          })
+            OR: subtypes.map((subtype) => ({
+              [subtype]: { some: { date: range } },
+            })),
+          }),
         },
         include: {
-          hospital: true
+          hospital: true,
         },
         skip: parsedOffset,
         take: parsedLimit,
@@ -139,14 +142,13 @@ export async function readData(req, res) {
           ...(parsedMdvis.length > 0 && { mDVI: { in: parsedMdvis } }),
           ...(dobFilter && { dateOfBirth: dobFilter }),
           ...(range && {
-            OR: subtypes.map(subtype => ({
-              [subtype]: { some: { date: range } }
-            }))
-          })
+            OR: subtypes.map((subtype) => ({
+              [subtype]: { some: { date: range } },
+            })),
+          }),
         },
       });
-    }
-    else {
+    } else {
       records = await prisma[type].findMany({
         where: {
           beneficiary: {
@@ -182,7 +184,7 @@ export async function readData(req, res) {
       });
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       records,
       totalRecords,
     });

@@ -9,7 +9,6 @@ export const buildDashboardQueryParams = (params) => {
     } else {
       queryParams.append(key, value);
     }
-
   });
 
   return queryParams.toString();

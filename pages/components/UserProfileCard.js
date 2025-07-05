@@ -1,5 +1,5 @@
 import Image from "next/image";
-import logo from 'public/images/vision-aid-logo.webp';
+import logo from "public/images/vision-aid-logo.webp";
 
 export default function UserProfileCard({
   gender,
@@ -19,11 +19,7 @@ export default function UserProfileCard({
   return (
     <div className="user-profile-card">
       <div>
-        <Image
-          src={logo}
-          alt="Profile Image"
-          className="profile-image"
-        />
+        <Image src={logo} alt="Profile Image" className="profile-image" />
         <h2 className="user-name">{name}</h2>
       </div>
 

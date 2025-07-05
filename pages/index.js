@@ -1,24 +1,19 @@
-import {
-  useSession,
-  getSession,
-} from "next-auth/react";
+import { useSession, getSession } from "next-auth/react";
 import Navigation from "./navigation/Navigation";
-import Layout from './components/layout';
+import Layout from "./components/layout";
 import { readUser } from "./api/user";
 
 export default function Home(props) {
   const { data: session } = useSession();
-  
+
   return (
     <Layout>
       <Navigation user={props.user} />
-        <div>
-            <div className='wrapper' style={{height: '70vh'}}>
-            {session && !props.user && (
-              <strong>Please ask an admin to add you as user!</strong>
-            )}
-            </div>
+      <div>
+        <div className="wrapper" style={{ height: "70vh" }}>
+          {session && !props.user && <strong>Please ask an admin to add you as user!</strong>}
         </div>
+      </div>
     </Layout>
   );
 }

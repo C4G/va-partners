@@ -20,10 +20,7 @@ export default function HistoricalEvaluationPage(props) {
     serviceToFetch = "Low_Vision_Evaluation";
   }
   let serviceIsATraining = false;
-  if (
-    props.service === "Training" ||
-    props.service === "Counselling_Education"
-  ) {
+  if (props.service === "Training" || props.service === "Counselling_Education") {
     serviceIsATraining = true;
   }
 
@@ -52,13 +49,10 @@ export default function HistoricalEvaluationPage(props) {
   const refetchUser = async () => {
     let user = {};
     try {
-      const beneficiary = await fetch(
-        `/api/beneficiary?mrn=${props.mrn}&hospitalId=${props.hospitalId}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const beneficiary = await fetch(`/api/beneficiary?mrn=${props.mrn}&hospitalId=${props.hospitalId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
       user = await beneficiary.json();
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -97,29 +91,15 @@ export default function HistoricalEvaluationPage(props) {
     let historicalDashboard = null;
     const evaluationData = filterData(entry, services);
     if (entry.date == undefined || evaluationData == undefined) {
-      historicalDashboard = (
-        <div className="text-align-left">No corresponding data found!</div>
-      );
+      historicalDashboard = <div className="text-align-left">No corresponding data found!</div>;
     } else {
       let commonProps = { refetchUser, evaluationData };
       if (props.service == "Low_Vision_Screening") {
-        historicalDashboard = (
-          <HistoricalLowVisionScreeningForm
-            {...commonProps}
-            key={evaluationData.service.id}
-          />
-        );
+        historicalDashboard = <HistoricalLowVisionScreeningForm {...commonProps} key={evaluationData.service.id} />;
       } else if (props.service == "Comprehensive_Low_Vision_Evaluation") {
-        historicalDashboard = (
-          <HistoricalCLVForm {...commonProps} key={evaluationData.service.id} />
-        );
+        historicalDashboard = <HistoricalCLVForm {...commonProps} key={evaluationData.service.id} />;
       } else if (props.service == "Vision_Enhancement") {
-        historicalDashboard = (
-          <HistoricalVisionEnhancementForm
-            {...commonProps}
-            key={evaluationData.service.id}
-          />
-        );
+        historicalDashboard = <HistoricalVisionEnhancementForm {...commonProps} key={evaluationData.service.id} />;
       } else if (props.service == "Counselling_Education") {
         historicalDashboard = (
           <HistoricalCounselingForm
@@ -179,7 +159,7 @@ export default function HistoricalEvaluationPage(props) {
   return (
     <div>
       <Navigation user={currentUser} />
-      <div className="container p-4 mb-3">
+      <div className="container mb-3 p-4">
         <h2>{formatTitle(props.service)} History</h2>
         <hr className="horizontal-line" />
         <div className="row">
@@ -215,10 +195,7 @@ export default function HistoricalEvaluationPage(props) {
                   {serviceIsATraining &&
                     historicalDates.map((entry) => (
                       <div className="accordion-item" key={entry.id}>
-                        <h2
-                          className="accordion-header"
-                          id={"panelsStayOpen-heading" + entry.id}
-                        >
+                        <h2 className="accordion-header" id={"panelsStayOpen-heading" + entry.id}>
                           <button
                             className="accordion-button collapsed"
                             type="button"
@@ -228,8 +205,7 @@ export default function HistoricalEvaluationPage(props) {
                             aria-controls={"panelsStayOpen-collapse" + entry.id}
                           >
                             <strong>
-                              {entry.date} (Type: {entry.suppInfo.type},
-                              Session: {entry.suppInfo.sessionNumber})
+                              {entry.date} (Type: {entry.suppInfo.type}, Session: {entry.suppInfo.sessionNumber})
                             </strong>
                           </button>
                         </h2>
@@ -239,19 +215,14 @@ export default function HistoricalEvaluationPage(props) {
                           aria-labelledby={"panelsStayOpen-heading" + entry.id}
                           data-bs-parent="#historyAccordion"
                         >
-                          <div className="accordion-body">
-                            {handleServiceChange(entry, serviceEditList)}
-                          </div>
+                          <div className="accordion-body">{handleServiceChange(entry, serviceEditList)}</div>
                         </div>
                       </div>
                     ))}
                   {!serviceIsATraining &&
                     historicalDates.map((entry) => (
                       <div className="accordion-item" key={entry.id}>
-                        <h2
-                          className="accordion-header"
-                          id={"panelsStayOpen-heading" + entry.id}
-                        >
+                        <h2 className="accordion-header" id={"panelsStayOpen-heading" + entry.id}>
                           <button
                             className="accordion-button collapsed"
                             type="button"
@@ -271,9 +242,7 @@ export default function HistoricalEvaluationPage(props) {
                           aria-labelledby={"panelsStayOpen-heading" + entry.id}
                           data-bs-parent="#historyAccordion"
                         >
-                          <div className="accordion-body">
-                            {handleServiceChange(entry, serviceEditList)}
-                          </div>
+                          <div className="accordion-body">{handleServiceChange(entry, serviceEditList)}</div>
                         </div>
                       </div>
                     ))}
