@@ -4,13 +4,13 @@ import { authOptions } from "./auth/[...nextauth]";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions)
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
-    res.status(401).json({ message: "You must be logged in." })
-    return
+    res.status(401).json({ message: "You must be logged in." });
+    return;
   }
-  await updateUserLastModified('patients', req.method, session.user.email);
+  await updateUserLastModified("patients", req.method, session.user.email);
   const functionName = req.query.functionName;
   if (req.method === "POST") {
     if (functionName == "computer-training") {
@@ -29,9 +29,7 @@ export default async function handler(req, res) {
   } else if (req.method == "GET") {
     return await readData(req, res);
   } else {
-    return res
-      .status(405)
-      .json({ message: "Method not allowed", success: false });
+    return res.status(405).json({ message: "Method not allowed", success: false });
   }
 }
 
@@ -49,9 +47,7 @@ async function readData(req, res) {
     return res.status(200).json(patients, { success: true });
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ error: "Error reading from database", success: false });
+    return res.status(500).json({ error: "Error reading from database", success: false });
   }
 }
 
@@ -78,9 +74,7 @@ async function addData(req, res) {
     return res.status(200).json(newEntry, { success: true });
   } catch (error) {
     console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
+    res.status(500).json({ error: "Error adding patient information", success: false });
   }
 }
 
@@ -107,9 +101,7 @@ async function addDataComputerTraining(req, res) {
     return res.status(200).json(newEntry, { success: true });
   } catch (error) {
     console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
+    res.status(500).json({ error: "Error adding patient information", success: false });
   }
 }
 
@@ -135,9 +127,7 @@ async function addDataMobileTraining(req, res) {
     return res.status(200).json(newEntry, { success: true });
   } catch (error) {
     console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
+    res.status(500).json({ error: "Error adding patient information", success: false });
   }
 }
 
@@ -164,9 +154,7 @@ async function addDataOrientationMobilityTraining(req, res) {
     return res.status(200).json(newEntry, { success: true });
   } catch (error) {
     console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
+    res.status(500).json({ error: "Error adding patient information", success: false });
   }
 }
 
@@ -191,9 +179,7 @@ async function addDataVisionEnhancement(req, res) {
     return res.status(200).json(newEntry, { success: true });
   } catch (error) {
     console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
+    res.status(500).json({ error: "Error adding patient information", success: false });
   }
 }
 
@@ -218,8 +204,6 @@ async function addDataCounsellingEducation(req, res) {
     return res.status(200).json(newEntry, { success: true });
   } catch (error) {
     console.error("Request error", error);
-    res
-      .status(500)
-      .json({ error: "Error adding patient information", success: false });
+    res.status(500).json({ error: "Error adding patient information", success: false });
   }
 }

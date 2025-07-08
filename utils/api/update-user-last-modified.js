@@ -9,4 +9,4 @@ export const updateUserLastModified = async (endpoint, method, email) => {
     data,
     where: { email },
   });
-}
+};

@@ -212,6 +212,7 @@ model Comprehensive_Low_Vision_Evaluation {
   date                        DateTime?
   sessionNumber               Int?
   diagnosis                   String?
+  diagnosisNotes              String?
   colourVisionLE              String?
   colourVisionRE              String?
   contrastSensitivityLE       String?

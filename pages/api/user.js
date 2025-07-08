@@ -4,13 +4,13 @@ import { authOptions } from "./auth/[...nextauth]";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions)
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
-    res.status(401).json({ message: "You must be logged in." })
-    return
+    res.status(401).json({ message: "You must be logged in." });
+    return;
   }
-  await updateUserLastModified('user', req.method, session.user.email);
+  await updateUserLastModified("user", req.method, session.user.email);
   if (req.method === "POST") {
     return await addData(req, res);
   } else if (req.method == "GET") {
@@ -18,9 +18,7 @@ export default async function handler(req, res) {
   } else if (req.method == "DELETE") {
     return await deleteData(req, res);
   } else {
-    return res
-      .status(405)
-      .json({ message: "Method not allowed", success: false });
+    return res.status(405).json({ message: "Method not allowed", success: false });
   }
 }
 
@@ -42,9 +40,7 @@ async function readData(req, res) {
     return res.status(200).json(user, { success: true });
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ error: "Error reading from database", success: false });
+    return res.status(500).json({ error: "Error reading from database", success: false });
   }
 }
 
@@ -105,21 +101,14 @@ async function addData(req, res) {
       hospitalRole: true,
     },
   };
-  console.log(
-    "Request body " +
-      JSON.stringify(body) +
-      " create value " +
-      JSON.stringify(create)
-  );
+  console.log("Request body " + JSON.stringify(body) + " create value " + JSON.stringify(create));
 
   try {
     const newEntry = await prisma.user.create(create);
     return res.status(200).json(newEntry, { success: true });
   } catch (error) {
     console.log("Request error " + error);
-    res
-      .status(500)
-      .json({ error: "Error adding user" + error, success: false });
+    res.status(500).json({ error: "Error adding user" + error, success: false });
   }
 }
 

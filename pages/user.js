@@ -53,9 +53,7 @@ function UserPage(props) {
         alert("An error occurred while saving user data. Please try again.");
       }
     } else {
-      alert(
-        "Please ensure that you have entered the beneficiary's name correctly. Try again!"
-      );
+      alert("Please ensure that you have entered the beneficiary's name correctly. Try again!");
       setConsentName("");
     }
   };
@@ -174,15 +172,9 @@ function UserPage(props) {
         <div>
           <div className="text-align-left">
             <div className="flex-container">
-              <div className="text-danger">
-                No consent information recorded.
-              </div>
+              <div className="text-danger">No consent information recorded.</div>
               <div className="text-align-right">
-                <button
-                  className="btn btn-sm btn-link"
-                  data-bs-toggle="modal"
-                  data-bs-target="#indicateConsent"
-                >
+                <button className="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#indicateConsent">
                   Indicate Consent
                 </button>
               </div>
@@ -193,27 +185,18 @@ function UserPage(props) {
               <div className="modal-content">
                 <div className="modal-header">
                   <h4 className="modal-title">Consent Form</h4>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                    id="close-indicate"
-                  ></button>
+                  <button type="button" className="btn-close" data-bs-dismiss="modal" id="close-indicate"></button>
                 </div>
                 <div className="modal-body">
-                  I hereby grant Vision-Aid the authority to use my photos,
-                  videos or other media in their public campaigns.
+                  I hereby grant Vision-Aid the authority to use my photos, videos or other media in their public
+                  campaigns.
                   <br />
                   <br />
                   <div>
                     Please type beneficiary&apos;s full name to grant consent:
                     <br />
                     <br />
-                    <input
-                      type="text"
-                      value={consentName}
-                      onChange={(e) => setConsentName(e.target.value)}
-                    />
+                    <input type="text" value={consentName} onChange={(e) => setConsentName(e.target.value)} />
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -263,16 +246,9 @@ function UserPage(props) {
               <div className="modal-content">
                 <div className="modal-header">
                   <h4 className="modal-title">Revoke Consent?</h4>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                    id="close-revoke"
-                  ></button>
+                  <button type="button" className="btn-close" data-bs-dismiss="modal" id="close-revoke"></button>
                 </div>
-                <div className="modal-body">
-                  Please confirm that you wish to revoke consent.
-                </div>
+                <div className="modal-body">Please confirm that you wish to revoke consent.</div>
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -312,24 +288,12 @@ function UserPage(props) {
               <div className="modal-content">
                 <div className="modal-header">
                   <h4 className="modal-title">Grant Consent?</h4>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                    id="close-grant"
-                  ></button>
+                  <button type="button" className="btn-close" data-bs-dismiss="modal" id="close-grant"></button>
                 </div>
                 <div className="modal-body">
-                  <div>
-                    Type the beneficiary&apos;s full name to grant consent to
-                    Vision-Aid.
-                  </div>
+                  <div>Type the beneficiary&apos;s full name to grant consent to Vision-Aid.</div>
                   <br /> <br />
-                  <input
-                    type="text"
-                    value={consentName}
-                    onChange={(e) => setConsentName(e.target.value)}
-                  />
+                  <input type="text" value={consentName} onChange={(e) => setConsentName(e.target.value)} />
                 </div>
                 <div className="modal-footer">
                   <button
@@ -389,10 +353,7 @@ function UserPage(props) {
     return canEdit && editableField === field ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form
-            onSubmit={(e) => handleSubmit(e, field)}
-            className="d-inline ms-2"
-          >
+          <form onSubmit={(e) => handleSubmit(e, field)} className="d-inline ms-2">
             <div className="row">
               <div className="col-md-9 nopadding">
                 <select
@@ -407,10 +368,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding">
                   <Check2 />
                 </button>
               </div>
@@ -442,10 +400,7 @@ function UserPage(props) {
     return canEdit && editableField === field ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form
-            onSubmit={(e) => handleSubmit(e, field)}
-            className="d-inline ms-2"
-          >
+          <form onSubmit={(e) => handleSubmit(e, field)} className="d-inline ms-2">
             <div className="row">
               <div className="col-md-9 nopadding">
                 <input
@@ -458,10 +413,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding">
                   <Check2 />
                 </button>
               </div>
@@ -506,10 +458,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding text-align-right"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
                   <Check2 />
                 </button>
               </div>
@@ -537,10 +486,7 @@ function UserPage(props) {
     return editableField === "extraInformation" ? (
       <div className="text-align-left">
         <div className="flex-container">
-          <form
-            onSubmit={(e) => handleSubmit(e, "extraInformation")}
-            className="d-inline ms-2"
-          >
+          <form onSubmit={(e) => handleSubmit(e, "extraInformation")} className="d-inline ms-2">
             <div className="row">
               <div className="col-md-9 nopadding">
                 <textarea
@@ -552,10 +498,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button
-                  type="submit"
-                  className="btn text-primary ms-2 nopadding text-align-right"
-                >
+                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
                   <Check2 />
                 </button>
               </div>
@@ -582,15 +525,11 @@ function UserPage(props) {
   return (
     <div>
       <Navigation user={props.currentUser} />
-      <div className="container p-4 mb-3">
+      <div className="container mb-3 p-4">
         <div className="d-flex">
           <h2 className="nopadding">Beneficiary Details</h2>
           <div className="ms-auto">
-            <button
-              className="btn btn-danger"
-              data-bs-toggle="modal"
-              data-bs-target="#deleteBeneficiary"
-            >
+            <button className="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteBeneficiary">
               Delete Beneficiary
             </button>
           </div>
@@ -599,17 +538,11 @@ function UserPage(props) {
               <div className="modal-content">
                 <div className="modal-header">
                   <h4 className="modal-title">Delete Beneficiary</h4>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                    id="close-revoke"
-                  ></button>
+                  <button type="button" className="btn-close" data-bs-dismiss="modal" id="close-revoke"></button>
                 </div>
                 <div className="modal-body">
-                  Please confirm that you wish to delete this beneficiary
-                  permanently. This will remove all training data associated
-                  with this beneficiary.
+                  Please confirm that you wish to delete this beneficiary permanently. This will remove all training
+                  data associated with this beneficiary.
                 </div>
                 <div className="modal-footer">
                   <button
@@ -637,31 +570,23 @@ function UserPage(props) {
               hospitalName={renderSelectField("hospitalName", "text", true)}
               education={renderField(
                 "education",
-                props.beneficiaryMirror.educationRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.educationRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               districts={renderField(
                 "districts",
-                props.beneficiaryMirror.occupationRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.occupationRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               state={renderField(
                 "state",
-                props.beneficiaryMirror.stateRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.stateRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               beneficiaryName={renderField("beneficiaryName", "text", true)}
               occupation={renderField(
                 "occupation",
-                props.beneficiaryMirror.occupationRequired
-                  ? "text"
-                  : props.beneficiaryMirror,
+                props.beneficiaryMirror.occupationRequired ? "text" : props.beneficiaryMirror,
                 true
               )}
               extraInformation={renderExtraInformation()}
@@ -676,9 +601,7 @@ function UserPage(props) {
         <br />
         <div className="row">
           <div className="col-md-5">
-            <ConsentForm
-              consent={renderConsentField("consent", "text", true)}
-            />
+            <ConsentForm consent={renderConsentField("consent", "text", true)} />
           </div>
         </div>
       </div>

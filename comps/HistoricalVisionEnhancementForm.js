@@ -40,7 +40,7 @@ export default function HistoricalVisionEnhancementForm(props) {
         alert("Failed to delete data!");
       }
     }
-  }
+  };
 
   const saveVisionEnhancementData = async () => {
     delete data["beneficiaryId"];
@@ -60,12 +60,10 @@ export default function HistoricalVisionEnhancementForm(props) {
   };
 
   return data == undefined ? (
-    <div className="text-align-left">
-      No historical data is present for this date!
-    </div>
+    <div className="text-align-left">No historical data is present for this date!</div>
   ) : (
     <div>
-      <table className="table beneficiary-table table-bordered row">
+      <table className="beneficiary-table table-bordered row table">
         <thead className="thead-dark">
           <tr className="row">
             <th scope="col" className="col-md-4">
@@ -82,9 +80,7 @@ export default function HistoricalVisionEnhancementForm(props) {
               Date
             </th>
             <td scope="row" className="col-md-8">
-              {!editMode &&
-                data.date !== null &&
-                moment(data.date).format("DD MMMM YYYY")}
+              {!editMode && data.date !== null && moment(data.date).format("DD MMMM YYYY")}
               {!editMode && data.date !== null && ""}
               {editMode && (
                 <input
@@ -103,13 +99,7 @@ export default function HistoricalVisionEnhancementForm(props) {
             <td scope="row" className="col-md-8">
               {!editMode && data.MDVI}
               {editMode && (
-                <input
-                  type="text"
-                  name="MDVI"
-                  value={data.MDVI}
-                  onChange={(e) => handleChange(e)}
-                  autoComplete="off"
-                />
+                <input type="text" name="MDVI" value={data.MDVI} onChange={(e) => handleChange(e)} autoComplete="off" />
               )}
             </td>
           </tr>
@@ -168,26 +158,17 @@ export default function HistoricalVisionEnhancementForm(props) {
         </tbody>
       </table>
       {props.evaluationData.editable && !editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={handleClick}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={handleClick}>
           Edit
         </button>
       )}
       {editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={saveVisionEnhancementData}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={saveVisionEnhancementData}>
           Save
         </button>
       )}
       {!editMode && (
-        <button
-          className="btn btn-danger border-0 ms-3 btn-block"
-          onClick={deleteVisionEnhancementData}
-        >
+        <button className="btn btn-danger ms-3 btn-block border-0" onClick={deleteVisionEnhancementData}>
           Delete
         </button>
       )}

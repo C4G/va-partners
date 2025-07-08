@@ -47,18 +47,13 @@ function SearchBar({ onSearch }) {
         )}
         <br />
         <div>
-          <button
-            type="submit"
-            onClick={(e) => handleSubmit(e)}
-            className="btn btn-primary"
-            id="search"
-          >
+          <button type="submit" onClick={(e) => handleSubmit(e)} className="btn btn-primary" id="search">
             Search
           </button>
           <button
             type="button"
             onClick={(e) => handleSubmit(e)}
-            className="btn btn-success border-0 btn-block"
+            className="btn btn-success btn-block border-0"
             style={{ marginLeft: "10px" }}
             id="register"
           >

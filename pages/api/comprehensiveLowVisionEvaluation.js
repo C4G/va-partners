@@ -4,13 +4,13 @@ import { authOptions } from "./auth/[...nextauth]";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions)
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
-    res.status(401).json({ message: "You must be logged in." })
-    return
+    res.status(401).json({ message: "You must be logged in." });
+    return;
   }
-  await updateUserLastModified('comprehensiveLowVisionEvaluation', req.method, session.user.email);
+  await updateUserLastModified("comprehensiveLowVisionEvaluation", req.method, session.user.email);
   if (req.method === "POST") {
     return await addData(req, res);
   } else if (req.method == "DELETE") {
@@ -20,21 +20,17 @@ export default async function handler(req, res) {
   } else if (req.method == "PATCH") {
     return await updateData(req, res);
   } else {
-    return res
-      .status(405)
-      .json({ message: "Method not allowed", success: false });
+    return res.status(405).json({ message: "Method not allowed", success: false });
   }
 }
 
 async function updateData(req, res) {
   try {
     const { id, ...data } = req.body;
-    const updatedUser = await prisma.comprehensive_Low_Vision_Evaluation.update(
-      {
-        where: { id },
-        data,
-      }
-    );
+    const updatedUser = await prisma.comprehensive_Low_Vision_Evaluation.update({
+      where: { id },
+      data,
+    });
     res.status(200).json(updatedUser);
   } catch (error) {
     console.log(error);
@@ -53,9 +49,7 @@ async function deleteData(req, res) {
     return res.status(200).json(comp_eval, { success: true });
   } catch (error) {
     console.log("Request error " + error);
-    res
-      .status(500)
-      .json({ error: "Error deleting CLVE Data" + error, success: false });
+    res.status(500).json({ error: "Error deleting CLVE Data" + error, success: false });
   }
 }
 
@@ -64,15 +58,16 @@ async function addData(req, res) {
   const create = {
     data: {
       beneficiary: {
-        connect: { 
+        connect: {
           mrn_hospitalId: {
-            mrn: body.beneficiaryId, 
+            mrn: body.beneficiaryId,
             hospitalId: body.hospitalId,
           },
         },
       },
       mdvi: body.mdvi,
       diagnosis: body.diagnosis,
+      diagnosisNotes: body.diagnosisNotes,
       date: body.date,
       sessionNumber: body.sessionNumber,
       distanceVisualAcuityRE: body.distanceVisualAcuityRE,
@@ -170,19 +165,13 @@ async function addData(req, res) {
           beneficiary: true,
         },
       };
-      const comp_eval = await prisma.comprehensive_Low_Vision_Evaluation.update(
-        update
-      );
+      const comp_eval = await prisma.comprehensive_Low_Vision_Evaluation.update(update);
       return res.status(200).json(comp_eval, { success: true });
     }
-    const comp_eval = await prisma.comprehensive_Low_Vision_Evaluation.create(
-      create
-    );
+    const comp_eval = await prisma.comprehensive_Low_Vision_Evaluation.create(create);
     return res.status(200).json(comp_eval, { success: true });
   } catch (error) {
     console.log("Request error " + error);
-    res
-      .status(500)
-      .json({ error: "Error adding user" + error, success: false });
+    res.status(500).json({ error: "Error adding user" + error, success: false });
   }
 }

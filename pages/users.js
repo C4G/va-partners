@@ -1,4 +1,3 @@
-
 import Navigation from "./navigation/Navigation";
 import { getSession } from "next-auth/react";
 import { allUsers, allHospitalRoles, readUser } from "@/pages/api/user";
@@ -7,11 +6,10 @@ import Router from "next/router";
 import { FormControl, Select, MenuItem, Input, Typography } from "@mui/material";
 import { createMenu } from "@/constants/globalFunctions";
 import { useState } from "react";
-import Layout from './components/layout';
-import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
+import Layout from "./components/layout";
+import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
 import "ag-grid-community/styles/ag-theme-quartz.css"; // Optional Theme applied to the Data Grid
-
 
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
@@ -25,10 +23,7 @@ export async function getServerSideProps(ctx) {
     };
   }
   const user = await readUser(session.user.email);
-  if (
-    user.admin == null &&
-    (user.hospitalRole.length == 0 || user.hospitalRole[0].admin != true)
-  ) {
+  if (user.admin == null && (user.hospitalRole.length == 0 || user.hospitalRole[0].admin != true)) {
     console.log("user admin is null or is not a manager of hospital");
     return {
       redirect: {
@@ -51,18 +46,37 @@ export async function getServerSideProps(ctx) {
   };
 }
 
-const formatLastUpdate = (p) => p.data.lastUpdate ? `${new Date(p.data.lastUpdateDate).toLocaleDateString('en-IN')} ${new Date(p.data.lastUpdateDate).toLocaleTimeString('en-IN')} ${p.data.lastUpdate}` : '';
+const formatLastUpdate = (p) =>
+  p.data.lastUpdate
+    ? `${new Date(p.data.lastUpdateDate).toLocaleDateString("en-IN")} ${new Date(p.data.lastUpdateDate).toLocaleTimeString("en-IN")} ${p.data.lastUpdate}`
+    : "";
 
 function Users(props) {
-  const globalFieldOptions = { filter: true }
+  const globalFieldOptions = { filter: true };
   const [rowData] = useState(props.users);
   const [colDefs] = useState([
     { field: "id", width: 66, ...globalFieldOptions },
     { field: "email", tooltipValueGetter: (p) => p.value, minWidth: 200, flex: 1, ...globalFieldOptions },
-    { field: "administrator", headerName: 'Admin', cellClass: 'd-flex align-items-center justify-content-center', width: 96, ...globalFieldOptions },
-    { field: "manager", width: 112, cellClass: 'd-flex align-items-center justify-content-center', ...globalFieldOptions },
+    {
+      field: "administrator",
+      headerName: "Admin",
+      cellClass: "d-flex align-items-center justify-content-center",
+      width: 96,
+      ...globalFieldOptions,
+    },
+    {
+      field: "manager",
+      width: 112,
+      cellClass: "d-flex align-items-center justify-content-center",
+      ...globalFieldOptions,
+    },
     { field: "hospital", tooltipValueGetter: (p) => p.value, minWidth: 150, ...globalFieldOptions },
-    { field: "lastUpdate", tooltipValueGetter: formatLastUpdate, valueFormatter: formatLastUpdate,  ...globalFieldOptions },
+    {
+      field: "lastUpdate",
+      tooltipValueGetter: formatLastUpdate,
+      valueFormatter: formatLastUpdate,
+      ...globalFieldOptions,
+    },
   ]);
   const [hosp, setHosp] = useState([]);
   const [role, setRole] = useState("");
@@ -78,14 +92,14 @@ function Users(props) {
 
   const getHospitalIdsByUsers = (id, users) => {
     let hospitalIds = [];
-    for (const user of users ) {
+    for (const user of users) {
       if (user.userId === id) {
         hospitalIds.push(user.hospitalId);
       }
     }
 
     return hospitalIds;
-  }
+  };
 
   const addUser = async (e) => {
     e.preventDefault();
@@ -107,9 +121,7 @@ function Users(props) {
         hospitalId = [0];
         break;
       } else {
-        hospitalId.push(parseInt(
-          hospital.substring(hospital.indexOf("("), hospital.indexOf(")")).substring(4)
-        ));
+        hospitalId.push(parseInt(hospital.substring(hospital.indexOf("("), hospital.indexOf(")")).substring(4)));
       }
     }
     console.log(hospitalId);
@@ -260,7 +272,8 @@ function Users(props) {
     const data = props.users[i];
     console.log(data);
     var admin;
-    var hospital, hospitalNames = "";
+    var hospital,
+      hospitalNames = "";
     var hospitalId = null;
     var hospitalIds = [];
     var manager = false;
@@ -287,10 +300,7 @@ function Users(props) {
         hospital = hospitalNames.slice(0, -2);
       }
     }
-    if (
-      props.user.hospitalRole.length != 0 &&
-      props.user.hospitalRole.hospitalId != hospitalId
-    ) {
+    if (props.user.hospitalRole.length != 0 && props.user.hospitalRole.hospitalId != hospitalId) {
       continue;
     }
 
@@ -316,126 +326,104 @@ function Users(props) {
 
   return (
     <Layout>
-    <div className="content">
-      <Navigation user={props.user} />
-      <div className="row">
-        <div className="offset-md-1 col-md-4">
-          <br />
-          <strong>Add User To Hospital</strong>
-          <br />
-          {/* <br /> */}
-          <div className="container m-4">
+      <div className="content">
+        <Navigation user={props.user} />
+        <div className="row">
+          <div className="offset-md-1 col-md-4">
             <br />
+            <strong>Add User To Hospital</strong>
             <br />
-            <form action="#" method="POST" onSubmit={(e) => addUser(e)}>
-              <table className="row">
-                <tr className="row padding-bottom">
-                  <td
-                    htmlFor="manager"
-                    className="col-md-5 flex-container-vertical"
-                  >
-                    Role
-                  </td>
-                  <td className="col-md-7">
-                    <FormControl fullWidth size="small">
-                      <Select
-                        value={role}
-                        onChange={(e) => handleRoleOption(e)}
-                        required
-                      >
-                        {createMenu(roleOptions, false)}
-                      </Select>
-                    </FormControl>
-                  </td>
-                </tr>
-                <br/>
-                <tr className="row padding-bottom">
-                  <td
-                    htmlFor="hospitalSelect"
-                    className="col-md-5 flex-container-vertical"
-                  >
-                    Select a hospital
-                  </td>
-                  <td className="col-md-7">
-                    <FormControl fullWidth size="small">
-                      {role === "Professional" ?
-                      <Select
-                        value={hosp}
-                        onChange={(e) => setHosp([e.target.value])}
-                        required
-                      >
-                        {createMenu(hospitalOptions, false)}
-                      </Select>
-                      : (role === "Manager" ?
-                      <Select
-                        value={hosp}
-                        onChange={(e) => setHosp(e.target.value)}
-                        multiple
-                        renderValue={(selected) => selected.join(", ")}
-                        required
-                      >
-                        {createMenu(hospitalOptions, true, hosp)}
-                      </Select>
-                      :
-                      <Select
-                        value={hosp}
-                        disabled
-                      >
-                        <MenuItem key="ALL" value="ALL">
-                          <Typography align="left">
-                              ALL
-                          </Typography>
-                        </MenuItem>
-                      </Select>
-                      )}
-                    </FormControl>
-                  </td>
-                </tr>
-                <br />
-                <tr className="row">
-                  <td htmlFor="email" className="col-md-5 vertical-align">
-                    User Email
-                  </td>
-                  <td className="col-md-7">
-                    <FormControl fullWidth size="small">
-                      <Input id="userEmail" autoComplete="off" required></Input>
-                    </FormControl>
-                  </td>
-                </tr>
-              </table>
+            {/* <br /> */}
+            <div className="container m-4">
               <br />
-              <button
-                type="submit"
-                className="btn btn-success border-0 btn-block"
-              >
-                Submit
-              </button>
-            </form>
-            <br />
+              <br />
+              <form action="#" method="POST" onSubmit={(e) => addUser(e)}>
+                <table className="row">
+                  <tr className="row padding-bottom">
+                    <td htmlFor="manager" className="col-md-5 flex-container-vertical">
+                      Role
+                    </td>
+                    <td className="col-md-7">
+                      <FormControl fullWidth size="small">
+                        <Select value={role} onChange={(e) => handleRoleOption(e)} required>
+                          {createMenu(roleOptions, false)}
+                        </Select>
+                      </FormControl>
+                    </td>
+                  </tr>
+                  <br />
+                  <tr className="row padding-bottom">
+                    <td htmlFor="hospitalSelect" className="col-md-5 flex-container-vertical">
+                      Select a hospital
+                    </td>
+                    <td className="col-md-7">
+                      <FormControl fullWidth size="small">
+                        {role === "Professional" ? (
+                          <Select value={hosp} onChange={(e) => setHosp([e.target.value])} required>
+                            {createMenu(hospitalOptions, false)}
+                          </Select>
+                        ) : role === "Manager" ? (
+                          <Select
+                            value={hosp}
+                            onChange={(e) => setHosp(e.target.value)}
+                            multiple
+                            renderValue={(selected) => selected.join(", ")}
+                            required
+                          >
+                            {createMenu(hospitalOptions, true, hosp)}
+                          </Select>
+                        ) : (
+                          <Select value={hosp} disabled>
+                            <MenuItem key="ALL" value="ALL">
+                              <Typography align="left">ALL</Typography>
+                            </MenuItem>
+                          </Select>
+                        )}
+                      </FormControl>
+                    </td>
+                  </tr>
+                  <br />
+                  <tr className="row">
+                    <td htmlFor="email" className="col-md-5 vertical-align">
+                      User Email
+                    </td>
+                    <td className="col-md-7">
+                      <FormControl fullWidth size="small">
+                        <Input id="userEmail" autoComplete="off" required></Input>
+                      </FormControl>
+                    </td>
+                  </tr>
+                </table>
+                <br />
+                <button type="submit" className="btn btn-success btn-block border-0">
+                  Submit
+                </button>
+              </form>
+              <br />
+            </div>
           </div>
-        </div>
-        {/* <hr style="width: 1px; height: 20px; display: inline-block;"></hr> */}
-        <div className="offset-md-1 col-md-5">
-          <br />
-          <strong>List Of Users</strong>
-          <br />
-          <br />
-          <div
-            className="ag-theme-quartz" // applying the Data Grid theme
-            style={{ height: 'calc(100dvh - 304px)' }} // the Data Grid will fill the size of the parent container
-          >
-            <AgGridReact
+          {/* <hr style="width: 1px; height: 20px; display: inline-block;"></hr> */}
+          <div className="offset-md-1 col-md-5">
+            <br />
+            <strong>List Of Users</strong>
+            <br />
+            <br />
+            <div
+              className="ag-theme-quartz" // applying the Data Grid theme
+              style={{ height: "calc(100dvh - 304px)" }} // the Data Grid will fill the size of the parent container
+            >
+              <AgGridReact
                 rowData={rowData}
                 columnDefs={colDefs}
                 tooltipShowDelay={500}
                 enableCellTextSelection={true}
                 tooltipInteraction={true}
-            />
+              />
+            </div>
           </div>
         </div>
+        <br />
       </div>
-      <br />
-    </div>
     </Layout>
   );
 }

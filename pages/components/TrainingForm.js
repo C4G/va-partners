@@ -6,10 +6,7 @@
 
 import { useState } from "react";
 import { Form, Row, Col, Button } from "react-bootstrap";
-import {
-  Select,
-  FormControl,
-} from "@mui/material";
+import { Select, FormControl } from "@mui/material";
 import { createMenu } from "@/constants/globalFunctions";
 import { VEDiagnosis } from "@/constants/generalConstants";
 import { required } from "../../comps/required";
@@ -36,9 +33,8 @@ const TrainingForm = ({
       },
     },
   };
-  
-  if (mdviValue === null || mdviValue === undefined || mdviValue === "")
-    mdviValue = "No";
+
+  if (mdviValue === null || mdviValue === undefined || mdviValue === "") mdviValue = "No";
   const [mdviVal, setMdviVal] = useState(mdviValue);
   const [diagnosis, setDiagnosis] = useState([]);
   const [otherDiagnosis, setOtherDiagnosis] = useState("");
@@ -61,10 +57,8 @@ const TrainingForm = ({
       return acc;
     }, {});
 
-    const allDiagnosis = diagnosis.reduce(
-      (curr, selected) => `${curr} ${selected === "Other" ? otherDiagnosis.trim() : selected}`,
-      ""
-    ).trim();
+    const diagnosisNotes = otherDiagnosis;
+    const allDiagnosis = (diagnosis.join(", ") + (diagnosisNotes ? `, ${diagnosisNotes}` : "")).trim();
 
     const newTraining = {
       date: e.target.date.value,
@@ -72,8 +66,7 @@ const TrainingForm = ({
       type: e.target.type == null ? null : e.target.type.value,
       typeOther: e.target.typeOther == null ? null : e.target.typeOther.value,
       subType,
-      subTypeOther:
-        e.target.subTypeOther == null ? null : e.target.subTypeOther.value,
+      subTypeOther: e.target.subTypeOther == null ? null : e.target.subTypeOther.value,
       MDVI: mdvi ? mdviVal : null,
       Diagnosis: allDiagnosis.length > 0 ? allDiagnosis : null,
       extraInformation: e.target.extraInformation.value,
@@ -88,7 +81,7 @@ const TrainingForm = ({
   let types = [<option key="default"></option>];
   if (typeList != null) {
     typeList.forEach((type) => {
-        types.push(<option value={type.value}>{type.value}</option>);
+      types.push(<option value={type.value}>{type.value}</option>);
     });
   }
 
@@ -119,8 +112,7 @@ const TrainingForm = ({
     if (subTypeList != null) {
       let stTemp = [<option key="default" value={null} selected></option>];
       subTypeList.forEach((st) => {
-        if (st.trainingType.value == event.target.value
-        ) {
+        if (st.trainingType.value == event.target.value) {
           stTemp.push(<option value={st.value}>{st.value}</option>);
         }
       });
@@ -152,7 +144,7 @@ const TrainingForm = ({
           <Row>
             <Col>
               <Form.Group controlId="date">
-                <Form.Label>Date { required() } </Form.Label>
+                <Form.Label>Date {required()} </Form.Label>
                 <Form.Control type="date" required />
               </Form.Group>
             </Col>
@@ -176,11 +168,7 @@ const TrainingForm = ({
                 <Col>
                   <Form.Group controlId="MDVI">
                     <Form.Label>MDVI</Form.Label>
-                    <Form.Control
-                      as="select"
-                      value={mdviVal}
-                      onChange={(e) => setMdviVal(e.target.value)}
-                    >
+                    <Form.Control as="select" value={mdviVal} onChange={(e) => setMdviVal(e.target.value)}>
                       <option key="Yes" value="Yes">
                         Yes
                       </option>
@@ -194,7 +182,7 @@ const TrainingForm = ({
                   </Form.Group>
                 </Col>
                 <Col>
-                  <Form.Label>Diagnosis { required() }</Form.Label>
+                  <Form.Label>Diagnosis {required()}</Form.Label>
                   <FormControl fullWidth size="small">
                     <Select
                       value={diagnosis}
@@ -214,16 +202,16 @@ const TrainingForm = ({
               <Row>
                 <Col>
                   {diagnosis.includes("Other") && (
-                      <Form.Group controlId="diagnosisOther">
-                        <Form.Label>Other Diagnosis {required()}</Form.Label>
-                        <Form.Control
-                          type="input"
-                          required
-                          autoComplete="off"
-                          value={otherDiagnosis}
-                          onChange={(e) => setOtherDiagnosis(e.target.value)}
-                        />
-                      </Form.Group>
+                    <Form.Group controlId="diagnosisOther">
+                      <Form.Label>Other Diagnosis {required()}</Form.Label>
+                      <Form.Control
+                        type="input"
+                        required
+                        autoComplete="off"
+                        value={otherDiagnosis}
+                        onChange={(e) => setOtherDiagnosis(e.target.value)}
+                      />
+                    </Form.Group>
                   )}
                 </Col>
               </Row>
@@ -231,7 +219,7 @@ const TrainingForm = ({
           )}
           {typeList != null && (
             <Form.Group controlId="type">
-              <Form.Label>Type { required() }</Form.Label>
+              <Form.Label>Type {required()}</Form.Label>
               <Form.Control as="select" required onChange={typeOnChange}>
                 {types}
               </Form.Control>
@@ -239,37 +227,22 @@ const TrainingForm = ({
           )}
           {showTypeOther && typeList != null && subTypeList == null && (
             <Form.Group controlId="typeOther">
-              <Form.Label>Type Other { required() }</Form.Label>
-              <Form.Control
-                as="textarea"
-                required
-                rows={1}
-                autoComplete="off"
-              ></Form.Control>
+              <Form.Label>Type Other {required()}</Form.Label>
+              <Form.Control as="textarea" required rows={1} autoComplete="off"></Form.Control>
             </Form.Group>
           )}
           {showSubType && typeList != null && subTypeOptions != null && (
             <Form.Group controlId="subType">
-              <Form.Label>Sub Type { required() } </Form.Label>
-              <Form.Control
-                id="subTypeSelect"
-                required
-                as="select"
-                onChange={subTypeOnChange}
-              >
+              <Form.Label>Sub Type {required()} </Form.Label>
+              <Form.Control id="subTypeSelect" required as="select" onChange={subTypeOnChange}>
                 {subTypeOptions}
               </Form.Control>
             </Form.Group>
           )}
           {showTypeOtherSub && typeList != null && subTypeList != null && (
             <Form.Group controlId="subTypeOther">
-              <Form.Label>Type Sub Other { required() }</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={1}
-                required
-                autoComplete="off"
-              ></Form.Control>
+              <Form.Label>Type Sub Other {required()}</Form.Label>
+              <Form.Control as="textarea" rows={1} required autoComplete="off"></Form.Control>
             </Form.Group>
           )}
           <Form.Group controlId="extraInformation">
@@ -277,7 +250,7 @@ const TrainingForm = ({
             <Form.Control as="textarea" rows={3} autoComplete="off" />
           </Form.Group>
           <br />
-          <Button disabled={loading} className="btn btn-success border-0 btn-block" type="submit">
+          <Button disabled={loading} className="btn btn-success btn-block border-0" type="submit">
             {submitButtonTest}
           </Button>
         </Form>

@@ -1,4 +1,4 @@
-import { Table } from 'react-bootstrap';
+import { Table } from "react-bootstrap";
 
 function UserList({ users }) {
   return (
@@ -19,12 +19,10 @@ function UserList({ users }) {
               <tr key={user.mrn}>
                 <td>{user.mrn}</td>
                 <td>{user.beneficiaryName}</td>
-                <td>{(new Date(user.dateOfBirth)).toDateString()}</td>
+                <td>{new Date(user.dateOfBirth).toDateString()}</td>
                 <td>{user.gender}</td>
                 <td>
-                  <a href={`/user?mrn=${user.mrn}&hospitalId=${user.hospitalId}`}>
-                    View Details
-                  </a>
+                  <a href={`/user?mrn=${user.mrn}&hospitalId=${user.hospitalId}`}>View Details</a>
                 </td>
               </tr>
             ))}

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { signIn, signOut } from "next-auth/react";
-import Image from 'next/image';
-import logo from 'public/images/vision-aid-logo.webp';
+import Image from "next/image";
+import logo from "public/images/vision-aid-logo.webp";
 
 function Navigation(props) {
   const { user } = props;
@@ -12,10 +12,10 @@ function Navigation(props) {
     role = user.admin
       ? "admin"
       : user.hospitalRole[0].admin
-      ? "manager"
-      : user.hospitalRole
-      ? "professional"
-      : "invalid";
+        ? "manager"
+        : user.hospitalRole
+          ? "professional"
+          : "invalid";
   }
 
   return (
@@ -48,16 +48,12 @@ function Navigation(props) {
           </button>
         </div>
 
-        <div className="collapse navbar-collapse" id="navbarNav">
+        <div className="navbar-collapse collapse" id="navbarNav">
           <ul className="navbar-nav">
             {user && role != "invalid" && (
               <li className="nav-item p-2">
                 <Link href="/beneficiary" legacyBehavior>
-                  <a
-                    className={`nav-link custom-link ${
-                      router.pathname === "/beneficiary" ? "active" : ""
-                    }`}
-                  >
+                  <a className={`nav-link custom-link ${router.pathname === "/beneficiary" ? "active" : ""}`}>
                     Beneficiaries
                   </a>
                 </Link>
@@ -66,37 +62,21 @@ function Navigation(props) {
             {user && role != "invalid" && (
               <li className="nav-item p-2">
                 <Link href="/reports" legacyBehavior>
-                  <a
-                    className={`nav-link custom-link ${
-                      router.pathname === "/reports" ? "active" : ""
-                    }`}
-                  >
-                    Reports
-                  </a>
+                  <a className={`nav-link custom-link ${router.pathname === "/reports" ? "active" : ""}`}>Reports</a>
                 </Link>
               </li>
             )}
             {user && role != "invalid" && (role === "admin" || role === "manager") && (
               <li className="nav-item p-2">
                 <Link href="/users" legacyBehavior>
-                  <a
-                    className={`nav-link custom-link ${
-                      router.pathname === "/users" ? "active" : ""
-                    }`}
-                  >
-                    Users
-                  </a>
+                  <a className={`nav-link custom-link ${router.pathname === "/users" ? "active" : ""}`}>Users</a>
                 </Link>
               </li>
             )}
             {user && role != "invalid" && role === "admin" && (
               <li className="nav-item p-2">
                 <Link href="/requiredfields" legacyBehavior>
-                  <a
-                    className={`nav-link custom-link ${
-                      router.pathname === "/requiredfields" ? "active" : ""
-                    }`}
-                  >
+                  <a className={`nav-link custom-link ${router.pathname === "/requiredfields" ? "active" : ""}`}>
                     Configuration
                   </a>
                 </Link>
@@ -124,11 +104,7 @@ function Navigation(props) {
 
         {!user && (
           <div className="left-auto-margin column-center">
-            <button
-              type="button"
-              className="btn btn-sm btn-light"
-              onClick={() => signIn()}
-            >
+            <button type="button" className="btn btn-sm btn-light" onClick={() => signIn()}>
               Sign in
             </button>
           </div>

@@ -1,4 +1,4 @@
-import XLSX from 'xlsx-js-style';
+import XLSX from "xlsx-js-style";
 
 const CASH_GRANT_SUMMARY_OF_FINANCES = `\tSummary of finances sheet\t\t\t\tAll figures in INR
 \tPlease fill in the summary of funds received and spent.
@@ -50,6 +50,6 @@ S/N\tBudget Heads\tQ1 Jan-Mar 2024\tQ2 Apr-Jun 2024\tQ3 Jul-Sep 2024\tQ4 Oct - D
 \tNumber of devices needed for next quarter
 `;
 export const buildCashGrantSummaryOfFinances = () => {
-  const sheetData = CASH_GRANT_SUMMARY_OF_FINANCES.split('\n').map(row => row.split('\t'));
+  const sheetData = CASH_GRANT_SUMMARY_OF_FINANCES.split("\n").map((row) => row.split("\t"));
   return XLSX.utils.aoa_to_sheet(sheetData);
-}
+};

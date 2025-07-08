@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import DownloadIcon from '@mui/icons-material/Download';
+import { useEffect } from "react";
+import DownloadIcon from "@mui/icons-material/Download";
 import {
   FormControl,
   InputLabel,
@@ -12,21 +12,16 @@ import {
   FormControlLabel,
   Tooltip,
   IconButton,
-} from '@mui/material';
-import moment from 'moment';
+} from "@mui/material";
+import moment from "moment";
 
-import XLSX from 'xlsx-js-style';
-import {
-  getReportData,
-  setAhdHeader,
-  setClveHeader,
-  setLveHeader,
-} from '@/constants/reportFunctions';
-import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
-import { buildSummarySheet } from '@/utils/ui/build-summary-sheet';
-import { buildCashGrantSummaryOfFinances } from '@/utils/ui/build-cash-grant-summary-of-finances';
-import { buildNilCashGrantSummaryOfFinances } from '@/utils/ui/build-nil-cash-grant-summary-of-finances';
-import TextFieldWrapper from './TextFieldWrapper';
+import XLSX from "xlsx-js-style";
+import { getReportData, setAhdHeader, setClveHeader, setLveHeader } from "@/constants/reportFunctions";
+import { buildDashboardQueryParams } from "@/utils/ui/build-dashboard-query-params";
+import { buildSummarySheet } from "@/utils/ui/build-summary-sheet";
+import { buildCashGrantSummaryOfFinances } from "@/utils/ui/build-cash-grant-summary-of-finances";
+import { buildNilCashGrantSummaryOfFinances } from "@/utils/ui/build-nil-cash-grant-summary-of-finances";
+import TextFieldWrapper from "./TextFieldWrapper";
 
 const refData = `S.no\tPrograms\tTypes\tDescription
 1\tScreening /Out reach activities/ Camp\tLow Vision Screening\tLow vision screening of the school of the blind and Identification of the visually impaired for assistive technology
@@ -45,7 +40,7 @@ const refData = `S.no\tPrograms\tTypes\tDescription
 14\t\tTraining for Life skills/ Money identification/ Home management / Kitchen skills\t
 15\t\tJob Coaching /IBPS\tIntegrated training program for Institute of Banking Personnel Selection and other job coaching
 16\t\tSpoken english training\tTraining to speak in English for both beginners and Intermediate.`;
-const refRows = refData.split('\n').map(row => row.split('\t'));
+const refRows = refData.split("\n").map((row) => row.split("\t"));
 
 const hospitalAbbr = {
   "Aravind Eye Hospital, Madurai": "AEH, MDU",
@@ -60,7 +55,7 @@ const hospitalAbbr = {
   "Dr. Jawahar Lal Rohatgi Eye Hospital, Kanpur": "JLR, UP",
   "Sitapur Eye Hospital, Sitapur, UP": "SEH, UP",
   "Voluntary Health Services": "VHS, CHE",
-  "Community Eye Care Foundation": "CECF, PUN"
+  "Community Eye Care Foundation": "CECF, PUN",
 };
 
 function GraphCustomizer({
@@ -80,21 +75,19 @@ function GraphCustomizer({
 }) {
   // Define quarters covering 3 months each
   const quarters = [
-    { label: 'Q4', startMonth: 9, endMonth: 11 }, // Oct - Dec
-    { label: 'Q3', startMonth: 6, endMonth: 8 },  // Jul - Sep
-    { label: 'Q2', startMonth: 3, endMonth: 5 },  // Apr - Jun
-    { label: 'Q1', startMonth: 0, endMonth: 2 },  // Jan - Mar
+    { label: "Q4", startMonth: 9, endMonth: 11 }, // Oct - Dec
+    { label: "Q3", startMonth: 6, endMonth: 8 }, // Jul - Sep
+    { label: "Q2", startMonth: 3, endMonth: 5 }, // Apr - Jun
+    { label: "Q1", startMonth: 0, endMonth: 2 }, // Jan - Mar
   ];
 
   const currentMonth = moment().month();
-  const currentQuarterIndex = quarters.findIndex(
-    (q) => currentMonth >= q.startMonth && currentMonth <= q.endMonth
-  );
+  const currentQuarterIndex = quarters.findIndex((q) => currentMonth >= q.startMonth && currentMonth <= q.endMonth);
 
   // Rotate quarters array so current quarter is first, then past quarters
   const availableQuarters = [
     ...quarters.slice(currentQuarterIndex, quarters.length),
-    ...quarters.slice(0, currentQuarterIndex)
+    ...quarters.slice(0, currentQuarterIndex),
   ];
 
   const initialQuarterIndex = availableQuarters.findIndex(
@@ -104,23 +97,15 @@ function GraphCustomizer({
   const setQuarter = (year, quarterIndex) => {
     const currentQuarterLabel = availableQuarters[initialQuarterIndex].label;
     const selectedQuarterLabel = availableQuarters[quarterIndex].label;
-    
+
     // Only decrement year if selected quarter is after current quarter in the year
     if (parseInt(selectedQuarterLabel[1]) > parseInt(currentQuarterLabel[1])) {
       year -= 1;
     }
-    
+
     const q = availableQuarters[quarterIndex];
-    const start = moment()
-      .year(year)
-      .month(q.startMonth)
-      .startOf('month')
-      .toDate();
-    const end = moment()
-      .year(year)
-      .month(q.endMonth)
-      .endOf('month')
-      .toDate();
+    const start = moment().year(year).month(q.startMonth).startOf("month").toDate();
+    const end = moment().year(year).month(q.endMonth).endOf("month").toDate();
     setStartDate(start);
     setEndDate(end);
 
@@ -137,8 +122,8 @@ function GraphCustomizer({
 
   const handleQuarterSelection = (event) => {
     let quarterLabel = event.target.value;
-    if (quarterLabel === '') {
-      setSelectedQuarter('');
+    if (quarterLabel === "") {
+      setSelectedQuarter("");
       return;
     }
     const selectedIndex = availableQuarters.findIndex((q) => q.label === quarterLabel);
@@ -170,37 +155,39 @@ function GraphCustomizer({
         "Training",
         "Low_Vision_Evaluation",
         "Comprehensive_Low_Vision_Evaluation",
-        "Counselling_Education"
+        "Counselling_Education",
       ];
 
-      const apiCalls = types.map((type) => fetch(`/api/v2/dashboard/${type}?${buildDashboardQueryParams(params)}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      }));
+      const apiCalls = types.map((type) =>
+        fetch(`/api/v2/dashboard/${type}?${buildDashboardQueryParams(params)}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        })
+      );
 
       const responses = await Promise.all(apiCalls);
-      const finalResult = await Promise.all(
-        responses.map((res) => (res.json ? res.json().catch((err) => err) : res))
-      );
+      const finalResult = await Promise.all(responses.map((res) => (res.json ? res.json().catch((err) => err) : res)));
 
       const allBeneficiaryData = finalResult[0].records.map((record) => ({
         ...record,
-        'Comprehensive_Low_Vision_Evaluation': finalResult[4].records.filter((clve) => clve.beneficiaryId === record.mrn),
-        'Counselling_Education': finalResult[5].records.filter((ce) => ce.beneficiaryId === record.mrn),
-        'Vision_Enhancement': finalResult[1].records.filter((ve) => ve.beneficiaryId === record.mrn),
-        'Training': finalResult[2].records.filter((t) => t.beneficiaryId === record.mrn),
-        'Low_Vision_Evaluation': finalResult[3].records.filter((lve) => lve.beneficiaryId === record.mrn),
+        Comprehensive_Low_Vision_Evaluation: finalResult[4].records.filter((clve) => clve.beneficiaryId === record.mrn),
+        Counselling_Education: finalResult[5].records.filter((ce) => ce.beneficiaryId === record.mrn),
+        Vision_Enhancement: finalResult[1].records.filter((ve) => ve.beneficiaryId === record.mrn),
+        Training: finalResult[2].records.filter((t) => t.beneficiaryId === record.mrn),
+        Low_Vision_Evaluation: finalResult[3].records.filter((lve) => lve.beneficiaryId === record.mrn),
       }));
 
-      const hospitalSummary = summary.filter((hospital) => selectedHospitals.includes(hospital.name)).map((hospital) => ({
-        ...hospital,
-        beneficiary: finalResult[0].records.filter((b) => b.hospitalId === hospital.id),
-        visionEnhancement: finalResult[1].records.filter((ve) => ve.hospitalId === hospital.id),
-        training: finalResult[2].records.filter((t) => t.hospitalId === hospital.id),
-        lowVisionEvaluation: finalResult[3].records.filter((lve) => lve.hospitalId === hospital.id),
-        comprehensiveLowVisionEvaluation: finalResult[4].records.filter((clve) => clve.hospitalId === hospital.id),
-        counsellingEducation: finalResult[5].records.filter((ce) => ce.hospitalId === hospital.id),
-      }));
+      const hospitalSummary = summary
+        .filter((hospital) => selectedHospitals.includes(hospital.name))
+        .map((hospital) => ({
+          ...hospital,
+          beneficiary: finalResult[0].records.filter((b) => b.hospitalId === hospital.id),
+          visionEnhancement: finalResult[1].records.filter((ve) => ve.hospitalId === hospital.id),
+          training: finalResult[2].records.filter((t) => t.hospitalId === hospital.id),
+          lowVisionEvaluation: finalResult[3].records.filter((lve) => lve.hospitalId === hospital.id),
+          comprehensiveLowVisionEvaluation: finalResult[4].records.filter((clve) => clve.hospitalId === hospital.id),
+          counsellingEducation: finalResult[5].records.filter((ce) => ce.hospitalId === hospital.id),
+        }));
 
       const reportData = getReportData(allBeneficiaryData, hospitalSummary, true);
 
@@ -233,10 +220,10 @@ function GraphCustomizer({
       if (hospitalSummary.length === 1) {
         XLSX.utils.book_append_sheet(wb, buildSummarySheet(), "Summary");
         const tier = hospitalSummary[0].tier;
-        if (tier === 'NIL_CASH_GRANT') {
+        if (tier === "NIL_CASH_GRANT") {
           XLSX.utils.book_append_sheet(wb, buildNilCashGrantSummaryOfFinances(), "Summary of Finances Tier 2 & 3");
         }
-        if (tier === 'RECEIVE_CASH_GRANT') {
+        if (tier === "RECEIVE_CASH_GRANT") {
           XLSX.utils.book_append_sheet(wb, buildCashGrantSummaryOfFinances(), "Summary of Finances");
         }
       }
@@ -263,10 +250,7 @@ function GraphCustomizer({
         origin: -1,
       });
 
-      setAhdHeader(
-        wahd,
-        selectedHospitals,
-      );
+      setAhdHeader(wahd, selectedHospitals);
       XLSX.utils.sheet_add_json(wahd, aggregatedHospitalData, {
         skipHeader: true,
         origin: -1,
@@ -274,7 +258,7 @@ function GraphCustomizer({
 
       // Bold Summary of Services rows
       const rows = Array.from({ length: 8 }, (_, i) => i + 4);
-      const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode('A'.charCodeAt(0) + i));
+      const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode("A".charCodeAt(0) + i));
       for (const row of rows) {
         for (const column of columns) {
           const cell = column + row;
@@ -289,7 +273,7 @@ function GraphCustomizer({
       for (let i = 0; i < refRows[0].length; i++) {
         wscols.push({ wch: wrefcols[i] });
       }
-      wref['!cols'] = wscols;
+      wref["!cols"] = wscols;
 
       let reportHospitalName = hospitalAbbr[selectedHospitals[0]];
       if (selectedHospitals.length === summary.length) {
@@ -302,13 +286,13 @@ function GraphCustomizer({
       let fileNameComponents = [];
       fileNameComponents.push("Report");
       fileNameComponents.push(reportHospitalName);
-      fileNameComponents.push(adjustedStartDate.toISOString().split('T')[0]);
-      fileNameComponents.push(adjustedEndDate.toISOString().split('T')[0]);
+      fileNameComponents.push(adjustedStartDate.toISOString().split("T")[0]);
+      fileNameComponents.push(adjustedEndDate.toISOString().split("T")[0]);
       const filename = fileNameComponents.join("_") + ".xlsx";
 
       XLSX.writeFile(wb, filename);
     } catch (error) {
-      console.error('Error generating report:', error);
+      console.error("Error generating report:", error);
     }
   };
 
@@ -321,10 +305,7 @@ function GraphCustomizer({
             control={
               <Checkbox
                 checked={selectedHospitals.length === summary.length && summary.length > 0}
-                indeterminate={
-                  selectedHospitals.length > 0 &&
-                  selectedHospitals.length < summary.length
-                }
+                indeterminate={selectedHospitals.length > 0 && selectedHospitals.length < summary.length}
                 onChange={() => {
                   if (selectedHospitals.length === summary.length) {
                     handleHospitalSelection({ target: { value: [] } });
@@ -335,11 +316,7 @@ function GraphCustomizer({
                 }}
               />
             }
-            label={
-              selectedHospitals.length === summary.length
-                ? 'Unselect All'
-                : 'Select All'
-            }
+            label={selectedHospitals.length === summary.length ? "Unselect All" : "Select All"}
           />
         </Grid>
 
@@ -355,7 +332,7 @@ function GraphCustomizer({
               onChange={handleHospitalSelection}
               renderValue={(selected) => {
                 if (!selected || selected.length === 0) {
-                  return 'Select Hospitals';
+                  return "Select Hospitals";
                 } else if (selected.length === 1) {
                   return selected[0];
                 } else {
@@ -366,9 +343,7 @@ function GraphCustomizer({
             >
               {summary.map((hospital) => (
                 <MenuItem key={hospital.id} value={hospital.name}>
-                  <Checkbox
-                    checked={selectedHospitals.indexOf(hospital.name) > -1}
-                  />
+                  <Checkbox checked={selectedHospitals.indexOf(hospital.name) > -1} />
                   <ListItemText primary={hospital.name} />
                 </MenuItem>
               ))}
@@ -378,20 +353,12 @@ function GraphCustomizer({
 
         {/* Start Date */}
         <Grid item xs={12} sm={6} md={2}>
-          <TextFieldWrapper
-            label="Start Date"
-            value={moment(startDate).format('YYYY-MM-DD')}
-            setDate={setStartDate}
-          />
+          <TextFieldWrapper label="Start Date" value={moment(startDate).format("YYYY-MM-DD")} setDate={setStartDate} />
         </Grid>
 
         {/* End Date */}
         <Grid item xs={12} sm={6} md={2}>
-          <TextFieldWrapper
-            label="End Date"
-            value={moment(endDate).format('YYYY-MM-DD')}
-            setDate={setEndDate}
-          />
+          <TextFieldWrapper label="End Date" value={moment(endDate).format("YYYY-MM-DD")} setDate={setEndDate} />
         </Grid>
 
         {/* Quarter Selection */}
@@ -409,7 +376,7 @@ function GraphCustomizer({
               </MenuItem>
               {availableQuarters.map((quarter, index) => (
                 <MenuItem key={quarter.label} value={quarter.label}>
-                  {quarter.label + (index === 0 ? ' (Current)' : '')}
+                  {quarter.label + (index === 0 ? " (Current)" : "")}
                 </MenuItem>
               ))}
             </Select>
@@ -423,13 +390,13 @@ function GraphCustomizer({
               onClick={downloadFilteredReport}
               aria-label="download report"
               sx={{
-                height: '55px',
-                width: '55px',
-                borderRadius: '5px',
-                backgroundColor: '#2074d4',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: '#1864c4',
+                height: "55px",
+                width: "55px",
+                borderRadius: "5px",
+                backgroundColor: "#2074d4",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "#1864c4",
                 },
               }}
             >

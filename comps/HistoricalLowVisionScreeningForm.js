@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { FormControl, Select, MenuItem } from "@mui/material";
 import {
@@ -11,11 +10,7 @@ import {
   electronicDevicesIndices,
   electronicDevicesSubheadings,
 } from "@/constants/devicesConstants";
-import {
-  createOptionMenu,
-  createMenu,
-  isNotNullEmptyOrUndefined,
-} from "@/constants/globalFunctions";
+import { createOptionMenu, createMenu, isNotNullEmptyOrUndefined } from "@/constants/globalFunctions";
 import { comma, commaAndSpace } from "@/constants/generalConstants";
 import { jsonToCSV, readString } from "react-papaparse";
 import moment from "moment";
@@ -38,9 +33,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
   };
 
   const removeOtherDevices = (devicesArr, originalDevices) => {
-    let otherDevices = devicesArr.filter(
-      (device) => !originalDevices.includes(device)
-    );
+    let otherDevices = devicesArr.filter((device) => !originalDevices.includes(device));
     for (let device of otherDevices) {
       devicesArr.splice(devicesArr.indexOf(device), 1);
     }
@@ -61,145 +54,80 @@ export default function HistoricalLowVisionScreeningForm(props) {
 
   const [data, setData] = useState(props.evaluationData.service);
 
-  const recommendationSpectacleArr = isNotNullEmptyOrUndefined(
-    data.recommendationSpectacle
-  )
+  const recommendationSpectacleArr = isNotNullEmptyOrUndefined(data.recommendationSpectacle)
     ? readString(data.recommendationSpectacle).data[0]
     : [];
-  const recommendationOpticalArr = isNotNullEmptyOrUndefined(
-    data.recommendationOptical
-  )
+  const recommendationOpticalArr = isNotNullEmptyOrUndefined(data.recommendationOptical)
     ? readString(data.recommendationOptical).data[0]
     : [];
-  const recommendationNonOpticalArr = isNotNullEmptyOrUndefined(
-    data.recommendationNonOptical
-  )
+  const recommendationNonOpticalArr = isNotNullEmptyOrUndefined(data.recommendationNonOptical)
     ? readString(data.recommendationNonOptical).data[0]
     : [];
-  const recommendationElectronicArr = isNotNullEmptyOrUndefined(
-    data.recommendationElectronic
-  )
+  const recommendationElectronicArr = isNotNullEmptyOrUndefined(data.recommendationElectronic)
     ? readString(data.recommendationElectronic).data[0]
     : [];
 
   const [devices, setDevices] = useState({
-    recommendationSpectacle: isNotNullEmptyOrUndefined(
-      data.recommendationSpectacle
-    )
-      ? recommendationSpectacleArr.every((device) =>
-          spectacleDevices.includes(device)
-        )
+    recommendationSpectacle: isNotNullEmptyOrUndefined(data.recommendationSpectacle)
+      ? recommendationSpectacleArr.every((device) => spectacleDevices.includes(device))
         ? recommendationSpectacleArr
-        : addOtherTerm(
-            removeOtherDevices(
-              [...recommendationSpectacleArr],
-              spectacleDevices
-            )
-          )
+        : addOtherTerm(removeOtherDevices([...recommendationSpectacleArr], spectacleDevices))
       : [],
     recommendationOptical: isNotNullEmptyOrUndefined(data.recommendationOptical)
-      ? recommendationOpticalArr.every((device) =>
-          opticalDevices.includes(device)
-        )
+      ? recommendationOpticalArr.every((device) => opticalDevices.includes(device))
         ? recommendationOpticalArr
-        : addOtherTerm(
-            removeOtherDevices([...recommendationOpticalArr], opticalDevices)
-          )
+        : addOtherTerm(removeOtherDevices([...recommendationOpticalArr], opticalDevices))
       : [],
-    recommendationNonOptical: isNotNullEmptyOrUndefined(
-      data.recommendationNonOptical
-    )
-      ? recommendationNonOpticalArr.every((device) =>
-          nonOpticalDevices.includes(device)
-        )
+    recommendationNonOptical: isNotNullEmptyOrUndefined(data.recommendationNonOptical)
+      ? recommendationNonOpticalArr.every((device) => nonOpticalDevices.includes(device))
         ? recommendationNonOpticalArr
-        : addOtherTerm(
-            removeOtherDevices(
-              [...recommendationNonOpticalArr],
-              nonOpticalDevices
-            )
-          )
+        : addOtherTerm(removeOtherDevices([...recommendationNonOpticalArr], nonOpticalDevices))
       : [],
-    recommendationElectronic: isNotNullEmptyOrUndefined(
-      data.recommendationElectronic
-    )
-      ? recommendationElectronicArr.every((device) =>
-          electronicDevices.includes(device)
-        )
+    recommendationElectronic: isNotNullEmptyOrUndefined(data.recommendationElectronic)
+      ? recommendationElectronicArr.every((device) => electronicDevices.includes(device))
         ? recommendationElectronicArr
-        : addOtherTerm(
-            removeOtherDevices(
-              [...recommendationElectronicArr],
-              electronicDevices
-            )
-          )
+        : addOtherTerm(removeOtherDevices([...recommendationElectronicArr], electronicDevices))
       : [],
   });
 
   const [showOther, setShowOther] = useState({
     recommendationSpectacle:
-      isNotNullEmptyOrUndefined(devices.recommendationSpectacle) &&
-      devices.recommendationSpectacle.includes("Other"),
+      isNotNullEmptyOrUndefined(devices.recommendationSpectacle) && devices.recommendationSpectacle.includes("Other"),
     recommendationOptical:
-      isNotNullEmptyOrUndefined(devices.recommendationOptical) &&
-      devices.recommendationOptical.includes("Other"),
+      isNotNullEmptyOrUndefined(devices.recommendationOptical) && devices.recommendationOptical.includes("Other"),
     recommendationNonOptical:
-      isNotNullEmptyOrUndefined(devices.recommendationNonOptical) &&
-      devices.recommendationNonOptical.includes("Other"),
+      isNotNullEmptyOrUndefined(devices.recommendationNonOptical) && devices.recommendationNonOptical.includes("Other"),
     recommendationElectronic:
-      isNotNullEmptyOrUndefined(devices.recommendationElectronic) &&
-      devices.recommendationElectronic.includes("Other"),
+      isNotNullEmptyOrUndefined(devices.recommendationElectronic) && devices.recommendationElectronic.includes("Other"),
   });
 
   const [otherDevices, setOtherDevices] = useState({
-    recommendationSpectacle: isNotNullEmptyOrUndefined(
-      data.recommendationSpectacle
-    )
+    recommendationSpectacle: isNotNullEmptyOrUndefined(data.recommendationSpectacle)
       ? devices.recommendationSpectacle.includes("Other")
-        ? recommendationSpectacleArr.filter(
-            (device) => !spectacleDevices.includes(device)
-          )
+        ? recommendationSpectacleArr.filter((device) => !spectacleDevices.includes(device))
         : ""
       : "",
     recommendationOptical: isNotNullEmptyOrUndefined(data.recommendationOptical)
       ? devices.recommendationOptical.includes("Other")
-        ? recommendationOpticalArr.filter(
-            (device) => !opticalDevices.includes(device)
-          )
+        ? recommendationOpticalArr.filter((device) => !opticalDevices.includes(device))
         : ""
       : "",
-    recommendationNonOptical: isNotNullEmptyOrUndefined(
-      data.recommendationNonOptical
-    )
+    recommendationNonOptical: isNotNullEmptyOrUndefined(data.recommendationNonOptical)
       ? devices.recommendationNonOptical.includes("Other")
-        ? recommendationNonOpticalArr.filter(
-            (device) => !nonOpticalDevices.includes(device)
-          )
+        ? recommendationNonOpticalArr.filter((device) => !nonOpticalDevices.includes(device))
         : ""
       : "",
-    recommendationElectronic: isNotNullEmptyOrUndefined(
-      data.recommendationElectronic
-    )
+    recommendationElectronic: isNotNullEmptyOrUndefined(data.recommendationElectronic)
       ? devices.recommendationElectronic.includes("Other")
-        ? recommendationElectronicArr.filter(
-            (device) => !electronicDevices.includes(device)
-          )
+        ? recommendationElectronicArr.filter((device) => !electronicDevices.includes(device))
         : ""
       : "",
   });
 
   const [editMode, setEditMode] = useState(false);
 
-  const recommendationSpectacleOptions = createMenu(
-    spectacleDevices,
-    true,
-    devices["recommendationSpectacle"]
-  );
-  const recommendationOpticalOptions = createMenu(
-    opticalDevices,
-    true,
-    devices["recommendationOptical"]
-  );
+  const recommendationSpectacleOptions = createMenu(spectacleDevices, true, devices["recommendationSpectacle"]);
+  const recommendationOpticalOptions = createMenu(opticalDevices, true, devices["recommendationOptical"]);
   const recommendationNonOpticalOptions = createOptionMenu(
     nonOpticalDevices,
     nonOpticalDevicesSubheadings,
@@ -273,19 +201,14 @@ export default function HistoricalLowVisionScreeningForm(props) {
         alert("Failed to delete data!");
       }
     }
-  }
+  };
 
   const saveLowVisionData = async () => {
     delete data["beneficiaryId"];
     data["recommendationSpectacle"] =
       showOther.recommendationSpectacle === true
         ? jsonToCSV(
-            [
-              replaceOtherByDeviceName(
-                devices["recommendationSpectacle"],
-                otherDevices["recommendationSpectacle"]
-              ),
-            ],
+            [replaceOtherByDeviceName(devices["recommendationSpectacle"], otherDevices["recommendationSpectacle"])],
             { ...config, delimiter: comma }
           )
         : jsonToCSV([devices["recommendationSpectacle"]], {
@@ -295,12 +218,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
     data["recommendationOptical"] =
       showOther.recommendationOptical === true
         ? jsonToCSV(
-            [
-              replaceOtherByDeviceName(
-                devices["recommendationOptical"],
-                otherDevices["recommendationOptical"]
-              ),
-            ],
+            [replaceOtherByDeviceName(devices["recommendationOptical"], otherDevices["recommendationOptical"])],
             { ...config, delimiter: comma }
           )
         : jsonToCSV([devices["recommendationOptical"]], {
@@ -310,12 +228,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
     data["recommendationNonOptical"] =
       showOther.recommendationNonOptical === true
         ? jsonToCSV(
-            [
-              replaceOtherByDeviceName(
-                devices["recommendationNonOptical"],
-                otherDevices["recommendationNonOptical"]
-              ),
-            ],
+            [replaceOtherByDeviceName(devices["recommendationNonOptical"], otherDevices["recommendationNonOptical"])],
             { ...config, delimiter: comma }
           )
         : jsonToCSV([devices["recommendationNonOptical"]], {
@@ -325,12 +238,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
     data["recommendationElectronic"] =
       showOther.recommendationElectronic === true
         ? jsonToCSV(
-            [
-              replaceOtherByDeviceName(
-                devices["recommendationElectronic"],
-                otherDevices["recommendationElectronic"]
-              ),
-            ],
+            [replaceOtherByDeviceName(devices["recommendationElectronic"], otherDevices["recommendationElectronic"])],
             { ...config, delimiter: comma }
           )
         : jsonToCSV([devices["recommendationElectronic"]], {
@@ -353,12 +261,10 @@ export default function HistoricalLowVisionScreeningForm(props) {
   };
 
   return data == undefined ? (
-    <div className="text-align-left">
-      No historical data is present for this date!
-    </div>
+    <div className="text-align-left">No historical data is present for this date!</div>
   ) : (
     <div>
-      <table className="table beneficiary-table table-bordered row">
+      <table className="beneficiary-table table-bordered row table">
         <thead className="thead-dark">
           <tr className="row">
             <th scope="col" className="col-md-4">
@@ -375,9 +281,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
               Date
             </th>
             <td className="col-md-8">
-              {!editMode &&
-                data.date !== null &&
-                moment(data.date).format("DD MMMM YYYY")}
+              {!editMode && data.date !== null && moment(data.date).format("DD MMMM YYYY")}
               {!editMode && data.date !== null && ""}
               {editMode && (
                 <input
@@ -416,12 +320,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
               {!editMode && data.mdvi}
               {editMode && (
                 <FormControl fullWidth size="small">
-                  <Select
-                    onChange={(e) => handleChange(e)}
-                    value={data.mdvi}
-                    name="mdvi"
-                    MenuProps={MenuProps}
-                  >
+                  <Select onChange={(e) => handleChange(e)} value={data.mdvi} name="mdvi" MenuProps={MenuProps}>
                     <MenuItem value="Yes">Yes</MenuItem>
                     <MenuItem value="No">No</MenuItem>
                   </Select>
@@ -576,9 +475,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
               {editMode && (
                 <FormControl fullWidth size="small">
                   <Select
-                    onChange={(e) =>
-                      handleMultiSelectChange(e, "recommendationSpectacle")
-                    }
+                    onChange={(e) => handleMultiSelectChange(e, "recommendationSpectacle")}
                     value={devices.recommendationSpectacle}
                     name="recommendationSpectacle"
                     multiple
@@ -621,9 +518,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
               {editMode && (
                 <FormControl fullWidth size="small">
                   <Select
-                    onChange={(e) =>
-                      handleMultiSelectChange(e, "recommendationOptical")
-                    }
+                    onChange={(e) => handleMultiSelectChange(e, "recommendationOptical")}
                     value={devices.recommendationOptical}
                     name="recommendationOptical"
                     multiple
@@ -666,9 +561,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
               {editMode && (
                 <FormControl fullWidth size="small">
                   <Select
-                    onChange={(e) =>
-                      handleMultiSelectChange(e, "recommendationNonOptical")
-                    }
+                    onChange={(e) => handleMultiSelectChange(e, "recommendationNonOptical")}
                     value={devices.recommendationNonOptical}
                     name="recommendationNonOptical"
                     multiple
@@ -711,9 +604,7 @@ export default function HistoricalLowVisionScreeningForm(props) {
               {editMode && (
                 <FormControl fullWidth size="small">
                   <Select
-                    onChange={(e) =>
-                      handleMultiSelectChange(e, "recommendationElectronic")
-                    }
+                    onChange={(e) => handleMultiSelectChange(e, "recommendationElectronic")}
                     value={devices.recommendationElectronic}
                     name="recommendationElectronic"
                     multiple
@@ -765,26 +656,17 @@ export default function HistoricalLowVisionScreeningForm(props) {
         </tbody>
       </table>
       {props.evaluationData.editable && !editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={handleClick}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={handleClick}>
           Edit
         </button>
       )}
       {editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={saveLowVisionData}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={saveLowVisionData}>
           Save
         </button>
       )}
       {!editMode && (
-        <button
-          className="btn btn-danger border-0 ms-3 btn-block"
-          onClick={deleteLowVisionData}
-        >
+        <button className="btn btn-danger ms-3 btn-block border-0" onClick={deleteLowVisionData}>
           Delete
         </button>
       )}

@@ -20,10 +20,7 @@ export default function NewEvaluationDashboard(props) {
   const [loading, setLoading] = useState(false);
   const [trainingData, setTrainingData] = useState([]);
   const [visionTrainingData, setVisionTrainingData] = useState([]);
-  const [
-    comprehensiveLowVisionEvaluationData,
-    setComprehensiveLowVisionEvaluationData,
-  ] = useState([]);
+  const [comprehensiveLowVisionEvaluationData, setComprehensiveLowVisionEvaluationData] = useState([]);
   const [lowVisionEvaluationData, setLowVisionEvaluationData] = useState([]);
   const [counsellingEducationData, setCounsellingEducationData] = useState([]);
 
@@ -34,9 +31,7 @@ export default function NewEvaluationDashboard(props) {
     setVisionTrainingData(props.user.Vision_Enhancement);
   }, [props.user.Vision_Enhancement]);
   useEffect(() => {
-    setComprehensiveLowVisionEvaluationData(
-      props.user.Comprehensive_Low_Vision_Evaluation
-    );
+    setComprehensiveLowVisionEvaluationData(props.user.Comprehensive_Low_Vision_Evaluation);
   }, [props.user.Comprehensive_Low_Vision_Evaluation]);
   useEffect(() => {
     setLowVisionEvaluationData(props.user.Low_Vision_Evaluation);
@@ -140,7 +135,7 @@ export default function NewEvaluationDashboard(props) {
   return (
     <div>
       <Navigation user={props.currentUser} />
-      <div className="container p-4 mb-3">
+      <div className="container mb-3 p-4">
         <h2 className="benficiary-heading">{formatTitle(props.service)}</h2>
         <hr className="horizontal-line" />
         <div className="row">
@@ -169,16 +164,8 @@ export default function NewEvaluationDashboard(props) {
                 mdvi={props.user.mDVI}
                 updateMDVIForBeneficiary={updateMDVIForBeneficiary}
                 title="Comprehensive Low Vision Evaluation"
-                customFieldsDistance={[
-                  "distanceVisualAcuityRE",
-                  "distanceVisualAcuityLE",
-                  "distanceBinocularVisionBE",
-                ]}
-                customFieldsNear={[
-                  "nearVisualAcuityRE",
-                  "nearVisualAcuityLE",
-                  "nearBinocularVisionBE",
-                ]}
+                customFieldsDistance={["distanceVisualAcuityRE", "distanceVisualAcuityLE", "distanceBinocularVisionBE"]}
+                customFieldsNear={["nearVisualAcuityRE", "nearVisualAcuityLE", "nearBinocularVisionBE"]}
                 api="comprehensiveLowVisionEvaluation"
                 allfields={true}
                 loading={loading}
@@ -192,16 +179,8 @@ export default function NewEvaluationDashboard(props) {
                 mdvi={props.user.mDVI}
                 updateMDVIForBeneficiary={updateMDVIForBeneficiary}
                 title="Low Vision Screening"
-                customFieldsDistance={[
-                  "distanceVisualAcuityRE",
-                  "distanceVisualAcuityLE",
-                  "distanceBinocularVisionBE",
-                ]}
-                customFieldsNear={[
-                  "nearVisualAcuityRE",
-                  "nearVisualAcuityLE",
-                  "nearBinocularVisionBE",
-                ]}
+                customFieldsDistance={["distanceVisualAcuityRE", "distanceVisualAcuityLE", "distanceBinocularVisionBE"]}
+                customFieldsNear={["nearVisualAcuityRE", "nearVisualAcuityLE", "nearBinocularVisionBE"]}
                 api="lowVisionEvaluation"
                 allfields={false}
                 loading={loading}

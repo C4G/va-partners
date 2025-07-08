@@ -19,19 +19,13 @@ export default function HistoricalTrainingForm(props) {
     .filter((item) => item.trainingType.value === data.type)
     .map((item) => item.value);
   const trainingTypeOptions = createMenu(props.trainingTypeList, false);
-  const [trainingSubTypeOptions, setTrainingSubTypeOptions] = useState(
-    createMenu(trainingSubTypeList, false)
-  );
+  const [trainingSubTypeOptions, setTrainingSubTypeOptions] = useState(createMenu(trainingSubTypeList, false));
 
   const [editMode, setEditMode] = useState(false);
 
   // let subType = data.subType;
-  const [showOther, setShowOther] = useState(
-    trainingSubTypeList.includes(data.subType) ? false : true
-  );
-  const [otherType, setOtherType] = useState(
-    trainingSubTypeList.includes(data.subType) ? "" : data.subType
-  );
+  const [showOther, setShowOther] = useState(trainingSubTypeList.includes(data.subType) ? false : true);
+  const [otherType, setOtherType] = useState(trainingSubTypeList.includes(data.subType) ? "" : data.subType);
 
   useEffect(() => {
     if (showOther && editMode) {
@@ -50,9 +44,7 @@ export default function HistoricalTrainingForm(props) {
       .filter((item) => item.trainingType.value === e.target.value)
       .map((item) => item.value);
 
-    setTrainingSubTypeOptions(
-      createMenu(trainingSubTypeList, false)
-    );
+    setTrainingSubTypeOptions(createMenu(trainingSubTypeList, false));
 
     setData((data) => ({ ...data, subType: "" }));
     setShowOther(false);
@@ -92,7 +84,7 @@ export default function HistoricalTrainingForm(props) {
         alert("Failed to delete data!");
       }
     }
-  }
+  };
 
   const saveTrainingData = async () => {
     let trainingData = { ...data };
@@ -116,12 +108,10 @@ export default function HistoricalTrainingForm(props) {
   };
 
   return data == undefined ? (
-    <div className="text-align-left">
-      No historical data is present for this date!
-    </div>
+    <div className="text-align-left">No historical data is present for this date!</div>
   ) : (
     <div>
-      <table className="table beneficiary-table table-bordered row">
+      <table className="beneficiary-table table-bordered row table">
         <thead className="thead-dark">
           <tr className="row">
             <th scope="col" className="col-md-4">
@@ -138,9 +128,7 @@ export default function HistoricalTrainingForm(props) {
               Date
             </th>
             <td className="col-md-8">
-              {!editMode &&
-                data.date !== null &&
-                moment(data.date).format("DD MMMM YYYY")}
+              {!editMode && data.date !== null && moment(data.date).format("DD MMMM YYYY")}
               {!editMode && data.date !== null && ""}
               {editMode && (
                 <input
@@ -178,12 +166,7 @@ export default function HistoricalTrainingForm(props) {
               {!editMode && data.type}
               {editMode && (
                 <FormControl fullWidth size="small">
-                  <Select
-                    onChange={(e) => handleTypeChange(e)}
-                    value={data.type}
-                    name="type"
-                    MenuProps={MenuProps}
-                  >
+                  <Select onChange={(e) => handleTypeChange(e)} value={data.type} name="type" MenuProps={MenuProps}>
                     {trainingTypeOptions}
                   </Select>
                 </FormControl>
@@ -198,12 +181,7 @@ export default function HistoricalTrainingForm(props) {
               {!editMode && data.subType}
               {editMode && (
                 <FormControl fullWidth size="small">
-                  <Select
-                    onChange={(e) => handleChange(e)}
-                    value={data.subType}
-                    name="subType"
-                    MenuProps={MenuProps}
-                  >
+                  <Select onChange={(e) => handleChange(e)} value={data.subType} name="subType" MenuProps={MenuProps}>
                     {trainingSubTypeOptions}
                   </Select>
                 </FormControl>
@@ -246,26 +224,17 @@ export default function HistoricalTrainingForm(props) {
         </tbody>
       </table>
       {props.evaluationData.editable && !editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={handleClick}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={handleClick}>
           Edit
         </button>
       )}
       {editMode && (
-        <button
-          className="btn btn-success border-0 btn-block"
-          onClick={saveTrainingData}
-        >
+        <button className="btn btn-success btn-block border-0" onClick={saveTrainingData}>
           Save
         </button>
       )}
       {!editMode && (
-        <button
-          className="btn btn-danger border-0 ms-3 btn-block"
-          onClick={deleteTrainingData}
-        >
+        <button className="btn btn-danger ms-3 btn-block border-0" onClick={deleteTrainingData}>
           Delete
         </button>
       )}

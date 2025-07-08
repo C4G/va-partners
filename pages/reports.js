@@ -1,54 +1,36 @@
 // Import necessary libraries and components
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler } from "chart.js";
 import { readUser } from "./api/user";
-import { useRouter } from 'next/router';
+import { useRouter } from "next/router";
 import { getSession } from "next-auth/react";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bar } from "react-chartjs-2";
 import { findAllHospital } from "@/pages/api/hospital";
 import { Container } from "react-bootstrap";
 import Navigation from "./navigation/Navigation";
-import Layout from './components/layout';
+import Layout from "./components/layout";
 import moment from "moment";
 import { useState, useEffect } from "react";
 import GraphCustomizer from "./components/GraphCustomizer";
 import { Tab, Tabs, Paper, Button, Box } from "@mui/material";
-import ReportCustomizer from './customizedReport';
-import { AgGridReact } from 'ag-grid-react'; 
-import "ag-grid-community/styles/ag-grid.css"; 
-import "ag-grid-community/styles/ag-theme-quartz.css"; 
-import EditIcon from '@mui/icons-material/Edit';
-import { Drawer, IconButton } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { buildDashboardQueryParams } from '@/utils/ui/build-dashboard-query-params';
-import CircularProgress from '@mui/material/CircularProgress';
-import debounce from 'lodash.debounce';
+import ReportCustomizer from "./customizedReport";
+import { AgGridReact } from "ag-grid-react";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
+import EditIcon from "@mui/icons-material/Edit";
+import { Drawer, IconButton } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import { buildDashboardQueryParams } from "@/utils/ui/build-dashboard-query-params";
+import CircularProgress from "@mui/material/CircularProgress";
+import debounce from "lodash.debounce";
 
 // Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  ChartDataLabels
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler, ChartDataLabels);
 
 // Configure Chart.js data label plugin globally
 ChartJS.defaults.plugins.datalabels.font.size = 16;
 ChartJS.defaults.plugins.datalabels.font.weight = "bold";
-ChartJS.defaults.plugins.datalabels.display = function(context){
+ChartJS.defaults.plugins.datalabels.display = function (context) {
   return context.dataset.data[context.dataIndex] != 0;
 };
 
@@ -77,7 +59,6 @@ const graphOptions = {
   borderWidth: 1,
 };
 
-
 // Placeholder for existing graph building functions
 
 // Function to build Activities Graph using countsData
@@ -92,10 +73,7 @@ function buildActivitiesGraph(countsData) {
   const computerTrainingCount = countsData["Computer_Training"] || 0;
   const orientationMobilityTrainingCount = countsData["Orientation_Mobility_Training"] || 0;
   const trainingCount =
-    (countsData["Training"] || 0) +
-    mobileTrainingCount +
-    computerTrainingCount +
-    orientationMobilityTrainingCount;
+    (countsData["Training"] || 0) + mobileTrainingCount + computerTrainingCount + orientationMobilityTrainingCount;
 
   const counsellingCount = countsData["Counselling_Education"] || 0;
 
@@ -129,20 +107,20 @@ function buildActivitiesGraph(countsData) {
 function buildBreakdownGraph(countsData, breakdownType) {
   let typeCounts = {};
 
-  if (breakdownType === 'training') {
-    if (!countsData['Training_Subtypes']) {
-      console.error('Training subtypes data not available in countsData');
+  if (breakdownType === "training") {
+    if (!countsData["Training_Subtypes"]) {
+      console.error("Training subtypes data not available in countsData");
       return null;
     }
-    typeCounts = countsData['Training_Subtypes'];
-  } else if (breakdownType === 'counsellingEducation') {
-    if (!countsData['Counselling_Types']) {
-      console.error('Counselling types data not available in countsData');
+    typeCounts = countsData["Training_Subtypes"];
+  } else if (breakdownType === "counsellingEducation") {
+    if (!countsData["Counselling_Types"]) {
+      console.error("Counselling types data not available in countsData");
       return null;
     }
-    typeCounts = countsData['Counselling_Types'];
+    typeCounts = countsData["Counselling_Types"];
   } else {
-    console.error('Invalid breakdownType:', breakdownType);
+    console.error("Invalid breakdownType:", breakdownType);
     return null;
   }
 
@@ -153,7 +131,7 @@ function buildBreakdownGraph(countsData, breakdownType) {
     labels: labels,
     datasets: [
       {
-        label: 'Cumulative Counts',
+        label: "Cumulative Counts",
         data: dataPoints,
         ...graphOptions,
       },
@@ -165,20 +143,20 @@ function buildBreakdownGraph(countsData, breakdownType) {
 
 // Function to build Devices Graph
 function buildDevicesGraph(countsData) {
-  if (!countsData || countsData['Devices_Dispensed'] === undefined || countsData['Devices_Dispensed'] === null) {
-    console.error('Devices dispensed data not available in countsData');
+  if (!countsData || countsData["Devices_Dispensed"] === undefined || countsData["Devices_Dispensed"] === null) {
+    console.error("Devices dispensed data not available in countsData");
     return {
       labels: [],
       datasets: [],
     };
   }
 
-  const devicesCounts = countsData['Devices_Dispensed'];
+  const devicesCounts = countsData["Devices_Dispensed"];
 
-  const dispensedSpectacleCount = devicesCounts['Spectacle'] || 0;
-  const dispensedElectronicCount = devicesCounts['Electronic'] || 0;
-  const dispensedOpticalCount = devicesCounts['Optical'] || 0;
-  const dispensedNonOpticalCount = devicesCounts['NonOptical'] || 0;
+  const dispensedSpectacleCount = devicesCounts["Spectacle"] || 0;
+  const dispensedElectronicCount = devicesCounts["Electronic"] || 0;
+  const dispensedOpticalCount = devicesCounts["Optical"] || 0;
+  const dispensedNonOpticalCount = devicesCounts["NonOptical"] || 0;
 
   const chartData = {
     labels: [
@@ -189,13 +167,8 @@ function buildDevicesGraph(countsData) {
     ],
     datasets: [
       {
-        label: 'Cumulative Counts',
-        data: [
-          dispensedSpectacleCount,
-          dispensedElectronicCount,
-          dispensedOpticalCount,
-          dispensedNonOpticalCount,
-        ],
+        label: "Cumulative Counts",
+        data: [dispensedSpectacleCount, dispensedElectronicCount, dispensedOpticalCount, dispensedNonOpticalCount],
         ...graphOptions,
       },
     ],
@@ -205,7 +178,7 @@ function buildDevicesGraph(countsData) {
 }
 
 function buildRecDevicesGraph(countsData) {
-  if (!countsData || !countsData['Devices_Recommended']) {
+  if (!countsData || !countsData["Devices_Recommended"]) {
     // Return an empty chart data object or null
     return {
       labels: [],
@@ -213,12 +186,12 @@ function buildRecDevicesGraph(countsData) {
     };
   }
 
-  const devicesCounts = countsData['Devices_Recommended'];
+  const devicesCounts = countsData["Devices_Recommended"];
 
-  const recommendedSpectacleCount = devicesCounts['Spectacle'] || 0;
-  const recommendedElectronicCount = devicesCounts['Electronic'] || 0;
-  const recommendedOpticalCount = devicesCounts['Optical'] || 0;
-  const recommendedNonOpticalCount = devicesCounts['NonOptical'] || 0;
+  const recommendedSpectacleCount = devicesCounts["Spectacle"] || 0;
+  const recommendedElectronicCount = devicesCounts["Electronic"] || 0;
+  const recommendedOpticalCount = devicesCounts["Optical"] || 0;
+  const recommendedNonOpticalCount = devicesCounts["NonOptical"] || 0;
 
   return {
     labels: [
@@ -229,7 +202,7 @@ function buildRecDevicesGraph(countsData) {
     ],
     datasets: [
       {
-        label: 'Cumulative Counts',
+        label: "Cumulative Counts",
         data: [
           recommendedSpectacleCount,
           recommendedElectronicCount,
@@ -242,15 +215,14 @@ function buildRecDevicesGraph(countsData) {
   };
 }
 
-
 // Function to build Devices Breakdown Graph
 function buildDevicesBreakdownGraph(countsData, breakdownType) {
-  if (!countsData['Devices_Dispensed']) {
-    console.error('Devices dispensed data not available in countsData');
+  if (!countsData["Devices_Dispensed"]) {
+    console.error("Devices dispensed data not available in countsData");
     return null;
   }
 
-  const devicesCounts = countsData['Devices_Dispensed_Details'] || {};
+  const devicesCounts = countsData["Devices_Dispensed_Details"] || {};
   const typeCounts = devicesCounts[breakdownType] || {};
 
   const labels = Object.keys(typeCounts);
@@ -272,11 +244,11 @@ function buildDevicesBreakdownGraph(countsData, breakdownType) {
 
 // Function to build Recommended Devices Breakdown Graph
 function buildRecDevicesBreakdownGraph(countsData, breakdownType) {
-  if (!countsData['Devices_Recommended']) {
+  if (!countsData["Devices_Recommended"]) {
     return null;
   }
 
-  const devicesCounts = countsData['Devices_Recommended_Details'] || {};
+  const devicesCounts = countsData["Devices_Recommended_Details"] || {};
   const typeCounts = devicesCounts[breakdownType] || {};
 
   const labels = Object.keys(typeCounts);
@@ -426,11 +398,11 @@ const visualAcuityOptions = {
   responsive: true,
   plugins: {
     legend: {
-      position: 'top',
+      position: "top",
     },
     title: {
       display: true,
-      text: 'Visual Acuity Distribution',
+      text: "Visual Acuity Distribution",
     },
     tooltip: {
       enabled: true,
@@ -443,12 +415,12 @@ const visualAcuityOptions = {
         const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
         return `${value} (${percentage}%)`;
       },
-      color: '#000', // Set text color for better readability
-      anchor: 'end',
-      align: 'start',
+      color: "#000", // Set text color for better readability
+      anchor: "end",
+      align: "start",
       offset: -5,
       font: {
-        weight: 'bold',
+        weight: "bold",
         size: 14,
       },
     },
@@ -490,11 +462,7 @@ function buildTrainingTypesGraph(countsData) {
 
 // Function to build Training Subtypes Graph
 function buildTrainingSubtypesGraph(countsData, selectedType) {
-  if (
-    !countsData ||
-    !countsData["Training_Subtypes"] ||
-    !countsData["Training_Subtypes"][selectedType]
-  ) {
+  if (!countsData || !countsData["Training_Subtypes"] || !countsData["Training_Subtypes"][selectedType]) {
     return {
       labels: [],
       datasets: [],
@@ -588,7 +556,7 @@ function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals,
         labels: ["Total Unique Beneficiaries"],
         datasets: [
           {
-            label: 'Total',
+            label: "Total",
             data: [total],
             backgroundColor: ["rgba(75, 192, 192, 0.6)"],
             borderColor: ["rgba(75, 192, 192, 1)"],
@@ -612,9 +580,7 @@ function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals,
 
       // Build dataset for stacked bar chart
       const datasets = activities.map((activity, activityIndex) => {
-        const dataPoints = labels.map(
-          (hospital) => activityCountsPerHospital[hospital]?.[activity] || 0
-        );
+        const dataPoints = labels.map((hospital) => activityCountsPerHospital[hospital]?.[activity] || 0);
 
         return {
           label: activity,
@@ -640,7 +606,7 @@ function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals,
         labels: labels,
         datasets: [
           {
-            label: 'Unique Beneficiaries by Activity',
+            label: "Unique Beneficiaries by Activity",
             data: dataPoints,
             backgroundColor: labels.map((_, index) => getColor(index)),
             borderColor: labels.map((_, index) => getBorderColor(index)),
@@ -651,7 +617,6 @@ function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals,
     }
   }
 }
-
 
 // Fetch data server-side
 export async function getServerSideProps(ctx) {
@@ -674,11 +639,11 @@ export async function getServerSideProps(ctx) {
   // Fetch user data
   const user = await readUser(session.user.email);
   const isAdmin = Boolean(user.admin);
-  
+
   let hospitals = await findAllHospital();
 
   if (!isAdmin) {
-    hospitals = hospitals.filter((hospital) => user.hospitalRole.map(role => role.hospitalId).includes(hospital.id));
+    hospitals = hospitals.filter((hospital) => user.hospitalRole.map((role) => role.hospitalId).includes(hospital.id));
   }
 
   return {
@@ -691,15 +656,7 @@ export async function getServerSideProps(ctx) {
 }
 
 // PaginatedTable Component for rendering data table with pagination
-function PaginatedTable({
-  data,
-  columnDefs,
-  page,
-  totalRecords,
-  onPageChange,
-  pageSize,
-  onPageSizeChange,
-}) {
+function PaginatedTable({ data, columnDefs, page, totalRecords, onPageChange, pageSize, onPageSizeChange }) {
   const totalPages = Math.ceil(totalRecords / pageSize);
 
   // Calculate the start and end record numbers
@@ -724,20 +681,16 @@ function PaginatedTable({
       <div
         className="pagination-controls"
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '10px',
-          flexWrap: 'wrap', // Allows wrapping on smaller screens
-          gap: '10px', // Adds spacing between controls
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "10px",
+          flexWrap: "wrap", // Allows wrapping on smaller screens
+          gap: "10px", // Adds spacing between controls
         }}
       >
         {/* Previous Page Button */}
-        <Button
-          variant="contained"
-          onClick={() => onPageChange(page - 1)}
-          disabled={page === 1}
-        >
+        <Button variant="contained" onClick={() => onPageChange(page - 1)} disabled={page === 1}>
           Previous
         </Button>
 
@@ -748,28 +701,24 @@ function PaginatedTable({
 
         {/* Page Number Dropdown */}
         <Box display="flex" alignItems="center">
-          <span style={{ marginRight: '5px' }}>Page:</span>
-          <select
-            value={page}
-            onChange={(e) => onPageChange(parseInt(e.target.value, 10))}
-            style={{ padding: '5px' }}
-          >
+          <span style={{ marginRight: "5px" }}>Page:</span>
+          <select value={page} onChange={(e) => onPageChange(parseInt(e.target.value, 10))} style={{ padding: "5px" }}>
             {pageNumbers.map((num) => (
               <option key={num} value={num}>
                 {num}
               </option>
             ))}
           </select>
-          <span style={{ marginLeft: '5px' }}>of {totalPages}</span>
+          <span style={{ marginLeft: "5px" }}>of {totalPages}</span>
         </Box>
 
         {/* Page Size Dropdown */}
         <Box display="flex" alignItems="center">
-          <span style={{ marginRight: '5px' }}>Page Size:</span>
+          <span style={{ marginRight: "5px" }}>Page Size:</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(parseInt(e.target.value, 10))}
-            style={{ padding: '5px' }}
+            style={{ padding: "5px" }}
           >
             <option value={10}>10</option>
             <option value={20}>20</option>
@@ -792,18 +741,10 @@ function PaginatedTable({
 }
 
 // Main Summary Component
-export default function Summary({
-  user,
-  hospitals,
-  trainingTypes,
-  trainingSubTypes,
-  
-}) {
+export default function Summary({ user, hospitals, trainingTypes, trainingSubTypes }) {
   // State variables for date range
-  const [startDate, setStartDate] = useState(
-    moment().subtract(1, "year").format('YYYY-MM-DD')
-  );
-  const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
+  const [startDate, setStartDate] = useState(moment().subtract(1, "year").format("YYYY-MM-DD"));
+  const [endDate, setEndDate] = useState(moment().format("YYYY-MM-DD"));
 
   const router = useRouter();
   const {
@@ -816,15 +757,13 @@ export default function Summary({
     maxAge: qMaxAge,
     subTabIndex: qSubTabIndex,
     masterTabIndex: qMasterTabIndex,
-    quarter: qQuarter
+    quarter: qQuarter,
   } = router.query;
-  
 
-  
   // State variables for tabs
   const [masterTabIndex, setMasterTabIndex] = useState(0); // Table/Graph
   const [subTabIndex, setSubTabIndex] = useState(0); // Sub-tabs within Table
-  const [selectedQuarter, setSelectedQuarter] = useState('');
+  const [selectedQuarter, setSelectedQuarter] = useState("");
   const [selectedHospitals, setSelectedHospitals] = useState([]);
   const [selectedHospitalNames, setSelectedHospitalNames] = useState([]);
 
@@ -838,7 +777,7 @@ export default function Summary({
   });
   const [isTableActive, setIsTableActive] = useState(true);
   const [isGraphActive, setIsGraphActive] = useState(false);
-  
+
   // Pagination state variables
   const [pageSize, setPageSize] = useState(50); // Default page size
 
@@ -854,7 +793,7 @@ export default function Summary({
   const [counselingRecords, setCounselingRecords] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [visionEnhancements, setVisionEnhancements] = useState([]);
-  const [trainings, setTrainings] = useState([]); 
+  const [trainings, setTrainings] = useState([]);
 
   // Loading and counts states
   const [isLoading, setIsLoading] = useState(false);
@@ -866,8 +805,8 @@ export default function Summary({
   const [totalCounselingRecords, setTotalCounselingRecords] = useState(0);
 
   // Filter states
-  const [selectedGenders, setSelectedGenders] = useState(['Male','Female', 'Other']);
-  const [selectedMdvi, setSelectedMdvi] = useState(['Yes', 'No']);
+  const [selectedGenders, setSelectedGenders] = useState(["Male", "Female", "Other"]);
+  const [selectedMdvi, setSelectedMdvi] = useState(["Yes", "No"]);
   const [minAge, setMinAge] = useState(null);
   const [maxAge, setMaxAge] = useState(null);
 
@@ -888,118 +827,117 @@ export default function Summary({
     type: null, // Holds the currently selected Training type for drill-down
   });
 
+  // Debounced function to update URL query parameters
+  const updateURL = debounce(() => {
+    const newQuery = {
+      selectedHospitals: JSON.stringify(selectedHospitals),
+      startDate: startDate,
+      endDate: endDate,
+      selectedGenders: JSON.stringify(selectedGenders),
+      selectedMdvi: JSON.stringify(selectedMdvi),
+      minAge: minAge || "",
+      maxAge: maxAge || "",
+      subTabIndex: subTabIndex.toString(),
+      masterTabIndex: masterTabIndex.toString(),
+      quarter: selectedQuarter || "",
+    };
 
-    // Debounced function to update URL query parameters
-    const updateURL = debounce(() => {
-      const newQuery = {
-        selectedHospitals: JSON.stringify(selectedHospitals),
-        startDate: startDate,
-        endDate: endDate,
-        selectedGenders: JSON.stringify(selectedGenders),
-        selectedMdvi: JSON.stringify(selectedMdvi),
-        minAge: minAge || '',
-        maxAge: maxAge || '',
-        subTabIndex: subTabIndex.toString(),
-        masterTabIndex: masterTabIndex.toString(),
-        quarter: selectedQuarter || ''
-      };
-  
-      router.replace(
-        {
-          pathname: router.pathname,
-          query: newQuery,
-        },
-        undefined,
-        { shallow: true }
-      );
-    }, 300); // 300ms debounce delay
-  
-    // Synchronize URL with filter states
-    useEffect(() => {
-      updateURL();
-  
-      // Cleanup the debounce on unmount
-      return () => {
-        updateURL.cancel();
-      };
-    }, [
-      selectedHospitals,
-      startDate,
-      endDate,
-      selectedGenders,
-      selectedMdvi,
-      minAge,
-      maxAge,
-      subTabIndex,
-      masterTabIndex,
-    ]);
-  
-    // Initialize filter states from URL query parameters on mount
-    useEffect(() => {
-      if (qSelectedHospitals) {
-        try {
-          const parsedHospitals = JSON.parse(qSelectedHospitals);
-          setSelectedHospitals(parsedHospitals);
-        } catch (error) {
-          console.error("Error parsing selectedHospitals from query:", error);
-          setSelectedHospitals([]);
-        }
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: newQuery,
+      },
+      undefined,
+      { shallow: true }
+    );
+  }, 300); // 300ms debounce delay
+
+  // Synchronize URL with filter states
+  useEffect(() => {
+    updateURL();
+
+    // Cleanup the debounce on unmount
+    return () => {
+      updateURL.cancel();
+    };
+  }, [
+    selectedHospitals,
+    startDate,
+    endDate,
+    selectedGenders,
+    selectedMdvi,
+    minAge,
+    maxAge,
+    subTabIndex,
+    masterTabIndex,
+  ]);
+
+  // Initialize filter states from URL query parameters on mount
+  useEffect(() => {
+    if (qSelectedHospitals) {
+      try {
+        const parsedHospitals = JSON.parse(qSelectedHospitals);
+        setSelectedHospitals(parsedHospitals);
+      } catch (error) {
+        console.error("Error parsing selectedHospitals from query:", error);
+        setSelectedHospitals([]);
       }
-  
-      if (qStartDate) {
-        setStartDate(qStartDate);
+    }
+
+    if (qStartDate) {
+      setStartDate(qStartDate);
+    }
+    if (qEndDate) {
+      setEndDate(qEndDate);
+    }
+    if (qSelectedGenders) {
+      try {
+        const parsedGenders = JSON.parse(qSelectedGenders);
+        setSelectedGenders(parsedGenders);
+      } catch (error) {
+        console.error("Error parsing selectedGenders from query:", error);
+        setSelectedGenders(["Male", "Female", "Other"]);
       }
-      if (qEndDate) {
-        setEndDate(qEndDate);
+    }
+    if (qSelectedMdvi) {
+      try {
+        const parsedMdvi = JSON.parse(qSelectedMdvi);
+        setSelectedMdvi(parsedMdvi);
+      } catch (error) {
+        console.error("Error parsing selectedMdvi from query:", error);
+        setSelectedMdvi(["Yes", "No"]);
       }
-      if (qSelectedGenders) {
-        try {
-          const parsedGenders = JSON.parse(qSelectedGenders);
-          setSelectedGenders(parsedGenders);
-        } catch (error) {
-          console.error("Error parsing selectedGenders from query:", error);
-          setSelectedGenders(['Male','Female', 'Other']);
-        }
-      }
-      if (qSelectedMdvi) {
-        try {
-          const parsedMdvi = JSON.parse(qSelectedMdvi);
-          setSelectedMdvi(parsedMdvi);
-        } catch (error) {
-          console.error("Error parsing selectedMdvi from query:", error);
-          setSelectedMdvi(['Yes', 'No']);
-        }
-      }
-      if (qMinAge) {
-        setMinAge(Number(qMinAge));
-      }
-      if (qMaxAge) {
-        setMaxAge(Number(qMaxAge));
-      }
-      if (qSubTabIndex) {
-        setSubTabIndex(Number(qSubTabIndex));
-      }
-      if (qMasterTabIndex) {
-        setMasterTabIndex(Number(qMasterTabIndex));
-      }
-      if (qQuarter) {
-        setSelectedQuarter(qQuarter);
-      }
-    }, [
-      qSelectedHospitals,
-      qStartDate,
-      qEndDate,
-      qSelectedGenders,
-      qSelectedMdvi,
-      qMinAge,
-      qMaxAge,
-      qSubTabIndex,
-      qMasterTabIndex,
-      qQuarter
-    ]);
+    }
+    if (qMinAge) {
+      setMinAge(Number(qMinAge));
+    }
+    if (qMaxAge) {
+      setMaxAge(Number(qMaxAge));
+    }
+    if (qSubTabIndex) {
+      setSubTabIndex(Number(qSubTabIndex));
+    }
+    if (qMasterTabIndex) {
+      setMasterTabIndex(Number(qMasterTabIndex));
+    }
+    if (qQuarter) {
+      setSelectedQuarter(qQuarter);
+    }
+  }, [
+    qSelectedHospitals,
+    qStartDate,
+    qEndDate,
+    qSelectedGenders,
+    qSelectedMdvi,
+    qMinAge,
+    qMaxAge,
+    qSubTabIndex,
+    qMasterTabIndex,
+    qQuarter,
+  ]);
   const EditButtonRenderer = (props) => {
     const { mrn, hospitalId } = props.data;
-  
+
     return (
       <IconButton
         color="primary"
@@ -1012,69 +950,68 @@ export default function Summary({
       </IconButton>
     );
   };
-  
 
   const downloadChartData = (chartData, filename) => {
     if (!chartData || !chartData.labels || !chartData.datasets) {
       console.error("Invalid chart data");
       return;
     }
-  
+
     const { labels, datasets } = chartData;
     const csvRows = [];
-  
+
     // Add headers
-    csvRows.push(['Label', ...datasets.map(ds => ds.label)]);
-  
+    csvRows.push(["Label", ...datasets.map((ds) => ds.label)]);
+
     // Add data rows
     labels.forEach((label, index) => {
       const row = [label];
-      datasets.forEach(ds => {
+      datasets.forEach((ds) => {
         row.push(ds.data[index]);
       });
       csvRows.push(row);
     });
-  
+
     // Convert to CSV string
-    const csvContent = csvRows.map(e => e.join(",")).join("\n");
-  
+    const csvContent = csvRows.map((e) => e.join(",")).join("\n");
+
     // Create a Blob from the CSV string
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
     // Create a link to download the Blob
     const link = document.createElement("a");
-  
+
     // Safely handle selectedHospitalNames
-    let sanitizedHospitalNames = 'All_Hospitals';
+    let sanitizedHospitalNames = "All_Hospitals";
     if (Array.isArray(selectedHospitalNames) && selectedHospitalNames.length > 0) {
       if (selectedHospitalNames.length === 1) {
         // Replace spaces with underscores for a single hospital name
-        sanitizedHospitalNames = selectedHospitalNames[0].replace(/\s+/g, '_');
+        sanitizedHospitalNames = selectedHospitalNames[0].replace(/\s+/g, "_");
       } else {
         // Use 'MULTI' if multiple hospitals are selected
-        sanitizedHospitalNames = 'MULTI';
+        sanitizedHospitalNames = "MULTI";
       }
     }
-  
+
     // Safely handle startDate and endDate
-    const formattedStartDate = startDate ? moment(startDate).format('YYYY-MM-DD') : 'Unknown_StartDate';
-    const formattedEndDate = endDate ? moment(endDate).format('YYYY-MM-DD') : 'Unknown_EndDate';
-  
+    const formattedStartDate = startDate ? moment(startDate).format("YYYY-MM-DD") : "Unknown_StartDate";
+    const formattedEndDate = endDate ? moment(endDate).format("YYYY-MM-DD") : "Unknown_EndDate";
+
     // Construct the complete filename
     const completeFilename = `${filename}_${sanitizedHospitalNames}_${formattedStartDate}_${formattedEndDate}.csv`;
-  
+
     // Create the download link
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute("download", completeFilename);
-    link.style.visibility = 'hidden';
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-};
+  };
 
   // Graph options
-  const options={
+  const options = {
     plugins: {
       legend: {
         display: false,
@@ -1115,8 +1052,8 @@ export default function Summary({
     const fetchCountsData = async () => {
       try {
         setIsChartLoading(true); // Start loading
-        const startDateUTC = startDate ? moment(startDate).utc().startOf('day').toISOString() : null;
-        const endDateUTC = endDate ? moment(endDate).utc().endOf('day').toISOString() : null;
+        const startDateUTC = startDate ? moment(startDate).utc().startOf("day").toISOString() : null;
+        const endDateUTC = endDate ? moment(endDate).utc().endOf("day").toISOString() : null;
         const params = {
           hospitalIds: selectedHospitals,
           startDate: startDateUTC,
@@ -1140,7 +1077,7 @@ export default function Summary({
       } catch (error) {
         console.error("Error fetching counts data:", error);
         setCountsData(null);
-      }finally {
+      } finally {
         setIsChartLoading(false); // End loading
       }
     };
@@ -1148,23 +1085,20 @@ export default function Summary({
     fetchCountsData();
   }, [isGraphActive, selectedGenders, selectedMdvi, minAge, maxAge, selectedHospitals, startDate, endDate]);
 
-
   // Once hospitals are loaded and selectedHospitals are set, derive selectedHospitalNames
-useEffect(() => {
-  if (hospitals && hospitals.length > 0 && selectedHospitals && selectedHospitals.length > 0) {
-    const names = hospitals
-      .filter((h) => selectedHospitals.includes(h.id))
-      .map((h) => h.name);
-    setSelectedHospitalNames(names);
-  }
-}, [hospitals, selectedHospitals]);
+  useEffect(() => {
+    if (hospitals && hospitals.length > 0 && selectedHospitals && selectedHospitals.length > 0) {
+      const names = hospitals.filter((h) => selectedHospitals.includes(h.id)).map((h) => h.name);
+      setSelectedHospitalNames(names);
+    }
+  }, [hospitals, selectedHospitals]);
 
   // Update totals when countsData changes
   useEffect(() => {
     if (countsData) {
       // const totalSessions = computeTotalSessions(countsData);
       // setTotalSessions(totalSessions);
-  
+
       setTotalBeneficiaries(countsData["Unique_Beneficiaries"] || 0);
     }
   }, [countsData]);
@@ -1172,7 +1106,7 @@ useEffect(() => {
   // Fetch table data when table is active and filters or pagination change
   useEffect(() => {
     if (!isTableActive || selectedHospitals.length === 0) return;
-  
+
     const fetchData = async (type, page, setData, setTotal) => {
       setIsLoading(true);
       try {
@@ -1188,30 +1122,30 @@ useEffect(() => {
           genders: selectedGenders,
           min_age: minAge,
           max_age: maxAge,
-          mdvis: selectedMdvi
+          mdvis: selectedMdvi,
         };
-  
+
         // Log the parameters being sent
         console.log(`Fetching data for type: ${type} with params:`, params);
-  
+
         const queryString = buildDashboardQueryParams(params);
         console.log(`Fetching /api/v2/dashboard/${type}?${queryString}`);
-  
+
         const response = await fetch(`/api/v2/dashboard/${type}?${queryString}`, {
-          method: 'GET',
-          credentials: 'include', // Include credentials for authentication
+          method: "GET",
+          credentials: "include", // Include credentials for authentication
         });
         const result = await response.json();
-  
+
         // Log the API response
         console.log(`Response for ${type}:`, result);
-  
+
         if (response.ok) {
           setData(result.records || []);
           setTotal(result.totalRecords || 0);
         } else {
           console.error(`Error fetching ${type} data:`, result.error);
-          alert(`Error fetching ${type} data: ${result.error || 'Unknown error'}`);
+          alert(`Error fetching ${type} data: ${result.error || "Unknown error"}`);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -1220,7 +1154,6 @@ useEffect(() => {
         setIsLoading(false);
       }
     };
-
 
     switch (subTabIndex) {
       case 0:
@@ -1233,7 +1166,12 @@ useEffect(() => {
         fetchData("Training", trainingPage, setTrainings, setTotalTrainings);
         break;
       case 3:
-        fetchData("Comprehensive_Low_Vision_Evaluation", comprehensivePage, setComprehensiveEvaluations, setTotalComprehensiveEvaluations);
+        fetchData(
+          "Comprehensive_Low_Vision_Evaluation",
+          comprehensivePage,
+          setComprehensiveEvaluations,
+          setTotalComprehensiveEvaluations
+        );
         break;
       case 4:
         fetchData("Counselling_Education", counselingPage, setCounselingRecords, setTotalCounselingRecords);
@@ -1280,501 +1218,501 @@ useEffect(() => {
   };
 
   // Define column definitions (placeholders)
-  
-const counselingEducationColDefs =[
-  { 
-    field: "id", 
-    headerName: "ID", 
-    filter: true, 
-    sortable: true 
-  },
-  { 
-    field: "beneficiaryId", 
-    headerName: "Beneficiary ID", 
-    filter: true, 
-    sortable: true 
-  },
-  {
-    headerName: "Beneficiary Name",
-    valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
-    filter: true,
-    sortable: true,
-  },
-  { 
-    field: "hospitalId", 
-    headerName: "Hospital ID", 
-    filter: true, 
-    sortable: true 
-  },
-  {
-    headerName: "Hospital Name",
-    valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
-    filter: true,
-    sortable: true,
-  },
-  {
-    field: "date",
-    headerName: "Date",
-    filter: 'agDateColumnFilter',
-    sortable: true,
-    valueFormatter: (params) => {
-      return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
-    },
-  },
-  { 
-    field: "sessionNumber", 
-    headerName: "Session Number", 
-    filter: true, 
-    sortable: true 
-  },
-  { 
-    field: "typeCounselling", 
-    headerName: "Type of Counselling", 
-    filter: true, 
-    sortable: true 
-  },
-  { 
-    field: "type", 
-    headerName: "Type", 
-    filter: true, 
-    sortable: true 
-  },
-  { 
-    field: "vision", 
-    headerName: "Vision", 
-    filter: true, 
-    sortable: true 
-  },
-  { 
-    field: "MDVI", 
-    headerName: "MDVI", 
-    filter: true, 
-    sortable: true 
-  },
-  { 
-    field: "extraInformation", 
-    headerName: "Extra Information", 
-    filter: true, 
-    sortable: true,
-    cellStyle: { whiteSpace: 'normal', wordWrap: 'break-word' }, // For better text display
-  },
-];
 
-  const comprehensiveLowVisionEvaluationColDefs=[
-    { 
-      field: "id", 
-      headerName: "ID", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "beneficiaryId", 
-      headerName: "Beneficiary ID", 
-      filter: true, 
-      sortable: true 
-    },
+  const counselingEducationColDefs = [
     {
-      headerName: "Beneficiary Name",
-      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
+      field: "id",
+      headerName: "ID",
       filter: true,
       sortable: true,
     },
-    { 
-      field: "hospitalId", 
-      headerName: "Hospital ID", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "beneficiaryId",
+      headerName: "Beneficiary ID",
+      filter: true,
+      sortable: true,
+    },
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || "",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "hospitalId",
+      headerName: "Hospital ID",
+      filter: true,
+      sortable: true,
     },
     {
       headerName: "Hospital Name",
-      valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || "",
       filter: true,
       sortable: true,
     },
     {
       field: "date",
       headerName: "Date",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
-    { 
-      field: "sessionNumber", 
-      headerName: "Session Number", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "sessionNumber",
+      headerName: "Session Number",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "distanceVisualAcuityRE", 
-      headerName: "Distance Visual Acuity RE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "typeCounselling",
+      headerName: "Type of Counselling",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "distanceVisualAcuityLE", 
-      headerName: "Distance Visual Acuity LE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "type",
+      headerName: "Type",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "nearVisualAcuityRE", 
-      headerName: "Near Visual Acuity RE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "vision",
+      headerName: "Vision",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "nearVisualAcuityLE", 
-      headerName: "Near Visual Acuity LE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "MDVI",
+      headerName: "MDVI",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "distanceBinocularVisionBE", 
-      headerName: "Distance Binocular Vision BE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "extraInformation",
+      headerName: "Extra Information",
+      filter: true,
+      sortable: true,
+      cellStyle: { whiteSpace: "normal", wordWrap: "break-word" }, // For better text display
     },
-    { 
-      field: "nearBinocularVisionBE", 
-      headerName: "Near Binocular Vision BE", 
-      filter: true, 
-      sortable: true 
+  ];
+
+  const comprehensiveLowVisionEvaluationColDefs = [
+    {
+      field: "id",
+      headerName: "ID",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "colourVisionRE", 
-      headerName: "Colour Vision RE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "beneficiaryId",
+      headerName: "Beneficiary ID",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "colourVisionLE", 
-      headerName: "Colour Vision LE", 
-      filter: true, 
-      sortable: true 
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || "",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "contrastSensitivityRE", 
-      headerName: "Contrast Sensitivity RE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "hospitalId",
+      headerName: "Hospital ID",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "contrastSensitivityLE", 
-      headerName: "Contrast Sensitivity LE", 
-      filter: true, 
-      sortable: true 
+    {
+      headerName: "Hospital Name",
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || "",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "visualFieldsRE", 
-      headerName: "Visual Fields RE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "date",
+      headerName: "Date",
+      filter: "agDateColumnFilter",
+      sortable: true,
+      valueFormatter: (params) => {
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
+      },
     },
-    { 
-      field: "visualFieldsLE", 
-      headerName: "Visual Fields LE", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "sessionNumber",
+      headerName: "Session Number",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costElectronic", 
-      headerName: "Cost Electronic", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "distanceVisualAcuityRE",
+      headerName: "Distance Visual Acuity RE",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costNonOptical", 
-      headerName: "Cost Non-Optical", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "distanceVisualAcuityLE",
+      headerName: "Distance Visual Acuity LE",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costOptical", 
-      headerName: "Cost Optical", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "nearVisualAcuityRE",
+      headerName: "Near Visual Acuity RE",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costSpectacle", 
-      headerName: "Cost Spectacle", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "nearVisualAcuityLE",
+      headerName: "Near Visual Acuity LE",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costToBeneficiaryElectronic", 
-      headerName: "Cost to Beneficiary Electronic", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "distanceBinocularVisionBE",
+      headerName: "Distance Binocular Vision BE",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costToBeneficiaryNonOptical", 
-      headerName: "Cost to Beneficiary Non-Optical", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "nearBinocularVisionBE",
+      headerName: "Near Binocular Vision BE",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costToBeneficiaryOptical", 
-      headerName: "Cost to Beneficiary Optical", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "colourVisionRE",
+      headerName: "Colour Vision RE",
+      filter: true,
+      sortable: true,
     },
-    { 
-      field: "costToBeneficiarySpectacle", 
-      headerName: "Cost to Beneficiary Spectacle", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "colourVisionLE",
+      headerName: "Colour Vision LE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "contrastSensitivityRE",
+      headerName: "Contrast Sensitivity RE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "contrastSensitivityLE",
+      headerName: "Contrast Sensitivity LE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "visualFieldsRE",
+      headerName: "Visual Fields RE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "visualFieldsLE",
+      headerName: "Visual Fields LE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costElectronic",
+      headerName: "Cost Electronic",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costNonOptical",
+      headerName: "Cost Non-Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costOptical",
+      headerName: "Cost Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costSpectacle",
+      headerName: "Cost Spectacle",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costToBeneficiaryElectronic",
+      headerName: "Cost to Beneficiary Electronic",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costToBeneficiaryNonOptical",
+      headerName: "Cost to Beneficiary Non-Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costToBeneficiaryOptical",
+      headerName: "Cost to Beneficiary Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "costToBeneficiarySpectacle",
+      headerName: "Cost to Beneficiary Spectacle",
+      filter: true,
+      sortable: true,
     },
     {
       field: "dispensedDateElectronic",
       headerName: "Dispensed Date Electronic",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
     {
       field: "dispensedDateNonOptical",
       headerName: "Dispensed Date Non-Optical",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
     {
       field: "dispensedDateOptical",
       headerName: "Dispensed Date Optical",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
     {
       field: "dispensedDateSpectacle",
       headerName: "Dispensed Date Spectacle",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
-    { 
-      field: "dispensedElectronic", 
-      headerName: "Dispensed Electronic", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "dispensedNonOptical", 
-      headerName: "Dispensed Non-Optical", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "dispensedOptical", 
-      headerName: "Dispensed Optical", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "dispensedSpectacle", 
-      headerName: "Dispensed Spectacle", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "recommendationElectronic", 
-      headerName: "Recommendation Electronic", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "recommendationNonOptical", 
-      headerName: "Recommendation Non-Optical", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "recommendationOptical", 
-      headerName: "Recommendation Optical", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "recommendationSpectacle", 
-      headerName: "Recommendation Spectacle", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "trainingGivenElectronic", 
-      headerName: "Training Given Electronic", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "trainingGivenNonOptical", 
-      headerName: "Training Given Non-Optical", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "trainingGivenOptical", 
-      headerName: "Training Given Optical", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "trainingGivenSpectacle", 
-      headerName: "Training Given Spectacle", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "mdvi", 
-      headerName: "MDVI", 
-      filter: true, 
-      sortable: true 
-    },
-  ];
-
-  const trainingColDefs =[
-    { 
-      field: "id", 
-      headerName: "ID", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "beneficiaryId", 
-      headerName: "Beneficiary ID", 
-      filter: true, 
-      sortable: true 
-    },
     {
-      headerName: "Beneficiary Name",
-      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
+      field: "dispensedElectronic",
+      headerName: "Dispensed Electronic",
       filter: true,
       sortable: true,
     },
-    { 
-      field: "hospitalId", 
-      headerName: "Hospital ID", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "dispensedNonOptical",
+      headerName: "Dispensed Non-Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "dispensedOptical",
+      headerName: "Dispensed Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "dispensedSpectacle",
+      headerName: "Dispensed Spectacle",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "recommendationElectronic",
+      headerName: "Recommendation Electronic",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "recommendationNonOptical",
+      headerName: "Recommendation Non-Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "recommendationOptical",
+      headerName: "Recommendation Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "recommendationSpectacle",
+      headerName: "Recommendation Spectacle",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "trainingGivenElectronic",
+      headerName: "Training Given Electronic",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "trainingGivenNonOptical",
+      headerName: "Training Given Non-Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "trainingGivenOptical",
+      headerName: "Training Given Optical",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "trainingGivenSpectacle",
+      headerName: "Training Given Spectacle",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "mdvi",
+      headerName: "MDVI",
+      filter: true,
+      sortable: true,
+    },
+  ];
+
+  const trainingColDefs = [
+    {
+      field: "id",
+      headerName: "ID",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "beneficiaryId",
+      headerName: "Beneficiary ID",
+      filter: true,
+      sortable: true,
+    },
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || "",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "hospitalId",
+      headerName: "Hospital ID",
+      filter: true,
+      sortable: true,
     },
     {
       field: "hospital.name",
       headerName: "Hospital Name",
       filter: true,
       sortable: true,
-      valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || "",
     },
     {
       field: "date",
       headerName: "Date",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
-    { 
-      field: "sessionNumber", 
-      headerName: "Session Number", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "extraInformation", 
-      headerName: "Extra Information", 
-      filter: true, 
-      sortable: true,
-      cellStyle: { whiteSpace: 'normal', wordWrap: 'break-word' }, // For better text display
-    },
-    { 
-      field: "type", 
-      headerName: "Type", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "subType", 
-      headerName: "Sub-Type", 
-      filter: true, 
-      sortable: true 
-    },
-  ];
-
-  const visionEnhancementColDefs=[
-    { 
-      field: "id", 
-      headerName: "ID", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "beneficiaryId", 
-      headerName: "Beneficiary ID", 
-      filter: true, 
-      sortable: true 
-    },
     {
-      headerName: "Beneficiary Name",
-      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || '',
+      field: "sessionNumber",
+      headerName: "Session Number",
       filter: true,
       sortable: true,
     },
-    { 
-      field: "hospitalId", 
-      headerName: "Hospital ID", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "extraInformation",
+      headerName: "Extra Information",
+      filter: true,
+      sortable: true,
+      cellStyle: { whiteSpace: "normal", wordWrap: "break-word" }, // For better text display
+    },
+    {
+      field: "type",
+      headerName: "Type",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "subType",
+      headerName: "Sub-Type",
+      filter: true,
+      sortable: true,
+    },
+  ];
+
+  const visionEnhancementColDefs = [
+    {
+      field: "id",
+      headerName: "ID",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "beneficiaryId",
+      headerName: "Beneficiary ID",
+      filter: true,
+      sortable: true,
+    },
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || "",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "hospitalId",
+      headerName: "Hospital ID",
+      filter: true,
+      sortable: true,
     },
     {
       field: "hospital.name",
       headerName: "Hospital Name",
       filter: true,
       sortable: true,
-      valueGetter: (params) => params.data.beneficiary?.hospital?.name || '',
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || "",
     },
     {
       field: "date",
       headerName: "Date",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
-    { 
-      field: "sessionNumber", 
-      headerName: "Session Number", 
-      filter: true, 
-      sortable: true 
-    },
-    { 
-      field: "extraInformation", 
-      headerName: "Extra Information", 
-      filter: true, 
+    {
+      field: "sessionNumber",
+      headerName: "Session Number",
+      filter: true,
       sortable: true,
-      cellStyle: { whiteSpace: 'normal', wordWrap: 'break-word' }, // For better text display
     },
-    { 
-      field: "Diagnosis", 
-      headerName: "Diagnosis", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "extraInformation",
+      headerName: "Extra Information",
+      filter: true,
+      sortable: true,
+      cellStyle: { whiteSpace: "normal", wordWrap: "break-word" }, // For better text display
     },
-    { 
-      field: "MDVI", 
-      headerName: "MDVI", 
-      filter: true, 
-      sortable: true 
+    {
+      field: "Diagnosis",
+      headerName: "Diagnosis",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "MDVI",
+      headerName: "MDVI",
+      filter: true,
+      sortable: true,
     },
   ];
 
@@ -1785,7 +1723,7 @@ const counselingEducationColDefs =[
       width: 150,
       filter: false,
       sortable: false,
-      cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+      cellStyle: { display: "flex", justifyContent: "center", alignItems: "center" },
     },
     { field: "mrn", headerName: "MRN", filter: true, sortable: true },
     { field: "beneficiaryName", headerName: "Beneficiary Name", filter: true, sortable: true },
@@ -1795,15 +1733,15 @@ const counselingEducationColDefs =[
       headerName: "Hospital Name",
       filter: true,
       sortable: true,
-      valueGetter: (params) => params.data.hospital?.name || '',
+      valueGetter: (params) => params.data.hospital?.name || "",
     },
     {
       field: "dateOfBirth",
       headerName: "Date of Birth",
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       sortable: true,
       valueFormatter: (params) => {
-        return params.value ? moment(params.value).format('YYYY-MM-DD') : '';
+        return params.value ? moment(params.value).format("YYYY-MM-DD") : "";
       },
     },
     {
@@ -1820,7 +1758,7 @@ const counselingEducationColDefs =[
           }
           return age;
         } else {
-          return '';
+          return "";
         }
       },
       filter: true,
@@ -1834,13 +1772,13 @@ const counselingEducationColDefs =[
       valueFormatter: (params) => {
         if (params.value) {
           const gender = params.value.toLowerCase();
-          if (gender === 'male' || gender === 'm') {
-            return 'M';
-          } else if (gender === 'female' || gender === 'f') {
-            return 'F';
+          if (gender === "male" || gender === "m") {
+            return "M";
+          } else if (gender === "female" || gender === "f") {
+            return "F";
           }
         }
-        return '';
+        return "";
       },
     },
     { field: "phoneNumber", headerName: "Phone Number", filter: true, sortable: true },
@@ -1855,11 +1793,11 @@ const counselingEducationColDefs =[
       headerName: "MDVI",
       filter: true,
       sortable: true,
-      valueFormatter: (params) => (params.value ? 'Yes' : 'No'),
+      valueFormatter: (params) => (params.value ? "Yes" : "No"),
     },
     { field: "extraInformation", headerName: "Extra Information", filter: true, sortable: true },
   ];
-  
+
   // Handle sub-tab changes
   const handleSubTabChange = (event, newValue) => {
     setSubTabIndex(newValue);
@@ -1871,11 +1809,7 @@ const counselingEducationColDefs =[
       target: { value },
     } = e;
     setSelectedHospitalNames(value);
-    setSelectedHospitals(
-      hospitals
-        .filter((hospital) => value.includes(hospital.name))
-        .map((hospital) => hospital.id)
-    );
+    setSelectedHospitals(hospitals.filter((hospital) => value.includes(hospital.name)).map((hospital) => hospital.id));
   };
 
   // Handle select all hospitals
@@ -1890,44 +1824,49 @@ const counselingEducationColDefs =[
   };
 
   // Generate graph data
-  const electronicRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Electronic') : null;
-  const spectacleRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Spectacle') : null;
-  const opticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'Optical') : null;
-  const nonOpticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, 'NonOptical') : null;
-  
+  const electronicRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, "Electronic") : null;
+  const spectacleRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, "Spectacle") : null;
+  const opticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, "Optical") : null;
+  const nonOpticalRecDevicesGraphData = countsData ? buildRecDevicesBreakdownGraph(countsData, "NonOptical") : null;
+
   const visualAcuityCategories = [
-    'Blindness',
-    'Severe visual impairment',
-    'Moderate visual impairment',
-    'Mild visual impairment',
-    'Visual Acuity normal',
+    "Blindness",
+    "Severe visual impairment",
+    "Moderate visual impairment",
+    "Mild visual impairment",
+    "Visual Acuity normal",
     // 'Other',
   ];
 
-  const visualAcuityChartData = countsData && countsData.distanceBinocularVisionBE_counts ? {
-    labels: visualAcuityCategories, // Use predefined categories
-    datasets: [
-      {
-        label: 'Number of Cases',
-        data: visualAcuityCategories.map(category => countsData.distanceBinocularVisionBE_counts[category] || 0),
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.6)',      // Blindness
-          'rgba(255, 206, 86, 0.6)',      // Severe visual impairment
-          'rgba(54, 162, 235, 0.6)',      // Moderate visual impairment
-          'rgba(255, 159, 64, 0.6)',      // Mild visual impairment
-          'rgba(153, 102, 255, 0.6)',     // Visual Acuity normal
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',        // Blindness
-          'rgba(255, 206, 86, 1)',        // Severe visual impairment
-          'rgba(54, 162, 235, 1)',        // Moderate visual impairment
-          'rgba(255, 159, 64, 1)',        // Mild visual impairment
-          'rgba(153, 102, 255, 1)',       // Visual Acuity normal
-        ],
-        borderWidth: 1,
-      },
-    ],
-  } : null;
+  const visualAcuityChartData =
+    countsData && countsData.distanceBinocularVisionBE_counts
+      ? {
+          labels: visualAcuityCategories, // Use predefined categories
+          datasets: [
+            {
+              label: "Number of Cases",
+              data: visualAcuityCategories.map(
+                (category) => countsData.distanceBinocularVisionBE_counts[category] || 0
+              ),
+              backgroundColor: [
+                "rgba(255, 99, 132, 0.6)", // Blindness
+                "rgba(255, 206, 86, 0.6)", // Severe visual impairment
+                "rgba(54, 162, 235, 0.6)", // Moderate visual impairment
+                "rgba(255, 159, 64, 0.6)", // Mild visual impairment
+                "rgba(153, 102, 255, 0.6)", // Visual Acuity normal
+              ],
+              borderColor: [
+                "rgba(255, 99, 132, 1)", // Blindness
+                "rgba(255, 206, 86, 1)", // Severe visual impairment
+                "rgba(54, 162, 235, 1)", // Moderate visual impairment
+                "rgba(255, 159, 64, 1)", // Mild visual impairment
+                "rgba(153, 102, 255, 1)", // Visual Acuity normal
+              ],
+              borderWidth: 1,
+            },
+          ],
+        }
+      : null;
 
   // Generate Unique Beneficiaries Graph Data with Drilldown
   // const uniqueBeneficiariesGraphData = buildUniqueBeneficiariesGraph(countsData, uniqueBeneficiariesDrilledDown);
@@ -1938,68 +1877,65 @@ const counselingEducationColDefs =[
     uniqueBeneficiariesDrilledDown
   );
 
-// Define options with an onClick handler for Training Types chart
-const trainingTypesOptions = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top',
+  // Define options with an onClick handler for Training Types chart
+  const trainingTypesOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: "Training Types Distribution",
+      },
+      tooltip: {
+        enabled: true,
+      },
     },
-    title: {
-      display: true,
-      text: 'Training Types Distribution',
-    },
-    tooltip: {
-      enabled: true,
-    },
-  },
-  onClick: (event, elements) => {
-    if (elements.length > 0) {
-      const chartElement = elements[0];
-      const index = chartElement.index;
+    onClick: (event, elements) => {
+      if (elements.length > 0) {
+        const chartElement = elements[0];
+        const index = chartElement.index;
 
-      const trainingGraphData = buildTrainingTypesGraph(countsData);
+        const trainingGraphData = buildTrainingTypesGraph(countsData);
 
-      // Ensure labels exist and index is valid
-      if (
-        trainingGraphData.labels &&
-        trainingGraphData.labels.length > index
-      ) {
-        const selectedType = trainingGraphData.labels[index];
-        setTrainingDrillDown({ active: true, type: selectedType });
-      } else {
-        console.error("Selected type is undefined or out of bounds.");
+        // Ensure labels exist and index is valid
+        if (trainingGraphData.labels && trainingGraphData.labels.length > index) {
+          const selectedType = trainingGraphData.labels[index];
+          setTrainingDrillDown({ active: true, type: selectedType });
+        } else {
+          console.error("Selected type is undefined or out of bounds.");
+        }
       }
-    }
-  },
-};
+    },
+  };
 
-// Define options for Training Subtypes chart
-const trainingSubtypesOptions = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top',
+  // Define options for Training Subtypes chart
+  const trainingSubtypesOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: `Training Subtypes Distribution for ${trainingDrillDown.type}`,
+      },
+      tooltip: {
+        enabled: true,
+      },
     },
-    title: {
-      display: true,
-      text: `Training Subtypes Distribution for ${trainingDrillDown.type}`,
-    },
-    tooltip: {
-      enabled: true,
-    },
-  },
-};
-  
+  };
+
   const uniqueBeneficiariesOptions = {
     responsive: true,
     plugins: {
       legend: {
         display: true,
-        position: 'top',
+        position: "top",
       },
       tooltip: {
-        mode: 'index',
+        mode: "index",
         intersect: false,
       },
     },
@@ -2008,14 +1944,14 @@ const trainingSubtypesOptions = {
         stacked: uniqueBeneficiariesDrilledDown, // Enable stacking when drilled down
         title: {
           display: true,
-          text: 'Hospitals',
+          text: "Hospitals",
         },
       },
       y: {
         stacked: uniqueBeneficiariesDrilledDown, // Enable stacking when drilled down
         title: {
           display: true,
-          text: 'Number of Unique Beneficiaries',
+          text: "Number of Unique Beneficiaries",
         },
         beginAtZero: true,
       },
@@ -2028,105 +1964,105 @@ const trainingSubtypesOptions = {
     },
   };
 
-// Function to build Gender Graph using countsData
-function buildGenderGraph(countsData) {
-  if (!countsData || !countsData.genderCounts) {
-    return {
+  // Function to build Gender Graph using countsData
+  function buildGenderGraph(countsData) {
+    if (!countsData || !countsData.genderCounts) {
+      return {
+        labels: ["Male", "Female"],
+        datasets: [
+          {
+            label: "Gender Distribution",
+            data: [0, 0, 0],
+            backgroundColor: ["rgba(54, 162, 235, 0.6)", "rgba(255, 99, 132, 0.6)", "rgba(255, 206, 86, 0.6)"],
+            borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 99, 132, 1)", "rgba(255, 206, 86, 1)"],
+            borderWidth: 1,
+          },
+        ],
+      };
+    }
+
+    const { Male, Female } = countsData.genderCounts;
+
+    const chartData = {
       labels: ["Male", "Female"],
       datasets: [
         {
           label: "Gender Distribution",
-          data: [0, 0, 0],
+          data: [Male, Female],
           backgroundColor: ["rgba(54, 162, 235, 0.6)", "rgba(255, 99, 132, 0.6)", "rgba(255, 206, 86, 0.6)"],
           borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 99, 132, 1)", "rgba(255, 206, 86, 1)"],
           borderWidth: 1,
         },
       ],
     };
+
+    return chartData;
   }
 
-  const { Male, Female } = countsData.genderCounts;
+  // Function to build Age Graph using countsData
+  function buildAgeGraph(countsData) {
+    if (!countsData || !countsData.ageGroupCounts) {
+      return {
+        labels: ["0-18", "19-35", "36-50", "51-65", "66+"],
+        datasets: [
+          {
+            label: "Age Distribution",
+            data: [0, 0, 0, 0, 0],
+            backgroundColor: [
+              "rgba(75, 192, 192, 0.6)",
+              "rgba(153, 102, 255, 0.6)",
+              "rgba(255, 159, 64, 0.6)",
+              "rgba(255, 206, 86, 0.6)",
+              "rgba(54, 162, 235, 0.6)",
+            ],
+            borderColor: [
+              "rgba(75, 192, 192, 1)",
+              "rgba(153, 102, 255, 1)",
+              "rgba(255, 159, 64, 1)",
+              "rgba(255, 206, 86, 1)",
+              "rgba(54, 162, 235, 1)",
+            ],
+            borderWidth: 1,
+          },
+        ],
+      };
+    }
 
-  const chartData = {
-    labels: ["Male", "Female"],
-    datasets: [
-      {
-        label: "Gender Distribution",
-        data: [Male, Female],
-        backgroundColor: ["rgba(54, 162, 235, 0.6)", "rgba(255, 99, 132, 0.6)", "rgba(255, 206, 86, 0.6)"],
-        borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 99, 132, 1)", "rgba(255, 206, 86, 1)"],
-        borderWidth: 1,
-      },
-    ],
-  };
+    const ageGroups = countsData.ageGroupCounts;
 
-  return chartData;
-}
-
-// Function to build Age Graph using countsData
-function buildAgeGraph(countsData) {
-  if (!countsData || !countsData.ageGroupCounts) {
-    return {
-      labels: ["0-18", "19-35", "36-50", "51-65", "66+"],
+    const chartData = {
+      labels: Object.keys(ageGroups),
       datasets: [
         {
           label: "Age Distribution",
-          data: [0, 0, 0, 0, 0],
+          data: Object.values(ageGroups),
           backgroundColor: [
             "rgba(75, 192, 192, 0.6)",
             "rgba(153, 102, 255, 0.6)",
             "rgba(255, 159, 64, 0.6)",
             "rgba(255, 206, 86, 0.6)",
-            "rgba(54, 162, 235, 0.6)"
+            "rgba(54, 162, 235, 0.6)",
           ],
           borderColor: [
             "rgba(75, 192, 192, 1)",
             "rgba(153, 102, 255, 1)",
             "rgba(255, 159, 64, 1)",
             "rgba(255, 206, 86, 1)",
-            "rgba(54, 162, 235, 1)"
+            "rgba(54, 162, 235, 1)",
           ],
           borderWidth: 1,
         },
       ],
     };
+
+    return chartData;
   }
-
-  const ageGroups = countsData.ageGroupCounts;
-
-  const chartData = {
-    labels: Object.keys(ageGroups),
-    datasets: [
-      {
-        label: "Age Distribution",
-        data: Object.values(ageGroups),
-        backgroundColor: [
-          "rgba(75, 192, 192, 0.6)",
-          "rgba(153, 102, 255, 0.6)",
-          "rgba(255, 159, 64, 0.6)",
-          "rgba(255, 206, 86, 0.6)",
-          "rgba(54, 162, 235, 0.6)"
-        ],
-        borderColor: [
-          "rgba(75, 192, 192, 1)",
-          "rgba(153, 102, 255, 1)",
-          "rgba(255, 159, 64, 1)",
-          "rgba(255, 206, 86, 1)",
-          "rgba(54, 162, 235, 1)"
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  return chartData;
-}
 
   // Handle graph tabs
   const renderGraph = () => {
     if (isChartLoading) {
       return (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
+        <div style={{ textAlign: "center", padding: "20px" }}>
           <CircularProgress />
           <p>Loading charts...</p>
         </div>
@@ -2139,112 +2075,110 @@ function buildAgeGraph(countsData) {
     }
 
     if (selectedHospitals.length === 0) {
-      return <p><br></br>Please select hospitals to view the graphs.</p>;
+      return (
+        <p>
+          <br></br>Please select hospitals to view the graphs.
+        </p>
+      );
     }
     switch (activeGraphTab) {
       case 0:
         switch (activeBeneficiaryGraphTab) {
           case 0:
-              return countsData ? (
-                <div>
-                  <Bar data={buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals)} />
+            return countsData ? (
+              <div>
+                <Bar data={buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals)} />
+                <Button
+                  variant="outlined"
+                  onClick={() =>
+                    downloadChartData(
+                      buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals),
+                      "Total_Beneficiaries"
+                    )
+                  }
+                  style={{ marginTop: "10px" }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
+          case 1:
+            return countsData ? (
+              <div>
+                {uniqueBeneficiariesDrilledDown && (
                   <Button
                     variant="outlined"
-                    onClick={() => downloadChartData(buildTotalBeneficiariesGraph(countsData, selectedHospitals, hospitals), 'Total_Beneficiaries')}
-                    style={{ marginTop: '10px' }}
+                    onClick={() => setUniqueBeneficiariesDrilledDown(false)}
+                    style={{ marginBottom: "10px" }}
                   >
-                    Download Data
+                    Back to Total
                   </Button>
-                </div>
-              ) : (
-                <p>Loading...</p>
-              );
-            case 1:
-              return countsData ? (
-                <div>
-                  {uniqueBeneficiariesDrilledDown && (
-                    <Button
-                      variant="outlined"
-                      onClick={() => setUniqueBeneficiariesDrilledDown(false)}
-                      style={{ marginBottom: '10px' }}
-                    >
-                      Back to Total
-                    </Button>
-                  )}
-                  <Bar
-                    data={uniqueBeneficiariesGraphData}
-                    options={uniqueBeneficiariesOptions}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={() =>
-                      downloadChartData(
-                        uniqueBeneficiariesGraphData,
-                        'Unique_Beneficiaries'
-                      )
-                    }
-                    style={{ marginTop: '10px' }}
-                  >
-                    Download Data
-                  </Button>
-                </div>
-              ) : (
-                <p>Loading...</p>
-              );
-    
+                )}
+                <Bar data={uniqueBeneficiariesGraphData} options={uniqueBeneficiariesOptions} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(uniqueBeneficiariesGraphData, "Unique_Beneficiaries")}
+                  style={{ marginTop: "10px" }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
+
           case 2:
-  return countsData ? (
-    <div>
-      <Bar data={buildSessionsGraph(countsData, selectedHospitals, hospitals)} />
-      <Button
-        variant="outlined"
-        onClick={() =>
-          downloadChartData(
-            buildSessionsGraph(countsData, selectedHospitals, hospitals),
-            'Total_Sessions'
-          )
+            return countsData ? (
+              <div>
+                <Bar data={buildSessionsGraph(countsData, selectedHospitals, hospitals)} />
+                <Button
+                  variant="outlined"
+                  onClick={() =>
+                    downloadChartData(buildSessionsGraph(countsData, selectedHospitals, hospitals), "Total_Sessions")
+                  }
+                  style={{ marginTop: "10px" }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
+          case 3:
+            return countsData && countsData.genderCounts ? (
+              <div>
+                <Bar data={buildGenderGraph(countsData)} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildGenderGraph(countsData), "Gender_Distribution")}
+                  style={{ marginTop: "10px" }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
+          case 4:
+            return countsData && countsData.ageGroupCounts ? (
+              <div>
+                <Bar data={buildAgeGraph(countsData)} options={options} />
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadChartData(buildAgeGraph(countsData), "Age_Distribution")}
+                  style={{ marginTop: "10px" }}
+                >
+                  Download Data
+                </Button>
+              </div>
+            ) : (
+              <p>Loading...</p>
+            );
+          default:
+            return null;
         }
-        style={{ marginTop: '10px' }}
-      >
-        Download Data
-      </Button>
-    </div>
-  ) : (
-    <p>Loading...</p>
-  );
-        case 3:
-          return countsData && countsData.genderCounts ? (
-            <div>
-              <Bar data={buildGenderGraph(countsData)} options={options} />
-              <Button
-                variant="outlined"
-                onClick={() => downloadChartData(buildGenderGraph(countsData), 'Gender_Distribution')}
-                style={{ marginTop: '10px' }}
-              >
-                Download Data
-              </Button>
-            </div>
-          ) : (
-            <p>Loading...</p>
-          );
-        case 4:
-          return countsData && countsData.ageGroupCounts ? (
-            <div>
-              <Bar data={buildAgeGraph(countsData)} options={options} />
-              <Button
-                variant="outlined"
-                onClick={() => downloadChartData(buildAgeGraph(countsData), 'Age_Distribution')}
-                style={{ marginTop: '10px' }}
-              >
-                Download Data
-              </Button>
-            </div>
-          ) : (
-            <p>Loading...</p>
-          );
-        default:
-          return null;
-      }
       case 1:
         switch (activeActivitiesGraphTab) {
           case 0: {
@@ -2260,8 +2194,8 @@ function buildAgeGraph(countsData) {
                 <Bar data={activitiesChartData} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(activitiesChartData, 'All_Activities')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() => downloadChartData(activitiesChartData, "All_Activities")}
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2274,10 +2208,8 @@ function buildAgeGraph(countsData) {
                 {trainingDrillDown.active && (
                   <Button
                     variant="outlined"
-                    onClick={() =>
-                      setTrainingDrillDown({ active: false, type: null })
-                    }
-                    style={{ marginBottom: '10px' }}
+                    onClick={() => setTrainingDrillDown({ active: false, type: null })}
+                    style={{ marginBottom: "10px" }}
                   >
                     Back to Training Types
                   </Button>
@@ -2291,8 +2223,13 @@ function buildAgeGraph(countsData) {
                       />
                       <Button
                         variant="outlined"
-                        onClick={() => downloadChartData(buildTrainingSubtypesGraph(countsData, trainingDrillDown.type), `Training_Subtypes_${trainingDrillDown.type}`)}
-                        style={{ marginTop: '10px' }}
+                        onClick={() =>
+                          downloadChartData(
+                            buildTrainingSubtypesGraph(countsData, trainingDrillDown.type),
+                            `Training_Subtypes_${trainingDrillDown.type}`
+                          )
+                        }
+                        style={{ marginTop: "10px" }}
                       >
                         Download Data
                       </Button>
@@ -2302,14 +2239,11 @@ function buildAgeGraph(countsData) {
                   )
                 ) : (
                   <div>
-                    <Bar
-                      data={buildTrainingTypesGraph(countsData)}
-                      options={trainingTypesOptions}
-                    />
+                    <Bar data={buildTrainingTypesGraph(countsData)} options={trainingTypesOptions} />
                     <Button
                       variant="outlined"
-                      onClick={() => downloadChartData(buildTrainingTypesGraph(countsData), 'Training_Types')}
-                      style={{ marginTop: '10px' }}
+                      onClick={() => downloadChartData(buildTrainingTypesGraph(countsData), "Training_Types")}
+                      style={{ marginTop: "10px" }}
                     >
                       Download Data
                     </Button>
@@ -2322,11 +2256,13 @@ function buildAgeGraph(countsData) {
           case 2:
             return countsData ? (
               <div>
-                <Bar data={buildBreakdownGraph(countsData, 'counsellingEducation')} options={options} />
+                <Bar data={buildBreakdownGraph(countsData, "counsellingEducation")} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(buildBreakdownGraph(countsData, 'counsellingEducation'), 'Counselling_Education')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() =>
+                    downloadChartData(buildBreakdownGraph(countsData, "counsellingEducation"), "Counselling_Education")
+                  }
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2345,8 +2281,8 @@ function buildAgeGraph(countsData) {
                 <Bar data={buildDevicesGraph(countsData)} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(buildDevicesGraph(countsData), 'Dispensed_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() => downloadChartData(buildDevicesGraph(countsData), "Dispensed_Devices")}
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2357,11 +2293,16 @@ function buildAgeGraph(countsData) {
           case 1:
             return countsData ? (
               <div>
-                <Bar data={buildDevicesBreakdownGraph(countsData, 'Electronic')} options={options} />
+                <Bar data={buildDevicesBreakdownGraph(countsData, "Electronic")} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Electronic'), 'Dispensed_Electronic_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() =>
+                    downloadChartData(
+                      buildDevicesBreakdownGraph(countsData, "Electronic"),
+                      "Dispensed_Electronic_Devices"
+                    )
+                  }
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2372,11 +2313,16 @@ function buildAgeGraph(countsData) {
           case 2:
             return countsData ? (
               <div>
-                <Bar data={buildDevicesBreakdownGraph(countsData, 'Spectacle')} options={options} />
+                <Bar data={buildDevicesBreakdownGraph(countsData, "Spectacle")} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Spectacle'), 'Dispensed_Spectacle_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() =>
+                    downloadChartData(
+                      buildDevicesBreakdownGraph(countsData, "Spectacle"),
+                      "Dispensed_Spectacle_Devices"
+                    )
+                  }
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2387,11 +2333,13 @@ function buildAgeGraph(countsData) {
           case 3:
             return countsData ? (
               <div>
-                <Bar data={buildDevicesBreakdownGraph(countsData, 'Optical')} options={options} />
+                <Bar data={buildDevicesBreakdownGraph(countsData, "Optical")} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'Optical'), 'Dispensed_Optical_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() =>
+                    downloadChartData(buildDevicesBreakdownGraph(countsData, "Optical"), "Dispensed_Optical_Devices")
+                  }
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2402,11 +2350,16 @@ function buildAgeGraph(countsData) {
           case 4:
             return countsData ? (
               <div>
-                <Bar data={buildDevicesBreakdownGraph(countsData, 'NonOptical')} options={options} />
+                <Bar data={buildDevicesBreakdownGraph(countsData, "NonOptical")} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(buildDevicesBreakdownGraph(countsData, 'NonOptical'), 'Dispensed_NonOptical_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() =>
+                    downloadChartData(
+                      buildDevicesBreakdownGraph(countsData, "NonOptical"),
+                      "Dispensed_NonOptical_Devices"
+                    )
+                  }
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2422,21 +2375,21 @@ function buildAgeGraph(countsData) {
           case 0:
             return (
               <div>
-              {(!countsData || !countsData['Devices_Recommended']) ? (
-                <p>Loading recommended devices data...</p>
-              ) : (
-                <div>
-                  <Bar data={buildRecDevicesGraph(countsData)} />
-                  <Button
-                    variant="outlined"
-                    onClick={() => downloadChartData(buildRecDevicesGraph(countsData), 'Recommended_Devices')}
-                    style={{ marginTop: '10px' }}
-                  >
-                    Download Data
-                  </Button>
-                </div>
-              )}
-            </div>
+                {!countsData || !countsData["Devices_Recommended"] ? (
+                  <p>Loading recommended devices data...</p>
+                ) : (
+                  <div>
+                    <Bar data={buildRecDevicesGraph(countsData)} />
+                    <Button
+                      variant="outlined"
+                      onClick={() => downloadChartData(buildRecDevicesGraph(countsData), "Recommended_Devices")}
+                      style={{ marginTop: "10px" }}
+                    >
+                      Download Data
+                    </Button>
+                  </div>
+                )}
+              </div>
             );
           case 1:
             return (
@@ -2444,8 +2397,8 @@ function buildAgeGraph(countsData) {
                 <Bar data={electronicRecDevicesGraphData} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(electronicRecDevicesGraphData, 'Recommended_Electronic_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() => downloadChartData(electronicRecDevicesGraphData, "Recommended_Electronic_Devices")}
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2457,8 +2410,8 @@ function buildAgeGraph(countsData) {
                 <Bar data={spectacleRecDevicesGraphData} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(spectacleRecDevicesGraphData, 'Recommended_Spectacle_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() => downloadChartData(spectacleRecDevicesGraphData, "Recommended_Spectacle_Devices")}
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2470,8 +2423,8 @@ function buildAgeGraph(countsData) {
                 <Bar data={opticalRecDevicesGraphData} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(opticalRecDevicesGraphData, 'Recommended_Optical_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() => downloadChartData(opticalRecDevicesGraphData, "Recommended_Optical_Devices")}
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2483,8 +2436,8 @@ function buildAgeGraph(countsData) {
                 <Bar data={nonOpticalRecDevicesGraphData} options={options} />
                 <Button
                   variant="outlined"
-                  onClick={() => downloadChartData(nonOpticalRecDevicesGraphData, 'Recommended_NonOptical_Devices')}
-                  style={{ marginTop: '10px' }}
+                  onClick={() => downloadChartData(nonOpticalRecDevicesGraphData, "Recommended_NonOptical_Devices")}
+                  style={{ marginTop: "10px" }}
                 >
                   Download Data
                 </Button>
@@ -2493,27 +2446,27 @@ function buildAgeGraph(countsData) {
           default:
             return null;
         }
-    case 4:
-      return visualAcuityChartData ? (
-        <div>
-          <Box sx={{ textAlign: 'center', marginTop: '20px' }}>
-            <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
-          </Box>
-          <Button
-            variant="outlined"
-            onClick={() => downloadChartData(visualAcuityChartData, 'Visual_Acuity_Distribution')}
-            style={{ marginTop: '10px' }}
-          >
-            Download Data
-          </Button>
-        </div>
-      ) : (
-        <p>No Visual Acuity data available.</p>
-      );
-    default:
-      return null;
-  }
-};
+      case 4:
+        return visualAcuityChartData ? (
+          <div>
+            <Box sx={{ textAlign: "center", marginTop: "20px" }}>
+              <Bar data={visualAcuityChartData} options={visualAcuityOptions} />
+            </Box>
+            <Button
+              variant="outlined"
+              onClick={() => downloadChartData(visualAcuityChartData, "Visual_Acuity_Distribution")}
+              style={{ marginTop: "10px" }}
+            >
+              Download Data
+            </Button>
+          </div>
+        ) : (
+          <p>No Visual Acuity data available.</p>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Layout>
@@ -2521,7 +2474,7 @@ function buildAgeGraph(countsData) {
         <Navigation user={user} />
         <Container className="p-3">
           {/* Filters and Drawer */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <GraphCustomizer
               user={user}
               summary={hospitals}
@@ -2532,8 +2485,8 @@ function buildAgeGraph(countsData) {
               handleAllSelect={handleAllSelect}
               setStartDate={setStartDate}
               setEndDate={setEndDate}
-              selectedQuarter={selectedQuarter}     
-              setSelectedQuarter={setSelectedQuarter} 
+              selectedQuarter={selectedQuarter}
+              setSelectedQuarter={setSelectedQuarter}
             />
 
             {/* All Filters Button */}
@@ -2541,7 +2494,7 @@ function buildAgeGraph(countsData) {
               variant="contained"
               startIcon={<MenuIcon />}
               onClick={handleDrawerOpen}
-              sx={{ marginLeft: 0, width: '160px', height:'55px' }}
+              sx={{ marginLeft: 0, width: "160px", height: "55px" }}
             >
               All Filters
             </Button>
@@ -2549,10 +2502,7 @@ function buildAgeGraph(countsData) {
 
           {/* Drawer component to hold filters */}
           <Drawer anchor="right" open={drawerOpen} onClose={handleDrawerClose}>
-            <Box
-              sx={{ width: 310 }}
-              role="presentation"
-            >
+            <Box sx={{ width: 310 }} role="presentation">
               <ReportCustomizer
                 user={user}
                 summary={hospitals}
@@ -2598,118 +2548,112 @@ function buildAgeGraph(countsData) {
                 <Tab label="Counselling" />
               </Tabs>
 
-         {/* Beneficiaries Tab */}
-    {subTabIndex === 0 && (
-      isLoading ? (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <CircularProgress />
-          <p>Loading beneficiaries...</p>
-        </div>
-      ) : beneficiaries.length > 0 ? (
-        <PaginatedTable
-          data={beneficiaries}
-          columnDefs={beneficiaryColDefs}
-          page={beneficiaryPage}
-          totalRecords={totalBeneficiaries}
-          pageSize={pageSize}
-          onPageSizeChange={handlePageSizeChange}
-          onPageChange={(newPage) => setBeneficiaryPage(newPage)}
-        />
-      ) : (
-        <p>No Beneficiary records found for the selected filters.</p>
-      )
-    )}
+              {/* Beneficiaries Tab */}
+              {subTabIndex === 0 &&
+                (isLoading ? (
+                  <div style={{ textAlign: "center", padding: "20px" }}>
+                    <CircularProgress />
+                    <p>Loading beneficiaries...</p>
+                  </div>
+                ) : beneficiaries.length > 0 ? (
+                  <PaginatedTable
+                    data={beneficiaries}
+                    columnDefs={beneficiaryColDefs}
+                    page={beneficiaryPage}
+                    totalRecords={totalBeneficiaries}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    onPageChange={(newPage) => setBeneficiaryPage(newPage)}
+                  />
+                ) : (
+                  <p>No Beneficiary records found for the selected filters.</p>
+                ))}
 
-    {/* Vision Enhancement Tab */}
-    {subTabIndex === 1 && (
-      isLoading ? (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <CircularProgress />
-          <p>Loading vision enhancements...</p>
-        </div>
-      ) : visionEnhancements.length > 0 ? (
-        <PaginatedTable
-          data={visionEnhancements}
-          columnDefs={visionEnhancementColDefs}
-          page={visionEnhancementPage}
-          totalRecords={totalVisionEnhancements}
-          pageSize={pageSize}
-          onPageSizeChange={handlePageSizeChange}
-          onPageChange={(newPage) => setVisionEnhancementPage(newPage)}
-        />
-      ) : (
-        <p>No Vision Enhancement records found for the selected filters.</p>
-      )
-    )}
+              {/* Vision Enhancement Tab */}
+              {subTabIndex === 1 &&
+                (isLoading ? (
+                  <div style={{ textAlign: "center", padding: "20px" }}>
+                    <CircularProgress />
+                    <p>Loading vision enhancements...</p>
+                  </div>
+                ) : visionEnhancements.length > 0 ? (
+                  <PaginatedTable
+                    data={visionEnhancements}
+                    columnDefs={visionEnhancementColDefs}
+                    page={visionEnhancementPage}
+                    totalRecords={totalVisionEnhancements}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    onPageChange={(newPage) => setVisionEnhancementPage(newPage)}
+                  />
+                ) : (
+                  <p>No Vision Enhancement records found for the selected filters.</p>
+                ))}
 
-                 {/* Training Tab */}
-      {subTabIndex === 2 && (
-        isLoading ? (
-          <div style={{ textAlign: 'center', margin: '20px 0' }}>
-            <CircularProgress />
-            <p>Loading trainings ...</p>
-          </div>
-        ) : trainings.length > 0 ? (
-          <PaginatedTable
-            data={trainings}
-            columnDefs={trainingColDefs} // Placeholder for Training column definitions
-            page={trainingPage}
-            totalRecords={totalTrainings}
-            pageSize={pageSize}
-            onPageSizeChange={handlePageSizeChange}
-            onPageChange={(newPage) => setTrainingPage(newPage)}
-          />
-        ) : (
-          <p>No Training records found for the selected filters.</p>
-        )
-      )}
+              {/* Training Tab */}
+              {subTabIndex === 2 &&
+                (isLoading ? (
+                  <div style={{ textAlign: "center", margin: "20px 0" }}>
+                    <CircularProgress />
+                    <p>Loading trainings ...</p>
+                  </div>
+                ) : trainings.length > 0 ? (
+                  <PaginatedTable
+                    data={trainings}
+                    columnDefs={trainingColDefs} // Placeholder for Training column definitions
+                    page={trainingPage}
+                    totalRecords={totalTrainings}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    onPageChange={(newPage) => setTrainingPage(newPage)}
+                  />
+                ) : (
+                  <p>No Training records found for the selected filters.</p>
+                ))}
 
-      {/* Comprehensive Low Vision Evaluation Tab */}
-      {subTabIndex === 3 && (
-        isLoading ? (
-          <div style={{ textAlign: 'center', margin: '20px 0' }}>
-            <CircularProgress />
-            <p>Loading CLVEs ...</p>
-          </div>
-        ) : comprehensiveEvaluations.length > 0 ? (
-          <PaginatedTable
-            data={comprehensiveEvaluations}
-            columnDefs={comprehensiveLowVisionEvaluationColDefs} // Placeholder for Comprehensive Low Vision Evaluation column definitions
-            page={comprehensivePage}
-            totalRecords={totalComprehensiveEvaluations}
-            pageSize={pageSize}
-            onPageSizeChange={handlePageSizeChange}
-            onPageChange={(newPage) => setComprehensivePage(newPage)}
-          />
-        ) : (
-          <p>No Comprehensive Low Vision Evaluation records found for the selected filters.</p>
-        )
-      )}
+              {/* Comprehensive Low Vision Evaluation Tab */}
+              {subTabIndex === 3 &&
+                (isLoading ? (
+                  <div style={{ textAlign: "center", margin: "20px 0" }}>
+                    <CircularProgress />
+                    <p>Loading CLVEs ...</p>
+                  </div>
+                ) : comprehensiveEvaluations.length > 0 ? (
+                  <PaginatedTable
+                    data={comprehensiveEvaluations}
+                    columnDefs={comprehensiveLowVisionEvaluationColDefs} // Placeholder for Comprehensive Low Vision Evaluation column definitions
+                    page={comprehensivePage}
+                    totalRecords={totalComprehensiveEvaluations}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    onPageChange={(newPage) => setComprehensivePage(newPage)}
+                  />
+                ) : (
+                  <p>No Comprehensive Low Vision Evaluation records found for the selected filters.</p>
+                ))}
 
-      {/* Counselling Tab */}
-      {subTabIndex === 4 && (
-        isLoading ? (
-          <div style={{ textAlign: 'center', margin: '20px 0' }}>
-            <CircularProgress />
-            <p>Loading counsellings ...</p>
-          </div>
-        ) : counselingRecords.length > 0 ? (
-          <PaginatedTable
-            data={counselingRecords}
-            columnDefs={counselingEducationColDefs} // Placeholder for Counseling Education column definitions
-            page={counselingPage}
-            totalRecords={totalCounselingRecords}
-            pageSize={pageSize}
-            onPageSizeChange={handlePageSizeChange}
-            onPageChange={(newPage) => setCounselingPage(newPage)}
-          />
-        ) : (
-          <p>No Counselling records found for the selected filters.</p>
-        )
-      )}
-    </div>
-  )
-}
+              {/* Counselling Tab */}
+              {subTabIndex === 4 &&
+                (isLoading ? (
+                  <div style={{ textAlign: "center", margin: "20px 0" }}>
+                    <CircularProgress />
+                    <p>Loading counsellings ...</p>
+                  </div>
+                ) : counselingRecords.length > 0 ? (
+                  <PaginatedTable
+                    data={counselingRecords}
+                    columnDefs={counselingEducationColDefs} // Placeholder for Counseling Education column definitions
+                    page={counselingPage}
+                    totalRecords={totalCounselingRecords}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    onPageChange={(newPage) => setCounselingPage(newPage)}
+                  />
+                ) : (
+                  <p>No Counselling records found for the selected filters.</p>
+                ))}
+            </div>
+          )}
           {masterTabIndex === 1 && (
             <div>
               {/* Graph Customization */}
