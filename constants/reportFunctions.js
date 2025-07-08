@@ -33,6 +33,7 @@ const clveMainHeader = [
   "Education",
   "Occupation",
   "Diagnosis",
+  "Diagnosis Notes",
   "Districts",
   "State",
   "Distance Acuity",
@@ -239,6 +240,7 @@ function getClveJson(commonData, clveData) {
   let clveJson = { ...commonData };
   clveJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(clveData["date"]));
   clveJson["Diagnosis"] = clveData["diagnosis"];
+  clveJson["Diagnosis Notes"] = clveData["diagnosisNotes"];
   clveJson["Acuity Notation"] = clveData["distanceVisualAcuityRE"].split(" ")[1]; // insert check for if [1] exists
   clveJson["Acuity RE"] = clveData["distanceVisualAcuityRE"].split(" ")[0];
   clveJson["Acuity LE"] = clveData["distanceVisualAcuityLE"].split(" ")[0];
@@ -1310,24 +1312,25 @@ export function setClveHeader(wclve) {
     mergeHeaderCells({ col: 5, rowSpan: 1 }), // Education
     mergeHeaderCells({ col: 6, rowSpan: 1 }), // Occupation
     mergeHeaderCells({ col: 7, rowSpan: 1 }), // Diagnosis
-    mergeHeaderCells({ col: 8, rowSpan: 1 }), // District
-    mergeHeaderCells({ col: 9, rowSpan: 1 }), // State
-    mergeHeaderCells({ col: 10, colSpan: 3 }), // { s: { r: 0, c: 11 }, e: { r: 0, c: 14 } }, Title: Acuity
-    mergeHeaderCells({ col: 14, colSpan: 3 }), // { s: { r: 0, c: 15 }, e: { r: 0, c: 18 } }, Title: Near Visual Acuity
-    mergeHeaderCells({ col: 18, rowSpan: 1 }), // Recommended Optical Aid
-    mergeHeaderCells({ col: 19, rowSpan: 1 }), // Recommended Non-Optical Aid
-    mergeHeaderCells({ col: 20, rowSpan: 1 }), // Recommended Electronic Aid
-    mergeHeaderCells({ col: 21, rowSpan: 1 }), // Spectacles (Refractive Error Only)
-    mergeHeaderCells({ col: 22, rowSpan: 1 }), // Dispensed Optical Aid
-    mergeHeaderCells({ col: 23, rowSpan: 1 }), // Dispensed Non-Optical Aid
-    mergeHeaderCells({ col: 24, rowSpan: 1 }), // Dispensed Electronic Aid
-    mergeHeaderCells({ col: 25, rowSpan: 1 }), // Dispensed Spectacles (Refractive Error Only)
-    mergeHeaderCells({ col: 26, colSpan: 1 }), // { s: { r: 0, c: 27 }, e: { r: 0, c: 28 } }, Title: Color Vision
-    mergeHeaderCells({ col: 28, colSpan: 1 }), // { s: { r: 0, c: 29 }, e: { r: 0, c: 30 } }, Title: Contrast Sensitivity
-    mergeHeaderCells({ col: 30, colSpan: 1 }), // { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } }, Title: Visual Fields
-    mergeHeaderCells({ col: 32, rowSpan: 1 }), // Cost of all the aids dispensed
-    mergeHeaderCells({ col: 33, rowSpan: 1 }), // Cost to the Beneficiary
-    mergeHeaderCells({ col: 34, rowSpan: 1 }), // Comments
+    mergeHeaderCells({ col: 8, rowSpan: 1 }), // Diagnosis Notes
+    mergeHeaderCells({ col: 9, rowSpan: 1 }), // District
+    mergeHeaderCells({ col: 10, rowSpan: 1 }), // State
+    mergeHeaderCells({ col: 11, colSpan: 3 }), // { s: { r: 0, c: 11 }, e: { r: 0, c: 14 } }, Title: Acuity
+    mergeHeaderCells({ col: 15, colSpan: 3 }), // { s: { r: 0, c: 15 }, e: { r: 0, c: 18 } }, Title: Near Visual Acuity
+    mergeHeaderCells({ col: 19, rowSpan: 1 }), // Recommended Optical Aid
+    mergeHeaderCells({ col: 20, rowSpan: 1 }), // Recommended Non-Optical Aid
+    mergeHeaderCells({ col: 21, rowSpan: 1 }), // Recommended Electronic Aid
+    mergeHeaderCells({ col: 22, rowSpan: 1 }), // Spectacles (Refractive Error Only)
+    mergeHeaderCells({ col: 23, rowSpan: 1 }), // Dispensed Optical Aid
+    mergeHeaderCells({ col: 24, rowSpan: 1 }), // Dispensed Non-Optical Aid
+    mergeHeaderCells({ col: 25, rowSpan: 1 }), // Dispensed Electronic Aid
+    mergeHeaderCells({ col: 26, rowSpan: 1 }), // Dispensed Spectacles (Refractive Error Only)
+    mergeHeaderCells({ col: 27, colSpan: 1 }), // { s: { r: 0, c: 27 }, e: { r: 0, c: 28 } }, Title: Color Vision
+    mergeHeaderCells({ col: 29, colSpan: 1 }), // { s: { r: 0, c: 29 }, e: { r: 0, c: 30 } }, Title: Contrast Sensitivity
+    mergeHeaderCells({ col: 31, colSpan: 1 }), // { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } }, Title: Visual Fields
+    mergeHeaderCells({ col: 33, rowSpan: 1 }), // Cost of all the aids dispensed
+    mergeHeaderCells({ col: 34, rowSpan: 1 }), // Cost to the Beneficiary
+    mergeHeaderCells({ col: 35, rowSpan: 1 }), // Comments
   ];
 
   return wclve;

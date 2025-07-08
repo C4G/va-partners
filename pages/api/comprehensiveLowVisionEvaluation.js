@@ -67,6 +67,7 @@ async function addData(req, res) {
       },
       mdvi: body.mdvi,
       diagnosis: body.diagnosis,
+      diagnosisNotes: body.diagnosisNotes,
       date: body.date,
       sessionNumber: body.sessionNumber,
       distanceVisualAcuityRE: body.distanceVisualAcuityRE,

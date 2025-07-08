@@ -383,6 +383,25 @@ export default function HistoricalCLVForm(props) {
           </tr>
           <tr className="row">
             <th scope="row" className="col-md-4">
+              Diagnosis Notes
+            </th>
+            <td scope="row" className="col-md-8">
+              {!editMode && data.diagnosisNotes}
+              {editMode && (
+                <FormControl fullWidth size="small">
+                  <input
+                    type="text"
+                    name="diagnosisNotes"
+                    value={data.diagnosisNotes}
+                    onChange={(e) => handleChange(e)}
+                    autoComplete="off"
+                  />
+                </FormControl>
+              )}
+            </td>
+          </tr>
+          <tr className="row">
+            <th scope="row" className="col-md-4">
               MDVI
             </th>
             <td className="col-md-8">
