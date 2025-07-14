@@ -60,7 +60,6 @@ const TrainingFormCLVE = ({
   const [mdviValue, setMdviValue] = useState(mdvi);
   const [section, setSection] = useState("visionEvaluation");
   const [diagnosis, setDiagnosis] = useState([]);
-  const [diagnosisNotesRequired, setDiagnosisNotesRequired] = useState(false);
   const [formData, setFormData] = useState({
     unitDistance: "LogMAR",
     unitNear: "LogMAR",
@@ -375,7 +374,6 @@ const TrainingFormCLVE = ({
       target: { value },
     } = e;
     setDiagnosis(value);
-    setDiagnosisNotesRequired(value.includes("Other"));
   };
 
   const updateFormData = (e, fieldName) => {
@@ -513,7 +511,7 @@ const TrainingFormCLVE = ({
           <Row>
             <Col>
               <Form.Group controlId="diagnosisOther">
-                <Form.Label>Diagnosis Notes{ diagnosisNotesRequired ?required(): null }</Form.Label>
+                <Form.Label>Diagnosis Notes{ required() }</Form.Label>
                 <Form.Control
                   type="text"
                   required
