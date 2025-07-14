@@ -65,23 +65,23 @@ const clveMainHeader = [
 
 // Escel sub-header for CLVE sheet
 let clveSubHeader = [];
-addEmptyElements(clveSubHeader, "", 10);
-clveSubHeader.push("Notation");
-clveSubHeader.push("RE");
-clveSubHeader.push("LE");
-clveSubHeader.push("BE");
-clveSubHeader.push("Notation");
-clveSubHeader.push("RE");
-clveSubHeader.push("LE");
-clveSubHeader.push("BE");
-addEmptyElements(clveSubHeader, "", 8);
-clveSubHeader.push("RE");
-clveSubHeader.push("LE");
-clveSubHeader.push("RE");
-clveSubHeader.push("LE");
-clveSubHeader.push("RE");
-clveSubHeader.push("LE");
-addEmptyElements(clveSubHeader, "", 3);
+addEmptyElements(clveSubHeader, "", 11); // Empty for columns 0-10 (Date through State)
+clveSubHeader.push("Notation"); // Column 11 - Distance Acuity Notation
+clveSubHeader.push("RE"); // Column 12 - Distance Acuity RE
+clveSubHeader.push("LE"); // Column 13 - Distance Acuity LE
+clveSubHeader.push("BE"); // Column 14 - Distance Acuity BE
+clveSubHeader.push("Notation"); // Column 15 - Near Acuity Notation
+clveSubHeader.push("RE"); // Column 16 - Near Acuity RE
+clveSubHeader.push("LE"); // Column 17 - Near Acuity LE
+clveSubHeader.push("BE"); // Column 18 - Near Acuity BE
+addEmptyElements(clveSubHeader, "", 8); // Empty for columns 19-26 (Recommended/Dispensed aids)
+clveSubHeader.push("RE"); // Column 27 - Colour Vision RE
+clveSubHeader.push("LE"); // Column 28 - Colour Vision LE
+clveSubHeader.push("RE"); // Column 29 - Contrast Sensitivity RE
+clveSubHeader.push("LE"); // Column 30 - Contrast Sensitivity LE
+clveSubHeader.push("RE"); // Column 31 - Visual Fields RE
+clveSubHeader.push("LE"); // Column 32 - Visual Fields LE
+addEmptyElements(clveSubHeader, "", 3); // Empty for columns 33-35 (Cost, Cost to Beneficiary, Comments)
 
 // Excel header for Low Vision Screening Sheet
 const lveMainHeader = [
@@ -237,40 +237,49 @@ function getBeneficiaryJson(commonData, beneficiary) {
 
 // Get CLVE Sheet data
 function getClveJson(commonData, clveData) {
-  let clveJson = { ...commonData };
-  clveJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(clveData["date"]));
-  clveJson["Diagnosis"] = clveData["diagnosis"];
-  clveJson["Diagnosis Notes"] = clveData["diagnosisNotes"];
-  clveJson["Acuity Notation"] = clveData["distanceVisualAcuityRE"].split(" ")[1]; // insert check for if [1] exists
-  clveJson["Acuity RE"] = clveData["distanceVisualAcuityRE"].split(" ")[0];
-  clveJson["Acuity LE"] = clveData["distanceVisualAcuityLE"].split(" ")[0];
-  clveJson["Acuity BE"] = clveData["distanceBinocularVisionBE"].split(" ")[0];
-  clveJson["Near Visual Acuity Notation"] = clveData["nearVisualAcuityRE"].split(" ")[1]; // insert check for if [1] exists
-  clveJson["Near Visual Acuity RE"] = clveData["nearVisualAcuityRE"].split(" ")[0];
-  clveJson["Near Visual Acuity LE"] = clveData["nearVisualAcuityLE"].split(" ")[0];
-  clveJson["Near Visual Acuity BE"] = clveData["nearBinocularVisionBE"].split(" ")[0];
-  clveJson["Recommended Optical Aid"] = clveData["recommendationOptical"];
-  clveJson["Recommended Non-Optical Aid"] = clveData["recommendationNonOptical"];
-  clveJson["Recommended Electronic Aid"] = clveData["recommendationElectronic"];
-  clveJson["Spectacles (Refractive Error Only)"] = clveData["recommendationSpectacle"];
-  clveJson["Dispensed Optical Aid"] = clveData["dispensedOptical"];
-  clveJson["Dispensed Non-Optical Aid"] = clveData["dispensedNonOptical"];
-  clveJson["Dispensed Electronic Aid"] = clveData["dispensedElectronic"];
-  clveJson["Dispensed Spectacles (Refractive Error Only)"] = clveData["dispensedSpectacle"];
-  clveJson["Colour Vision RE"] = clveData["colourVisionRE"];
-  clveJson["Colour Vision LE"] = clveData["colourVisionLE"];
-  clveJson["Contrast Sensitivity RE"] = clveData["contrastSensitivityRE"];
-  clveJson["Contrast Sensitivity LE"] = clveData["contrastSensitivityLE"];
-  clveJson["Visual Fields RE"] = clveData["visualFieldsRE"];
-  clveJson["Visual Fields LE"] = clveData["visualFieldsLE"];
-  clveJson["Cost of all the aids dispensed"] =
-    clveData["costOptical"] + clveData["costNonOptical"] + clveData["costElectronic"] + clveData["costSpectacle"];
-  clveJson["Cost to the Beneficiary"] =
-    clveData["costToBeneficiaryOptical"] +
-    clveData["costToBeneficiaryNonOptical"] +
-    clveData["costToBeneficiaryElectronic"] +
-    clveData["costToBeneficiarySpectacle"];
-  clveJson["Comments"] = clveData["extraInformation"];
+  const clveJson = {
+    "Date of Evaluation": getDateWithTimezoneOffset(new Date(clveData["date"])),
+    MRN: commonData["MRN"],
+    "Name of the Patient": commonData["Name of the Patient"],
+    Age: commonData["Age"],
+    Gender: commonData["Gender"],
+    Education: commonData["Education"],
+    Occupation: commonData["Occupation"],
+    Diagnosis: clveData["diagnosis"] || commonData["Diagnosis"],
+    "Diagnosis Notes": clveData["diagnosisNotes"],
+    Districts: commonData["District"], // Note: still using District from commonData
+    State: commonData["State"],
+    "Acuity Notation": clveData["distanceVisualAcuityRE"].split(" ")[1], // insert check for if [1] exists
+    "Acuity RE": clveData["distanceVisualAcuityRE"].split(" ")[0],
+    "Acuity LE": clveData["distanceVisualAcuityLE"].split(" ")[0],
+    "Acuity BE": clveData["distanceBinocularVisionBE"].split(" ")[0],
+    "Near Visual Acuity Notation": clveData["nearVisualAcuityRE"].split(" ")[1], // insert check for if [1] exists
+    "Near Visual Acuity RE": clveData["nearVisualAcuityRE"].split(" ")[0],
+    "Near Visual Acuity LE": clveData["nearVisualAcuityLE"].split(" ")[0],
+    "Near Visual Acuity BE": clveData["nearBinocularVisionBE"].split(" ")[0],
+    "Recommended Optical Aid": clveData["recommendationOptical"],
+    "Recommended Non-Optical Aid": clveData["recommendationNonOptical"],
+    "Recommended Electronic Aid": clveData["recommendationElectronic"],
+    "Spectacles (Refractive Error Only)": clveData["recommendationSpectacle"],
+    "Dispensed Optical Aid": clveData["dispensedOptical"],
+    "Dispensed Non-Optical Aid": clveData["dispensedNonOptical"],
+    "Dispensed Electronic Aid": clveData["dispensedElectronic"],
+    "Dispensed Spectacles (Refractive Error Only)": clveData["dispensedSpectacle"],
+    "Colour Vision RE": clveData["colourVisionRE"],
+    "Colour Vision LE": clveData["colourVisionLE"],
+    "Contrast Sensitivity RE": clveData["contrastSensitivityRE"],
+    "Contrast Sensitivity LE": clveData["contrastSensitivityLE"],
+    "Visual Fields RE": clveData["visualFieldsRE"],
+    "Visual Fields LE": clveData["visualFieldsLE"],
+    "Cost of all the aids dispensed":
+      clveData["costOptical"] + clveData["costNonOptical"] + clveData["costElectronic"] + clveData["costSpectacle"],
+    "Cost to the Beneficiary":
+      clveData["costToBeneficiaryOptical"] +
+      clveData["costToBeneficiaryNonOptical"] +
+      clveData["costToBeneficiaryElectronic"] +
+      clveData["costToBeneficiarySpectacle"],
+    Comments: clveData["extraInformation"],
+  };
 
   return clveJson;
 }
