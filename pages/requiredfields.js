@@ -1,31 +1,29 @@
 // This function gets called at build time
-import { readUser } from "./api/user";
-import { Table } from "react-bootstrap";
-import { getSession } from "next-auth/react";
 import { readBeneficiaryMirror } from "@/pages/api/beneficiaryMirror";
-import { v4 as uuidv4 } from "uuid";
-import Router from "next/router";
-import Navigation from "./navigation/Navigation";
+import { readComprehensiveLowVisionEvaluationMirror } from "@/pages/api/comprehensiveLowVisionEvaluationMirror";
+import { readComputerTrainingMirror } from "@/pages/api/computerTrainingMirror";
+import { readCounsellingEducationMirror } from "@/pages/api/counsellingEducationMirror";
+import { getCounsellingType } from "@/pages/api/counsellingType";
 import { findAllHospital } from "@/pages/api/hospital";
 import { readMobileTrainingMirror } from "@/pages/api/mobileTrainingMirror";
-import { readComputerTrainingMirror } from "@/pages/api/computerTrainingMirror";
 import { readOrientationMobilityTrainingMirror } from "@/pages/api/orientationMobilityTrainingMirror";
-import { readVisionEnhancementMirror } from "@/pages/api/visionEnhancementMirror";
-import { readComprehensiveLowVisionEvaluationMirror } from "@/pages/api/comprehensiveLowVisionEvaluationMirror";
-import { readCounsellingEducationMirror } from "@/pages/api/counsellingEducationMirror";
-import { Trash } from "react-bootstrap-icons";
-import { useState } from "react";
-import { getCounsellingType } from "@/pages/api/counsellingType";
-import { getTrainingTypes } from "@/pages/api/trainingType";
 import { getTrainingSubTypes } from "@/pages/api/trainingSubType";
-import { Modal, Button, Form } from "react-bootstrap";
+import { getTrainingTypes } from "@/pages/api/trainingType";
+import { readVisionEnhancementMirror } from "@/pages/api/visionEnhancementMirror";
+import { getSession } from "next-auth/react";
+import Router from "next/router";
+import { useState } from "react";
+import { Button, Form, Modal, Table } from "react-bootstrap";
+import { Trash } from "react-bootstrap-icons";
+import { v4 as uuidv4 } from "uuid";
+import { readUser } from "./api/user";
 import Layout from "./components/layout";
+import Navigation from "./navigation/Navigation";
 
 // http://localhost:3000/requiredfields
 export async function getServerSideProps(ctx) {
   const session = await getSession(ctx);
   if (session == null) {
-    console.log("session is null");
     return {
       redirect: {
         destination: "/",
@@ -35,7 +33,6 @@ export async function getServerSideProps(ctx) {
   }
   const user = await readUser(session.user.email);
   if (user.admin == null) {
-    console.log("user admin is null");
     return {
       redirect: {
         destination: "/",
@@ -53,7 +50,7 @@ export async function getServerSideProps(ctx) {
       requiredVisionEnhancement: await readVisionEnhancementMirror(),
       requiredComprehensiveLowVisionEvaluation: await readComprehensiveLowVisionEvaluationMirror(),
       requiredCounsellingEducation: await readCounsellingEducationMirror(),
-      hospitals: await findAllHospital(),
+      hospitals: await findAllHospital(true),
       counselingTypeList: await getCounsellingType(),
       trainingTypeList: await getTrainingTypes(),
       trainingSubTypeList: await getTrainingSubTypes(),
@@ -65,6 +62,7 @@ export async function getServerSideProps(ctx) {
 function RequiredFields(props) {
   const [section, setSection] = useState("");
   const [hospitals, setHospitals] = useState(props.hospitals);
+  const [loadingTier, setLoadingTier] = useState(null); // Track which hospital tier is being updated
 
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
@@ -112,7 +110,6 @@ function RequiredFields(props) {
 
   function removeExtraField(fieldId) {
     return function () {
-      console.log(fieldId);
       document.getElementById(fieldId).remove();
     };
   }
@@ -128,10 +125,6 @@ function RequiredFields(props) {
     let occupationRequired = document.getElementById("occupationRequired").checked;
     let districtsRequired = document.getElementById("districtsRequired").checked;
     let stateRequired = document.getElementById("stateRequired").checked;
-    //let diagnosisRequired = document.getElementById("diagnosisRequired").checked
-    //let visionRequired = document.getElementById("visionRequired").checked
-    //let mDVIRequired = document.getElementById("mDVIRequired").checked
-    //console.log("phoneNumberRequired" + phoneNumberRequired, "educationRequired" + educationRequired, "occupationRequired" + occupationRequired, "districtsRequired" + districtsRequired, "stateRequired" + stateRequired, "diagnosisRequired" + diagnosisRequired, "visionRequired" + visionRequired, "mDVIRequired" + mDVIRequired)
     let elements = document.getElementsByName("extraField");
     let extraInformation = [];
     for (let i = 0; i < elements.length; i++) {
@@ -144,8 +137,6 @@ function RequiredFields(props) {
       extraInformation.push(body);
     }
     let extraInformationRequired = JSON.stringify(extraInformation);
-    console.log(extraInformationRequired);
-    console.log("extra fields required" + extraInformationRequired);
     let response = await fetch("/api/beneficiaryMirror", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -255,8 +246,6 @@ function RequiredFields(props) {
       extraInformation.push(body);
     }
     let extraInformationRequired = JSON.stringify(extraInformation);
-    console.log(extraInformationRequired);
-    console.log("extra fields required" + extraInformationRequired);
     let response = await fetch("/api/" + api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -391,11 +380,13 @@ function RequiredFields(props) {
   async function addHospital(e) {
     e.preventDefault();
     let hospitalName = document.getElementById("createHospitalName").value;
+    let hospitalTier = document.getElementById("createHospitalTier").value;
     let response = await fetch("/api/hospital", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: hospitalName,
+        tier: hospitalTier,
       }),
     });
     let json = await response.json();
@@ -428,7 +419,6 @@ function RequiredFields(props) {
   for (const counselingType of props.counselingTypeList) {
     if (foundTypeCounselingOther == false && counselingType == "Other") {
       foundTypeCounselingOther = true;
-      console.log("Do not delete other option");
       continue;
     }
     removeTypeCounseling.push(
@@ -460,7 +450,6 @@ function RequiredFields(props) {
     trainingTypesOption.push(<option value={trainingType}>{trainingType}</option>);
     if (foundTypeTrainingOther == false && trainingType == "Other") {
       foundTypeTrainingOther = true;
-      console.log("Do not delete other option");
       continue;
     }
     removeTypeTraining.push(
@@ -490,7 +479,6 @@ function RequiredFields(props) {
   for (const trainingSubType of props.trainingSubTypeList) {
     if (foundSubTypeTrainingOther[trainingSubType.trainingType.id] == null && trainingSubType.value == "Other") {
       foundSubTypeTrainingOther[trainingSubType.trainingType.id] = true;
-      console.log("Do not delete other option");
       continue;
     }
     removeSubTypeTraining.push(
@@ -589,6 +577,39 @@ function RequiredFields(props) {
     }
   };
 
+  const updateHospitalTier = async (id, tier) => {
+    setLoadingTier(id); // Set loading state for this specific hospital
+
+    const data = {
+      id: id,
+      tier: tier,
+    };
+
+    try {
+      const res = await fetch("/api/hospital", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (res.status == 200) {
+        alert("Hospital tier updated successfully!");
+        setHospitals((hospitals) =>
+          hospitals.map((hospital) => (hospital.id === id ? { ...hospital, tier: tier } : hospital))
+        );
+      } else {
+        alert("Failed to update hospital tier!");
+      }
+    } catch (error) {
+      console.error("Error updating hospital tier:", error);
+      alert("Failed to update hospital tier!");
+    } finally {
+      setLoadingTier(null); // Clear loading state
+    }
+  };
+
   return (
     <Layout>
       <div className="content">
@@ -657,13 +678,6 @@ function RequiredFields(props) {
                       <strong>Add Hospital</strong>
                     </h2>
                     <div>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="createHospitalName"
-                        placeholder="Hospital Name"
-                        // style={{ marginLeft: "170px" }}
-                      />
                       <label
                         className="form-label"
                         htmlFor="createHospitalName"
@@ -671,6 +685,34 @@ function RequiredFields(props) {
                       >
                         Hospital Name
                       </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="createHospitalName"
+                        placeholder="Hospital Name"
+                        // style={{ marginLeft: "170px" }}
+                      />
+                    </div>
+                    <br />
+                    <div>
+                      <label className="form-label" htmlFor="createHospitalTier">
+                        Hospital Tier
+                      </label>
+                      <select
+                        id="createHospitalTier"
+                        className="form-select"
+                        style={{
+                          border: "1px solid #ccc",
+                          borderRadius: "0.25rem",
+                          color: "#495057",
+                          backgroundColor: "#fff",
+                          padding: "0.375rem 0.75rem",
+                        }}
+                        defaultValue="NIL_CASH_GRANT"
+                      >
+                        <option value="NIL_CASH_GRANT">NIL CASH GRANT</option>
+                        <option value="RECEIVE_CASH_GRANT">RECEIVE CASH GRANT</option>
+                      </select>
                     </div>
                     <br />
                     <button type="submit" className="btn btn-success">
@@ -687,6 +729,7 @@ function RequiredFields(props) {
                       <thead>
                         <tr>
                           <th>Hospital</th>
+                          <th>Tier</th>
                           <th>Action</th>
                         </tr>
                       </thead>
@@ -694,6 +737,30 @@ function RequiredFields(props) {
                         {hospitals.map((hospital) => (
                           <tr key={hospital.id}>
                             <td>{hospital.name}</td>
+                            <td>
+                              {loadingTier === hospital.id ? (
+                                <div className="flex items-center justify-center gap-2 p-2">
+                                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></div>
+                                  <span className="text-sm font-medium text-blue-500">Updating...</span>
+                                </div>
+                              ) : (
+                                <select
+                                  value={hospital.tier || "NIL_CASH_GRANT"}
+                                  onChange={(e) => updateHospitalTier(hospital.id, e.target.value)}
+                                  className="form-select"
+                                  style={{
+                                    border: "1px solid #ccc",
+                                    borderRadius: "0.25rem",
+                                    color: "#495057",
+                                    backgroundColor: "#fff",
+                                    padding: "0.375rem 0.75rem",
+                                  }}
+                                >
+                                  <option value="NIL_CASH_GRANT">NIL CASH GRANT</option>
+                                  <option value="RECEIVE_CASH_GRANT">RECEIVE CASH GRANT</option>
+                                </select>
+                              )}
+                            </td>
                             <td>
                               {!hospital.deleted && (
                                 <button
