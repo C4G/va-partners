@@ -64,7 +64,7 @@ function UserPage(props) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ mrn: props.user.mrn, consent: "No" }),
+      body: JSON.stringify({ hospitalId: props.user.hospitalId, mrn: props.user.mrn, consent: "No" }),
     });
 
     if (response.ok) {
