@@ -1,28 +1,27 @@
 // Import necessary libraries and components
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler } from "chart.js";
-import { readUser } from "./api/user";
-import { useRouter } from "next/router";
-import { getSession } from "next-auth/react";
-import ChartDataLabels from "chartjs-plugin-datalabels";
-import { Bar } from "react-chartjs-2";
 import { findAllHospital } from "@/pages/api/hospital";
-import { Container } from "react-bootstrap";
-import Navigation from "./navigation/Navigation";
-import Layout from "./components/layout";
-import moment from "moment";
-import { useState, useEffect } from "react";
-import GraphCustomizer from "./components/GraphCustomizer";
-import { Tab, Tabs, Paper, Button, Box } from "@mui/material";
-import ReportCustomizer from "./customizedReport";
-import { AgGridReact } from "ag-grid-react";
+import { buildDashboardQueryParams } from "@/utils/ui/build-dashboard-query-params";
+import EditIcon from "@mui/icons-material/Edit";
+import MenuIcon from "@mui/icons-material/Menu";
+import { Box, Button, Drawer, IconButton, Paper, Tab, Tabs } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-import EditIcon from "@mui/icons-material/Edit";
-import { Drawer, IconButton } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import { buildDashboardQueryParams } from "@/utils/ui/build-dashboard-query-params";
-import CircularProgress from "@mui/material/CircularProgress";
+import { AgGridReact } from "ag-grid-react";
+import { BarElement, CategoryScale, Chart as ChartJS, Filler, Legend, LinearScale, Title, Tooltip } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import debounce from "lodash.debounce";
+import moment from "moment";
+import { getSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { Container } from "react-bootstrap";
+import { Bar } from "react-chartjs-2";
+import { readUser } from "./api/user";
+import GraphCustomizer from "./components/GraphCustomizer";
+import Layout from "./components/layout";
+import ReportCustomizer from "./customizedReport";
+import Navigation from "./navigation/Navigation";
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler, ChartDataLabels);
@@ -1703,7 +1702,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       cellStyle: { whiteSpace: "normal", wordWrap: "break-word" }, // For better text display
     },
     {
-      field: "Diagnosis",
+      field: "diagnosis",
       headerName: "Diagnosis",
       filter: true,
       sortable: true,
