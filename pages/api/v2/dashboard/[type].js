@@ -5,6 +5,7 @@
 // */
 
 import prisma from "@/utils/api/client";
+import { enrichBeneficiariesWithDiagnosis } from "@/utils/api/diagnosis-helper";
 import moment from "moment";
 
 export default async function handler(req, res) {
@@ -115,7 +116,7 @@ export async function readData(req, res) {
         "Low_Vision_Evaluation",
       ];
 
-      records = await prisma.Beneficiary.findMany({
+      const beneficiaries = await prisma.Beneficiary.findMany({
         where: {
           deleted: false,
           hospitalId: { in: parsedHospitalIds },
@@ -134,6 +135,10 @@ export async function readData(req, res) {
         skip: parsedOffset,
         take: parsedLimit,
       });
+
+      // Enrich with diagnosis from latest evaluation
+      records = await enrichBeneficiariesWithDiagnosis(beneficiaries);
+
       totalRecords = await prisma.Beneficiary.count({
         where: {
           deleted: false,

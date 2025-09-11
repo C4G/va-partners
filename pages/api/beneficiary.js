@@ -1,4 +1,5 @@
 import prisma from "@/utils/api/client";
+import { enrichBeneficiariesWithDiagnosis } from "@/utils/api/diagnosis-helper";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
@@ -46,7 +47,10 @@ export const readBeneficiaryMrn = async (mrn, hospitalId) => {
         Training: true,
       },
     });
-    return beneficiary;
+
+    // Enrich with diagnosis from latest evaluation
+    const enrichedBeneficiary = await enrichBeneficiariesWithDiagnosis(beneficiary);
+    return enrichedBeneficiary;
   } catch (error) {
     console.log(error);
     return { error: "Couldn't read from db" };
@@ -88,8 +92,9 @@ export const readBeneficiaryOtherParam = async (otherParam) => {
       },
     });
 
-    // Map the hospital name into the response for easier access in the frontend
-    return beneficiaries.map((beneficiary) => ({
+    // Enrich with diagnosis from latest evaluation and map hospital name
+    const enrichedBeneficiaries = await enrichBeneficiariesWithDiagnosis(beneficiaries);
+    return enrichedBeneficiaries.map((beneficiary) => ({
       ...beneficiary,
       hospitalName: beneficiary.hospital.name, // Add hospital name to each beneficiary
     }));
@@ -107,7 +112,7 @@ async function readData(req, res) {
     } else if (req.query.mrn != null && req.query.hospitalId != null) {
       beneficiary = await readBeneficiaryMrn(req.query.mrn, req.query.hospitalId);
     } else if (req.query.beneficiaryName != "") {
-      beneficiary = await prisma.beneficiary.findMany({
+      const beneficiaries = await prisma.beneficiary.findMany({
         where: {
           beneficiaryName: {
             contains: req.query.beneficiaryName,
@@ -126,6 +131,8 @@ async function readData(req, res) {
           Training: true,
         },
       });
+      // Enrich with diagnosis from latest evaluation
+      beneficiary = await enrichBeneficiariesWithDiagnosis(beneficiaries);
     } else {
       beneficiary = [];
     }
@@ -165,7 +172,6 @@ async function addData(req, res) {
       occupation: body.occupation,
       districts: body.districts,
       state: body.state,
-      diagnosis: body.diagnosis,
       vision: body.vision,
       mDVI: body.mDVI,
       extraInformation: body.extraInformation,
@@ -248,7 +254,7 @@ async function deleteData(req, res) {
 export async function findAllBeneficiary(isAdmin, hospitalIds) {
   let beneficiaries;
   if (isAdmin) {
-    beneficiaries = prisma.beneficiary.findMany({
+    beneficiaries = await prisma.beneficiary.findMany({
       include: {
         hospital: true,
         Vision_Enhancement: true,
@@ -265,7 +271,7 @@ export async function findAllBeneficiary(isAdmin, hospitalIds) {
       },
     });
   } else {
-    beneficiaries = prisma.beneficiary.findMany({
+    beneficiaries = await prisma.beneficiary.findMany({
       include: {
         hospital: true,
         Vision_Enhancement: true,
@@ -284,12 +290,13 @@ export async function findAllBeneficiary(isAdmin, hospitalIds) {
     });
   }
 
-  return beneficiaries;
+  // Enrich with diagnosis from latest evaluation
+  return await enrichBeneficiariesWithDiagnosis(beneficiaries);
 }
 
 export async function findAllBeneficiaryForHospitalId(hospitalId) {
   try {
-    const beneficiary = await prisma.beneficiary.findMany({
+    const beneficiaries = await prisma.beneficiary.findMany({
       where: {
         hospitalId: hospitalId,
         deleted: false,
@@ -307,7 +314,8 @@ export async function findAllBeneficiaryForHospitalId(hospitalId) {
       },
     });
 
-    return beneficiary;
+    // Enrich with diagnosis from latest evaluation
+    return await enrichBeneficiariesWithDiagnosis(beneficiaries);
   } catch (error) {
     console.log(error);
     return { error: "Couldn't read from db" };

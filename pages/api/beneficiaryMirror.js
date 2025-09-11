@@ -1,7 +1,7 @@
 import prisma from "@/utils/api/client";
+import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -48,7 +48,6 @@ async function addData(req, res) {
       occupationRequired: body.occupationRequired,
       districtsRequired: body.districtsRequired,
       stateRequired: body.stateRequired,
-      diagnosisRequired: body.diagnosisRequired,
       visionRequired: body.visionRequired,
       mDVIRequired: body.mDVIRequired,
       extraInformationRequired: body.extraInformationRequired,
@@ -80,7 +79,6 @@ export async function readBeneficiaryMirror(hospital) {
         occupationRequired: true,
         districtsRequired: true,
         stateRequired: true,
-        diagnosisRequired: true,
         visionRequired: true,
         mDVIRequired: true,
         extraInformationRequired: "[]",

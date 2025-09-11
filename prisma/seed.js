@@ -86,7 +86,6 @@ async function main() {
       occupationRequired: true,
       districtsRequired: true,
       stateRequired: true,
-      diagnosisRequired: true,
       visionRequired: true,
       mDVIRequired: true,
       extraInformationRequired: '[{"name": "extraField", "type": "text", "require": "true"}]',

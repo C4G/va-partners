@@ -1,13 +1,13 @@
 // This function gets called at build time
-import { readUser } from "./api/user";
-import { getSession } from "next-auth/react";
 import { readBeneficiaryMirror } from "@/pages/api/beneficiaryMirror";
 import { findAllHospital } from "@/pages/api/hospital";
+import moment from "moment";
+import { getSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import Navigation from "./navigation/Navigation";
-import moment from "moment";
 import { required } from "../comps/required";
+import { readUser } from "./api/user";
+import Navigation from "./navigation/Navigation";
 
 // http://localhost:3000/beneficiaryinformation
 export async function getServerSideProps(ctx) {
@@ -81,7 +81,6 @@ function RequiredFields(props) {
     let occupation = document.getElementById("occupation") != null ? document.getElementById("occupation").value : null;
     let districts = document.getElementById("districts") != null ? document.getElementById("districts").value : null;
     let state = document.getElementById("state") != null ? document.getElementById("state").value : null;
-    let diagnosis = document.getElementById("diagnosis") != null ? document.getElementById("diagnosis").value : null;
     let vision = document.getElementById("vision") != null ? document.getElementById("vision").value : null;
     let mDVI = document.getElementById("mDVI") != null ? document.getElementById("mDVI").value : null;
 
@@ -100,7 +99,6 @@ function RequiredFields(props) {
       "occupation" + occupation,
       "districts" + districts,
       "state" + state,
-      "diagnosis" + diagnosis,
       "vision" + vision,
       "mDVI" + mDVI
     );
@@ -130,7 +128,6 @@ function RequiredFields(props) {
         occupation: occupation,
         districts: districts,
         state: state,
-        diagnosis: diagnosis,
         vision: vision,
         mDVI: mDVI,
         extraInformation: extraInfo,
@@ -347,26 +344,6 @@ function RequiredFields(props) {
     );
   }
 
-  var diagnosis;
-  if (!props.requiredBeneficiaryFields.diagnosisRequired) {
-    diagnosis = <div></div>;
-  } else {
-    diagnosis = (
-      <div className="form-group">
-        <label className="form-check-label" htmlFor="diagnosis">
-          Diagnosis
-        </label>
-        <input
-          type="text"
-          className="form-control"
-          id="diagnosis"
-          placeholder="Enter beneficiary's diagnosis"
-          autoComplete="off"
-        />
-      </div>
-    );
-  }
-
   var vision;
   if (!props.requiredBeneficiaryFields.visionRequired) {
     vision = <div></div>;
@@ -442,7 +419,6 @@ function RequiredFields(props) {
               </div>
             </div>
             {mDVI}
-            {diagnosis}
             {vision}
             <br />
             <div id="extraFields">

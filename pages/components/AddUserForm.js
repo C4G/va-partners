@@ -12,7 +12,6 @@ function AddUserForm({ onAddUser }) {
     occupation: "",
     districts: "",
     state: "",
-    diagnosis: "",
     vision: "",
     mDVI: "",
     extraInformation: "",
