@@ -1,7 +1,7 @@
-import XLSX from "xlsx-js-style";
-import { isNotNullEmptyOrUndefined, union, difference, intersect } from "./globalFunctions";
 import moment from "moment";
 import { calculateAge } from "utils/global/calculate-age";
+import XLSX from "xlsx-js-style";
+import { difference, intersect, isNotNullEmptyOrUndefined, union } from "./globalFunctions";
 
 function getFormattedDate(date) {
   const day = date.getDate();
@@ -203,6 +203,7 @@ function getCommonData(beneficiary) {
     Education: beneficiary["education"],
     Occupation: beneficiary["occupation"],
     Diagnosis: beneficiary["diagnosis"],
+    "Diagnosis Notes": beneficiary["diagnosisNotes"],
     District: beneficiary["districts"],
     State: beneficiary["state"],
   };

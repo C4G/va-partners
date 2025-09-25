@@ -1786,6 +1786,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
     { field: "districts", headerName: "District", filter: true, sortable: true },
     { field: "state", headerName: "State", filter: true, sortable: true },
     { field: "diagnosis", headerName: "Diagnosis", filter: true, sortable: true },
+    { field: "diagnosisNotes", headerName: "Diagnosis Notes", filter: true, sortable: true },
     { field: "vision", headerName: "Vision", filter: true, sortable: true },
     {
       field: "mDVI",
