@@ -217,6 +217,23 @@ function GraphCustomizer({
 
       const wahd = XLSX.utils.json_to_sheet([]);
 
+      var all_sheets = [wref, wben, wved, wlved, wclve, wed, wtd, wahd]
+
+      // --- NEW WIDTH LOGIC START ---
+      const defaultColumnWidth = 12;
+      const totalColsToApply = 30; // Applying to first 30 columns for safety
+      const commonCols = Array(totalColsToApply).fill({ wch: defaultColumnWidth });
+
+      // Helper to apply widths
+      const applyWidths = (sheet) => {
+        sheet["!cols"] = commonCols;
+      };
+
+      // Apply uniform widths to all data sheets
+      for (let sheet of all_sheets) {
+        applyWidths(sheet);
+      }
+
       if (hospitalSummary.length === 1) {
         XLSX.utils.book_append_sheet(wb, buildSummarySheet(), "Summary");
         const tier = hospitalSummary[0].tier;

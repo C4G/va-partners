@@ -93,6 +93,7 @@ const lveMainHeader = [
   "Education",
   "Occupation",
   "Diagnosis",
+  "Diagnosis Notes",
   "Districts",
   "State",
   "Session Number",
@@ -114,7 +115,7 @@ const lveMainHeader = [
 
 // Excel sub-header for Low Vision Screening Sheet
 let lveSubHeader = [];
-addEmptyElements(lveSubHeader, "", 13);
+addEmptyElements(lveSubHeader, "", 14);
 lveSubHeader.push("Notation");
 lveSubHeader.push("RE");
 lveSubHeader.push("LE");
@@ -215,6 +216,38 @@ function getCommonData(beneficiary) {
 function getBeneficiaryJson(commonData, beneficiary) {
   let beneficiaryJson = { ...commonData };
   delete beneficiaryJson["Date of Evaluation"];
+
+  // 1. Collect all clinical sessions from the three arrays
+  const clveSessions = beneficiary["Comprehensive_Low_Vision_Evaluation"] || [];
+  const veSessions = beneficiary["Vision_Enhancement"] || [];
+  const lveSessions = beneficiary["Low_Vision_Evaluation"] || [];
+
+  // 2. Prioritization Logic: CLVE takes precedence regardless of date
+  let selectedSession = null;
+
+  if (clveSessions.length > 0) {
+    // Sort CLVE sessions to get the most recent one if multiple exist
+    selectedSession = clveSessions.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+  } else {
+    // Combine and sort the remaining two by date (descending)
+    const remainingSessions = [...veSessions, ...lveSessions].sort((a, b) => {
+      return new Date(b.date) - new Date(a.date);
+    });
+
+    if (remainingSessions.length > 0) {
+      selectedSession = remainingSessions[0];
+    }
+  }
+
+  // 3. Update the Diagnosis based on the prioritized selection
+  if (selectedSession) {
+    // Check both property casings to ensure compatibility with VE and LVE data
+    beneficiaryJson["Diagnosis"] = selectedSession.diagnosis || selectedSession.Diagnosis || commonData["Diagnosis"];
+  } else {
+    // Fallback to the original profile diagnosis if no clinical sessions exist
+    beneficiaryJson["Diagnosis"] = commonData["Diagnosis"];
+  }
+
   beneficiaryJson["Phone Number"] = beneficiary["phoneNumber"];
   beneficiaryJson["Hospital Name"] = beneficiary["hospital"]["name"];
   beneficiaryJson["Vision"] = beneficiary["vision"];
@@ -322,8 +355,34 @@ function getLveJson(commonData, lveData) {
 }
 
 // Get Training Sheet data
-function getTrainingJson(commonData, tData) {
+function getTrainingJson(commonData, tData, beneficiary) {
   let tJson = { ...commonData };
+
+  // Prioritization logic: Profile -> CLVE -> Camp (LVE)
+  let finalDiagnosis = beneficiary["diagnosis"];
+
+  // 1. If profile diagnosis is empty, check Vision Enhancement
+  if (!isNotNullEmptyOrUndefined(finalDiagnosis)) {
+    const veRecords = beneficiary["Vision_Enhancement"] || [];
+    if (veRecords.length > 0) {
+      // Note: your getVeJson code indicates this data uses "Diagnosis" (Capital D)
+      const latestVe = veRecords.sort((a, b) => b.sessionNumber - a.sessionNumber)[0];
+      finalDiagnosis = latestVe.diagnosis || latestVe.Diagnosis;
+    }
+  }
+
+  // 2. If still empty, check Camp (LVE)
+  if (!isNotNullEmptyOrUndefined(finalDiagnosis)) {
+    const lveRecords = beneficiary["Low_Vision_Evaluation"] || [];
+    if (lveRecords.length > 0) {
+      const latestLve = lveRecords.sort((a, b) => b.sessionNumber - a.sessionNumber)[0];
+      finalDiagnosis = latestLve.diagnosis;
+    }
+  }
+
+  // Update the diagnosis field for the training record
+  tJson["Diagnosis"] = finalDiagnosis;
+
   tJson["Date of Evaluation"] = getDateWithTimezoneOffset(new Date(tData["date"]));
   tJson["Session Number"] = tData["sessionNumber"];
   tJson["Type of Training"] = tData["type"]; // has been referred in customizedReports. Please make necessary changes if this column name is changed.
@@ -1359,17 +1418,18 @@ export function setLveHeader(wlved) {
     mergeHeaderCells({ col: 6, rowSpan: 1 }), // Education
     mergeHeaderCells({ col: 7, rowSpan: 1 }), // Occupation
     mergeHeaderCells({ col: 8, rowSpan: 1 }), // Diagnosis
-    mergeHeaderCells({ col: 9, rowSpan: 1 }), // District
-    mergeHeaderCells({ col: 10, rowSpan: 1 }), // State
-    mergeHeaderCells({ col: 11, rowSpan: 1 }), // Session Number
-    mergeHeaderCells({ col: 12, rowSpan: 1 }), // MDVI
-    mergeHeaderCells({ col: 13, colSpan: 3 }), // { s: { r: 0, c: 13 }, e: { r: 0, c: 16 } }, Title: Acuity
-    mergeHeaderCells({ col: 17, colSpan: 3 }), // { s: { r: 0, c: 17 }, e: { r: 0, c: 20 } }, Title: Near Visual Acuity
-    mergeHeaderCells({ col: 21, rowSpan: 1 }), // Recommended Optical Aid
-    mergeHeaderCells({ col: 22, rowSpan: 1 }), // Recommended Non-Optical Aid
-    mergeHeaderCells({ col: 23, rowSpan: 1 }), // Recommended Electronic Aid
-    mergeHeaderCells({ col: 24, rowSpan: 1 }), // Spectacles (Refractive Error Only)
-    mergeHeaderCells({ col: 25, rowSpan: 1 }), // Extra Information
+    mergeHeaderCells({ col: 9, rowSpan: 1 }), // Diagnosis Notes
+    mergeHeaderCells({ col: 10, rowSpan: 1 }), // District
+    mergeHeaderCells({ col: 11, rowSpan: 1 }), // State
+    mergeHeaderCells({ col: 12, rowSpan: 1 }), // Session Number
+    mergeHeaderCells({ col: 13, rowSpan: 1 }), // MDVI
+    mergeHeaderCells({ col: 14, colSpan: 3 }), // { s: { r: 0, c: 13 }, e: { r: 0, c: 16 } }, Title: Acuity
+    mergeHeaderCells({ col: 18, colSpan: 3 }), // { s: { r: 0, c: 17 }, e: { r: 0, c: 20 } }, Title: Near Visual Acuity
+    mergeHeaderCells({ col: 22, rowSpan: 1 }), // Recommended Optical Aid
+    mergeHeaderCells({ col: 23, rowSpan: 1 }), // Recommended Non-Optical Aid
+    mergeHeaderCells({ col: 24, rowSpan: 1 }), // Recommended Electronic Aid
+    mergeHeaderCells({ col: 25, rowSpan: 1 }), // Spectacles (Refractive Error Only)
+    mergeHeaderCells({ col: 26, rowSpan: 1 }), // Extra Information
   ];
 }
 
@@ -1462,7 +1522,7 @@ export function getReportData(filteredBeneficiaryData, filteredSummary, includeA
     // Training Sheet
     let beneficiaryT = beneficiary["Training"];
     for (let tData of beneficiaryT) {
-      let tJson = getTrainingJson(commonData, tData);
+      let tJson = getTrainingJson(commonData, tData, beneficiary);
       trainingData.push(tJson);
     }
 
