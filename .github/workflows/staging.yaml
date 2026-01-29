@@ -7,7 +7,7 @@ on:
     branches:
       - staging
 jobs:
-  Deploy-Preview:
+  Deploy-Staging:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +16,8 @@ jobs:
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
       - name: Apply Prisma Migrations
         run: npx prisma migrate deploy
         env:
@@ -24,3 +26,4 @@ jobs:
         run: ./tools/deploy-test-domain.sh
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
