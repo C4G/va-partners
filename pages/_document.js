@@ -14,6 +14,11 @@ export default function Document() {
       <body>
         <Main />
         <NextScript />
+        <script
+          defer
+          src='https://analytics.c4g.dev/script.js'
+          data-website-id='ef62e25c-9932-4b25-b978-a6bbe6a93783'
+        />
       </body>
     </Html>
   );
