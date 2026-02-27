@@ -2,8 +2,9 @@
 import { findAllHospital } from "@/pages/api/hospital";
 import { buildDashboardQueryParams } from "@/utils/ui/build-dashboard-query-params";
 import EditIcon from "@mui/icons-material/Edit";
+import DownloadIcon from "@mui/icons-material/Download";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Box, Button, Drawer, IconButton, Paper, Tab, Tabs } from "@mui/material";
+import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, FormControlLabel, FormGroup, IconButton, Paper, Tab, Tabs, TextField, Typography } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -812,6 +813,14 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   // Drawer state for filters
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [downloadDataTypes, setDownloadDataTypes] = useState(["Beneficiary"]);
+  const [downloadGenders, setDownloadGenders] = useState(["Male", "Female", "Other"]);
+  const [downloadMdvi, setDownloadMdvi] = useState(["Yes", "No"]);
+  const [downloadMinAge, setDownloadMinAge] = useState(null);
+  const [downloadMaxAge, setDownloadMaxAge] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
   // State variables for graph tabs
   const [activeGraphTab, setActiveGraphTab] = useState(0);
   const [activeBeneficiaryGraphTab, setActiveBeneficiaryGraphTab] = useState(0);
@@ -948,6 +957,118 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
         <EditIcon />
       </IconButton>
     );
+  };
+
+  const toggleDownloadDataType = (key) => {
+    setDownloadDataTypes((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  const toggleDownloadGender = (g) => {
+    setDownloadGenders((prev) =>
+      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
+    );
+  };
+
+  const toggleDownloadMdvi = (m) => {
+    setDownloadMdvi((prev) =>
+      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]
+    );
+  };
+
+  const flattenRecord = (record) => {
+    const flat = {};
+    const recurse = (obj, prefix = "") => {
+      for (const k in obj) {
+        const val = obj[k];
+        const key = prefix ? `${prefix}.${k}` : k;
+        if (val !== null && typeof val === "object" && !Array.isArray(val)) {
+          recurse(val, key);
+        } else {
+          flat[key] = val ?? "";
+        }
+      }
+    };
+    recurse(record);
+    return flat;
+  };
+
+  const handleDownloadReport = async () => {
+    if (downloadDataTypes.length === 0) {
+      alert("Please select at least one data type.");
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const startDateUTC = new Date(startDate).toISOString();
+      const endDateUTC = new Date(endDate).toISOString();
+
+      let sanitizedHospitalNames = "All_Hospitals";
+      if (Array.isArray(selectedHospitalNames) && selectedHospitalNames.length > 0) {
+        sanitizedHospitalNames =
+          selectedHospitalNames.length === 1
+            ? selectedHospitalNames[0].replace(/\s+/g, "_")
+            : "MULTI";
+      }
+      const formattedStart = moment(startDate).format("YYYY-MM-DD");
+      const formattedEnd = moment(endDate).format("YYYY-MM-DD");
+
+      for (const dataType of downloadDataTypes) {
+        const params = new URLSearchParams();
+        params.append("offset", 0);
+        params.append("limit", 99999);
+        params.append("startDate", startDateUTC);
+        params.append("endDate", endDateUTC);
+        selectedHospitals.forEach((id) => params.append("hospitalIds", id));
+        downloadGenders.forEach((g) => params.append("genders", g));
+        downloadMdvi.forEach((m) => params.append("mdvis", m));
+        if (downloadMinAge) params.append("min_age", downloadMinAge);
+        if (downloadMaxAge) params.append("max_age", downloadMaxAge);
+
+        const response = await fetch(`/api/v2/dashboard/${dataType}?${params.toString()}`, {
+          credentials: "include",
+        });
+        const result = await response.json();
+        const records = result.records || [];
+
+        if (records.length === 0) {
+          continue;
+        }
+
+        const flatRecords = records.map(flattenRecord);
+        const headers = Object.keys(flatRecords[0]);
+        const csvRows = [
+          headers.join(","),
+          ...flatRecords.map((row) =>
+            headers
+              .map((h) => {
+                const val = row[h] ?? "";
+                return `"${String(val).replace(/"/g, '""')}"`;
+              })
+              .join(",")
+          ),
+        ];
+
+        const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${dataType}_${sanitizedHospitalNames}_${formattedStart}_${formattedEnd}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      setDownloadModalOpen(false);
+    } catch (err) {
+      console.error("Download error:", err);
+      alert("An error occurred while downloading the report.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const downloadChartData = (chartData, filename) => {
@@ -1841,31 +1962,31 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   const visualAcuityChartData =
     countsData && countsData.distanceBinocularVisionBE_counts
       ? {
-          labels: visualAcuityCategories, // Use predefined categories
-          datasets: [
-            {
-              label: "Number of Cases",
-              data: visualAcuityCategories.map(
-                (category) => countsData.distanceBinocularVisionBE_counts[category] || 0
-              ),
-              backgroundColor: [
-                "rgba(255, 99, 132, 0.6)", // Blindness
-                "rgba(255, 206, 86, 0.6)", // Severe visual impairment
-                "rgba(54, 162, 235, 0.6)", // Moderate visual impairment
-                "rgba(255, 159, 64, 0.6)", // Mild visual impairment
-                "rgba(153, 102, 255, 0.6)", // Visual Acuity normal
-              ],
-              borderColor: [
-                "rgba(255, 99, 132, 1)", // Blindness
-                "rgba(255, 206, 86, 1)", // Severe visual impairment
-                "rgba(54, 162, 235, 1)", // Moderate visual impairment
-                "rgba(255, 159, 64, 1)", // Mild visual impairment
-                "rgba(153, 102, 255, 1)", // Visual Acuity normal
-              ],
-              borderWidth: 1,
-            },
-          ],
-        }
+        labels: visualAcuityCategories,
+        datasets: [
+          {
+            label: "Number of Cases",
+            data: visualAcuityCategories.map(
+              (category) => countsData.distanceBinocularVisionBE_counts[category] || 0
+            ),
+            backgroundColor: [
+              "rgba(255, 99, 132, 0.6)",
+              "rgba(255, 206, 86, 0.6)",
+              "rgba(54, 162, 235, 0.6)",
+              "rgba(255, 159, 64, 0.6)",
+              "rgba(153, 102, 255, 0.6)",
+            ],
+            borderColor: [
+              "rgba(255, 99, 132, 1)",
+              "rgba(255, 206, 86, 1)",
+              "rgba(54, 162, 235, 1)",
+              "rgba(255, 159, 64, 1)",
+              "rgba(153, 102, 255, 1)",
+            ],
+            borderWidth: 1,
+          },
+        ],
+      }
       : null;
 
   // Generate Unique Beneficiaries Graph Data with Drilldown
@@ -2539,6 +2660,28 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
           {/* Render Table or Charts based on selected Master Tab */}
           {masterTabIndex === 0 && (
             <div>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1, mt: 1 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<DownloadIcon />}
+                  onClick={() => {
+                    setDownloadDataTypes(
+                      ["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"][subTabIndex]
+                        ? [["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"][subTabIndex]]
+                        : ["Beneficiary"]
+                    );
+                    setDownloadGenders([...selectedGenders]);
+                    setDownloadMdvi([...selectedMdvi]);
+                    setDownloadMinAge(minAge);
+                    setDownloadMaxAge(maxAge);
+                    setDownloadModalOpen(true);
+                  }}
+                >
+                  Download Report
+                </Button>
+              </Box>
+
               {/* Sub-Tabs within Table */}
               <Tabs value={subTabIndex} onChange={handleSubTabChange} centered>
                 <Tab label="Beneficiaries" />
@@ -2751,6 +2894,93 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
         </Container>
         <br />
       </div>
+
+      <Dialog open={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: "bold" }}>Download Report</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>Data Type</Typography>
+          <FormGroup sx={{ mb: 2 }}>
+            {[
+              { key: "Beneficiary", label: "Beneficiaries" },
+              { key: "Vision_Enhancement", label: "Vision Enhancement" },
+              { key: "Training", label: "Training" },
+              { key: "Comprehensive_Low_Vision_Evaluation", label: "Comprehensive Low Vision Evaluation" },
+              { key: "Counselling_Education", label: "Counselling Education" },
+            ].map(({ key, label }) => (
+              <FormControlLabel
+                key={key}
+                control={
+                  <Checkbox
+                    checked={downloadDataTypes.includes(key)}
+                    onChange={() => toggleDownloadDataType(key)}
+                    size="small"
+                  />
+                }
+                label={label}
+              />
+            ))}
+          </FormGroup>
+
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>Gender</Typography>
+          <FormGroup row sx={{ mb: 2 }}>
+            {["Male", "Female", "Other"].map((g) => (
+              <FormControlLabel
+                key={g}
+                control={
+                  <Checkbox checked={downloadGenders.includes(g)} onChange={() => toggleDownloadGender(g)} size="small" />
+                }
+                label={g}
+              />
+            ))}
+          </FormGroup>
+
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>MDVI</Typography>
+          <FormGroup row sx={{ mb: 2 }}>
+            {["Yes", "No"].map((m) => (
+              <FormControlLabel
+                key={m}
+                control={
+                  <Checkbox checked={downloadMdvi.includes(m)} onChange={() => toggleDownloadMdvi(m)} size="small" />
+                }
+                label={m}
+              />
+            ))}
+          </FormGroup>
+
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>Age Range</Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <TextField
+              label="Min Age"
+              type="number"
+              size="small"
+              value={downloadMinAge ?? ""}
+              onChange={(e) => setDownloadMinAge(e.target.value ? Number(e.target.value) : null)}
+              fullWidth
+            />
+            <TextField
+              label="Max Age"
+              type="number"
+              size="small"
+              value={downloadMaxAge ?? ""}
+              onChange={(e) => setDownloadMaxAge(e.target.value ? Number(e.target.value) : null)}
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setDownloadModalOpen(false)} disabled={isDownloading}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownloadReport}
+            disabled={isDownloading || downloadDataTypes.length === 0}
+          >
+            {isDownloading ? "Downloading..." : "Download"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Layout>
   );
 }
