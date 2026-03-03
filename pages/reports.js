@@ -23,6 +23,7 @@ import GraphCustomizer from "./components/GraphCustomizer";
 import Layout from "./components/layout";
 import ReportCustomizer from "./customizedReport";
 import Navigation from "./navigation/Navigation";
+import * as XLSX from "xlsx-js-style";
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler, ChartDataLabels);
@@ -1014,6 +1015,9 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       const formattedStart = moment(startDate).format("YYYY-MM-DD");
       const formattedEnd = moment(endDate).format("YYYY-MM-DD");
 
+      const wb = XLSX.utils.book_new();
+      let hasData = false;
+
       for (const dataType of downloadDataTypes) {
         const params = new URLSearchParams();
         params.append("offset", 0);
@@ -1037,29 +1041,28 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
         }
 
         const flatRecords = records.map(flattenRecord);
-        const headers = Object.keys(flatRecords[0]);
-        const csvRows = [
-          headers.join(","),
-          ...flatRecords.map((row) =>
-            headers
-              .map((h) => {
-                const val = row[h] ?? "";
-                return `"${String(val).replace(/"/g, '""')}"`;
-              })
-              .join(",")
-          ),
-        ];
+        const ws = XLSX.utils.json_to_sheet(flatRecords);
 
-        const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${dataType}_${sanitizedHospitalNames}_${formattedStart}_${formattedEnd}.csv`);
-        link.style.visibility = "hidden";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const address = XLSX.utils.encode_col(C) + "1";
+          if (!ws[address]) continue;
+          ws[address].s = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "EAEAEA" } },
+          };
+        }
+
+        const sheetName = dataType.replace(/_/g, " ").substring(0, 31);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        hasData = true;
+      }
+
+      if (hasData) {
+        const fileName = `VisionAid_Report_${sanitizedHospitalNames}_${formattedStart}_${formattedEnd}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+      } else {
+        alert("No records found for the selected criteria.");
       }
 
       setDownloadModalOpen(false);
