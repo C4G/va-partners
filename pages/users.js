@@ -5,7 +5,7 @@ import { findAllHospital } from "@/pages/api/hospital";
 import Router from "next/router";
 import { FormControl, Select, MenuItem, Input, Typography } from "@mui/material";
 import { createMenu } from "@/constants/globalFunctions";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "./components/layout";
 import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
@@ -53,7 +53,7 @@ const formatLastUpdate = (p) =>
 
 function Users(props) {
   const globalFieldOptions = { filter: true };
-  const [rowData] = useState(props.users);
+  const [rowData, setRowData] = useState(props.users);
   const [colDefs] = useState([
     { field: "id", width: 66, ...globalFieldOptions },
     { field: "email", tooltipValueGetter: (p) => p.value, minWidth: 200, flex: 1, ...globalFieldOptions },
@@ -323,6 +323,11 @@ function Users(props) {
     data["hospital"] = hospital;
     usersList.push(data);
   }
+
+  // Update rowData whenever the usersList logic recalculates
+  useEffect(() => {
+    setRowData(usersList);
+  }, [props.users]);
 
   return (
     <Layout>

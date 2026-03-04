@@ -36,6 +36,18 @@ async function main() {
   });
   await prisma.user.create({
     data: {
+      email: "noahmhodgson@gmail.com",
+      admin: {
+        create: {},
+      },
+    },
+    include: {
+      admin: true,
+      hospitalRole: true,
+    },
+  });
+  await prisma.user.create({
+    data: {
       email: "visionaidp11ad@gmail.com",
       admin: {
         create: {},
