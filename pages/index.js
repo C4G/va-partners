@@ -11,8 +11,8 @@ import { buildDashboardQueryParams } from "@/utils/ui/build-dashboard-query-para
 
 export default function Home(props) {
   const { data: session } = useSession();
-  const [totalBenificiaries, setTotalBenificiaries] = useState("0");
-  const [uniqueBenificiaries, setUniqueBenificiaries] = useState("0");
+  const [totalBeneficiaries, setTotalBeneficiaries] = useState("0");
+  const [uniqueBeneficiaries, setUniqueBeneficiaries] = useState("0");
   const [totalVisionEnhancements, setTotalVisionEnhancements] = useState("0");
   const [totalTrainings, setTotalTrainings] = useState("0");
   const [totalEvaluations, setTotalEvaluations] = useState("0");
@@ -34,8 +34,8 @@ export default function Home(props) {
       console.log("Counts data:", data);
 
       if (response.ok) {
-        setTotalBenificiaries(data.Total_Benificiaries || "0");
-        setUniqueBenificiaries(data.Unique_Benificiaries || "0");
+        setTotalBeneficiaries(data.Total_Beneficiaries || "0");
+        setUniqueBeneficiaries(data.Unique_Beneficiaries || "0");
         setTotalVisionEnhancements(data.Vision_Enhancements || "0");
         setTotalTrainings(data.Training || "0");
         setTotalEvaluations(data.Low_Vision_Evaluation || "0");
@@ -103,22 +103,22 @@ export default function Home(props) {
     <Layout>
       <Navigation user={props.user} />
       <div>
-        <div className="wrapper" style={{ height: "70vh" }}>
+        <div className="wrapper">
           {session && !props.user && <strong>Please ask an admin to add you as user!</strong>}
           {session && props.user.admin && (
             <Container sx={{ py: 4 }}>
               <br />
               <Grid container spacing={3}>
-                {/* Total Benificiaries*/}
+                {/* Total Beneficiaries*/}
                 <KpiCard
-                  kpi={totalBenificiaries}
-                  descriptor={`Benificiaries`}
+                  kpi={totalBeneficiaries}
+                  descriptor={`Beneficiaries`}
                   href={`/reports?selectedHospitals=[${props.hospitals.map((item) => item.id).join(",")}]&startDate=&endDate=&selectedGenders=["Male"%2C"Female"%2C"Other"]&selectedMdvi=["Yes"%2C"No"]&minAge=&maxAge=&subTabIndex=0&masterTabIndex=0&quarter=Q${moment().quarter()}`}
                 />
-                {/* Unique Benificiaries*/}
+                {/* Unique Beneficiaries*/}
                 <KpiCard
-                  kpi={uniqueBenificiaries}
-                  descriptor={`Unique Benificiaries`}
+                  kpi={uniqueBeneficiaries}
+                  descriptor={`Unique Beneficiaries`}
                   href={`/reports?selectedHospitals=[${props.hospitals.map((item) => item.id).join(",")}]&startDate=&endDate=&selectedGenders=["Male"%2C"Female"%2C"Other"]&selectedMdvi=["Yes"%2C"No"]&minAge=&maxAge=&subTabIndex=0&masterTabIndex=0&quarter=Q${moment().quarter()}`}
                 />
                 {/* Total Vision Enhancements*/}
