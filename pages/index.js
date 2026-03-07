@@ -49,11 +49,11 @@ export default function Home(props) {
       //setCountsData(null);
     }
   };
-  if (props.user.admin.length > 0) {
-    fetchCountsData(props.hospitals.map((item) => item.id));
-  } else if (props.user.hospitalRole.length > 0) {
-    fetchCountsData(props.user.hospitalRole.map((role) => role.id));
-  }
+  const isAdmin = props.user?.admin ?? false;
+
+  if (isAdmin) {
+  fetchCountsData(props.hospitals.map((item) => item.id));
+}
   console.log(props.user);
 
   function KpiCard({ kpi, descriptor, href }) {
@@ -105,7 +105,7 @@ export default function Home(props) {
       <div>
         <div className="wrapper" style={{ height: "70vh" }}>
           {session && !props.user && <strong>Please ask an admin to add you as user!</strong>}
-          {session && (
+          {session && props.user.admin && (
             <Container sx={{ py: 4 }}>
               <br />
               <Grid container spacing={3}>
@@ -151,19 +151,11 @@ export default function Home(props) {
               </Grid>
               <br />
               <Grid container spacing={3} justifyContent="center">
-                {props.user.admin ? (
                   <KpiCard
                     kpi={props.hospitals.length}
                     descriptor="Hospitals Served"
                     href={`/reports?selectedHospitals=[${props.hospitals.map((item) => item.id).join(",")}]&startDate=&endDate=&selectedGenders=["Male"%2C"Female"%2C"Other"]&selectedMdvi=["Yes"%2C"No"]&minAge=&maxAge=&masterTabIndex=0&quarter=Q${moment().quarter()}`}
                   />
-                ) : (
-                  <KpiCard
-                    kpi={props.user.hospitalRole}
-                    descriptor="Your Hospitals"
-                    href={`/reports?selectedHospitals=[${props.user.hospitalRole.map((role) => role.id).join(",")}]&startDate=&endDate=&selectedGenders=["Male"%2C"Female"%2C"Other"]&selectedMdvi=["Yes"%2C"No"]&minAge=&maxAge=&masterTabIndex=0&quarter=Q${moment().quarter()}`}
-                  />
-                )}
               </Grid>
             </Container>
           )}
