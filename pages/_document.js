@@ -1,4 +1,4 @@
-import { Head, Html, Main, NextScript } from "next/document";
+import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
   return (
@@ -17,7 +17,7 @@ export default function Document() {
         <script
           defer
           src='https://analytics.c4g.dev/script.js'
-          data-website-id='78b33cf6-bee9-4c3f-b82b-443777988bf3'
+          data-website-id='ef62e25c-9932-4b25-b978-a6bbe6a93783'
         />
       </body>
     </Html>
