@@ -52,6 +52,15 @@ function Navigation(props) {
           <ul className="navbar-nav">
             {user && role != "invalid" && (
               <li className="nav-item p-2">
+                <Link href="/" legacyBehavior>
+                  <a className={`nav-link custom-link ${router.pathname === "/" ? "active" : ""}`}>
+                    Home
+                  </a>
+                </Link>
+              </li>
+            )}
+            {user && role != "invalid" && (
+              <li className="nav-item p-2">
                 <Link href="/beneficiary" legacyBehavior>
                   <a className={`nav-link custom-link ${router.pathname === "/beneficiary" ? "active" : ""}`}>
                     Beneficiaries

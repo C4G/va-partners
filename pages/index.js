@@ -36,7 +36,7 @@ export default function Home(props) {
       if (response.ok) {
         setTotalBeneficiaries(data.Total_Beneficiaries || "0");
         setUniqueBeneficiaries(data.Unique_Beneficiaries || "0");
-        setTotalVisionEnhancements(data.Vision_Enhancements || "0");
+        setTotalVisionEnhancements(data.Vision_Enhancement || "0");
         setTotalTrainings(data.Training || "0");
         setTotalEvaluations(data.Low_Vision_Evaluation || "0");
         setTotalCounseling(data.Counselling_Education || "0");
