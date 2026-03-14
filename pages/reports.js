@@ -815,7 +815,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
-  const [downloadDataTypes, setDownloadDataTypes] = useState(["Beneficiary"]);
+  const [downloadDataTypes, setDownloadDataTypes] = useState(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"]);
   const [downloadGenders, setDownloadGenders] = useState(["Male", "Female", "Other"]);
   const [downloadMdvi, setDownloadMdvi] = useState(["Yes", "No"]);
   const [downloadMinAge, setDownloadMinAge] = useState(null);
@@ -2669,11 +2669,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
                   color="primary"
                   startIcon={<DownloadIcon />}
                   onClick={() => {
-                    setDownloadDataTypes(
-                      ["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"][subTabIndex]
-                        ? [["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"][subTabIndex]]
-                        : ["Beneficiary"]
-                    );
+                    setDownloadDataTypes(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"]);
                     setDownloadGenders([...selectedGenders]);
                     setDownloadMdvi([...selectedMdvi]);
                     setDownloadMinAge(minAge);
@@ -2681,7 +2677,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
                     setDownloadModalOpen(true);
                   }}
                 >
-                  Download Report
+                  Customize Download
                 </Button>
               </Box>
 
@@ -2899,7 +2895,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       </div>
 
       <Dialog open={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: "bold" }}>Download Report</DialogTitle>
+        <DialogTitle sx={{ fontWeight: "bold" }}>Customize Download</DialogTitle>
         <DialogContent dividers>
           <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>Data Type</Typography>
           <FormGroup sx={{ mb: 2 }}>
