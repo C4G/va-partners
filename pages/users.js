@@ -333,8 +333,8 @@ function Users(props) {
     <Layout>
       <div className="content">
         <Navigation user={props.user} />
-        <div className="row">
-          <div className="offset-md-1 col-md-4">
+        <div className="row user-view-1">
+          <div className="col-md-4">
             <br />
             <strong>Add User To Hospital</strong>
             <br />
@@ -407,8 +407,10 @@ function Users(props) {
               <br />
             </div>
           </div>
-          {/* <hr style="width: 1px; height: 20px; display: inline-block;"></hr> */}
-          <div className="offset-md-1 col-md-5">
+        </div>
+        {/* <hr style="width: 1px; height: 20px; display: inline-block;"></hr> */}
+        <div className="row user-view-2">
+          <div className="col-md-8">
             <br />
             <strong>List Of Users</strong>
             <br />

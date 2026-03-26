@@ -557,3 +557,12 @@ footer will be floating and page will be too short for styling) */
 .padding-bottom {
   padding-bottom: 8px;
 }
+
+.user-view-1, .user-view-2 {
+  display: flex;
+  justify-content: center;
+}
+
+.user-view-2 .col-md-8 {
+  margin-bottom: 100px;
+}
