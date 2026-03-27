@@ -12,13 +12,15 @@ import { getTrainingTypes } from "@/pages/api/trainingType";
 import { readVisionEnhancementMirror } from "@/pages/api/visionEnhancementMirror";
 import { getSession } from "next-auth/react";
 import Router from "next/router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, Form, Modal, Table } from "react-bootstrap";
 import { Trash } from "react-bootstrap-icons";
 import { v4 as uuidv4 } from "uuid";
 import { readUser } from "./api/user";
 import Layout from "./components/layout";
 import Navigation from "./navigation/Navigation";
+import { Checkbox, FormControlLabel, Grid } from "@mui/material";
+import { KPI_KEYS } from "@/utils/global/kpi-config";
 
 // http://localhost:3000/requiredfields
 export async function getServerSideProps(ctx) {
@@ -610,12 +612,55 @@ function RequiredFields(props) {
     }
   };
 
+  // noah's new code for home screen card toggling
+  const ALL_KPIS = [
+    { key: KPI_KEYS.BENEFICIARIES, label: "Beneficiaries" },
+    { key: KPI_KEYS.UNIQUE_BENEFICIARIES, label: "Unique Beneficiaries" },
+    { key: KPI_KEYS.VISION, label: "Vision Enhancements" },
+    { key: KPI_KEYS.TRAININGS, label: "Trainings" },
+    { key: KPI_KEYS.EVALUATIONS, label: "Evaluations" },
+    { key: KPI_KEYS.DEVICES, label: "Devices Given" },
+    { key: KPI_KEYS.COUNSELING, label: "Counseling" },
+    { key: KPI_KEYS.HOSPITALS, label: "Hospitals Served" },
+  ];
+
+  const [selected, setSelected] = useState([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("visibleKpis");
+
+    if (saved) {
+      setSelected(JSON.parse(saved));
+    } else {
+      setSelected(ALL_KPIS.map((k) => k.key));
+    }
+  }, []);
+
+  const handleToggle = (key) => {
+    setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  };
+
+  const handleSave = () => {
+    localStorage.setItem("visibleKpis", JSON.stringify(selected));
+    alert("Saved!");
+  };
+
   return (
     <Layout>
       <div className="content">
         <Navigation user={props.user} />
         <div className="d-flex h-100 flex-grow-1 flex-row">
           <div className="col-md-3 container m-4 p-4">
+            <div className="p-2">
+              <button
+                className={`w-100 text-align-left ${
+                  section === "home" ? "btn btn-success btn-block active-tab" : "btn btn-light btn-block"
+                }`}
+                onClick={() => setSection("home")}
+              >
+                Home
+              </button>
+            </div>
             <div className="p-2">
               <button
                 className={`w-100 text-align-left ${
@@ -670,6 +715,33 @@ function RequiredFields(props) {
           </div> */}
           </div>
           <div className="col-md-8">
+            {section === "home" && (
+              <div className="container m-4 p-4">
+                <form action="#" method="POST" onSubmit={(e) => addHospital(e)}>
+                  <div className="text-center">
+                    <h2 className="mt-4 mb-4 text-center">
+                      <strong>Toggle Home Screen Cards</strong>
+                      <br />
+                      <Grid container spacing={2}>
+                        {ALL_KPIS.map((kpi) => (
+                          <Grid item xs={12} md={4} key={kpi.key}>
+                            <FormControlLabel
+                              control={
+                                <Checkbox checked={selected.includes(kpi.key)} onChange={() => handleToggle(kpi.key)} />
+                              }
+                              label={kpi.label}
+                            />
+                          </Grid>
+                        ))}
+                      </Grid>
+
+                      <br />
+                      <Button onClick={handleSave}>Save</Button>
+                    </h2>
+                  </div>
+                </form>
+              </div>
+            )}
             {section === "hospitals" && (
               <div className="container m-4 p-4">
                 <form action="#" method="POST" onSubmit={(e) => addHospital(e)}>
