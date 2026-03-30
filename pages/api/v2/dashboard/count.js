@@ -240,8 +240,6 @@ async function readData(req, res) {
       select: { mrn: true, hospitalId: true, dateOfBirth: true, gender: true },
     });
 
-    const totalBeneficiariesCount = selectedBeneficiaries.length;
-
     let uniqueBenefIds = new Set();
     if (dateRangeCondition) {
       // We need to find those with activity in the date range
@@ -268,6 +266,11 @@ async function readData(req, res) {
       }
     }
 
+    const filteredBeneficiaries = dateRangeCondition
+      ? selectedBeneficiaries.filter((b) => uniqueBenefIds.has(`${b.mrn}-${b.hospitalId}`))
+      : selectedBeneficiaries;
+
+    const totalBeneficiariesCount = filteredBeneficiaries.length;
     const uniqueBeneficiariesCount = uniqueBenefIds.size;
 
     const formattedCounts = {
@@ -294,7 +297,7 @@ async function readData(req, res) {
     if (parsedHospitalIds.length > 1) {
       // Compute totals/uniques per hospital from selectedBeneficiaries and uniqueBenefIds
       const totalByHospitalMap = {};
-      for (const b of selectedBeneficiaries) {
+      for (const b of filteredBeneficiaries) {
         totalByHospitalMap[b.hospitalId] = (totalByHospitalMap[b.hospitalId] || 0) + 1;
       }
 
@@ -443,8 +446,6 @@ async function readData(req, res) {
     formattedCounts["Devices_Recommended"] = devicesRecommendedCounts;
     formattedCounts["Devices_Dispensed_Details"] = devicesDispensedDetails;
     formattedCounts["Devices_Recommended_Details"] = devicesRecommendedDetails;
-
-    let filteredBeneficiaries = selectedBeneficiaries.filter((b) => uniqueBenefIds.has(`${b.mrn}-${b.hospitalId}`));
 
     // Now compute gender and age from filteredBeneficiaries, not selectedBeneficiaries.
     const genderCountsFormatted = { Male: 0, Female: 0, Other: 0 };

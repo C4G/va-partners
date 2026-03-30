@@ -1181,10 +1181,10 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
           hospitalIds: selectedHospitals,
           startDate: startDateUTC,
           endDate: endDateUTC,
-          // genders: selectedGenders,
-          // mdvis: selectedMdvi,
-          // min_age: minAge,
-          // max_age: maxAge,
+          genders: selectedGenders,
+          mdvis: selectedMdvi,
+          min_age: minAge,
+          max_age: maxAge,
         };
 
         const response = await fetch(`/api/v2/dashboard/count?${buildDashboardQueryParams(params)}`);
