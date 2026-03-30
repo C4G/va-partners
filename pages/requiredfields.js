@@ -614,7 +614,6 @@ function RequiredFields(props) {
 
   // noah's new code for home screen card toggling
   const ALL_KPIS = [
-    { key: KPI_KEYS.BENEFICIARIES, label: "Beneficiaries" },
     { key: KPI_KEYS.UNIQUE_BENEFICIARIES, label: "Unique Beneficiaries" },
     { key: KPI_KEYS.VISION, label: "Vision Enhancements" },
     { key: KPI_KEYS.TRAININGS, label: "Trainings" },
@@ -669,16 +668,6 @@ function RequiredFields(props) {
                 onClick={() => setSection("hospitals")}
               >
                 Hospitals
-              </button>
-            </div>
-            <div className="p-2">
-              <button
-                className={`w-100 text-align-left ${
-                  section === "beneficiaries" ? "btn btn-success btn-block active-tab" : "btn btn-light btn-block"
-                }`}
-                onClick={() => setSection("beneficiaries")}
-              >
-                Beneficiaries
               </button>
             </div>
             <div className="p-2">

@@ -13,7 +13,6 @@ import { KPI_KEYS } from "@/utils/global/kpi-config";
 export default function Home(props) {
   const { data: session } = useSession();
 
-  const [totalBeneficiaries, setTotalBeneficiaries] = useState("0");
   const [uniqueBeneficiaries, setUniqueBeneficiaries] = useState("0");
   const [totalVisionEnhancements, setTotalVisionEnhancements] = useState("0");
   const [totalTrainings, setTotalTrainings] = useState("0");
@@ -50,7 +49,6 @@ export default function Home(props) {
       const data = await response.json();
       console.log(data);
       if (response.ok) {
-        setTotalBeneficiaries(data.Total_Beneficiaries || "0");
         setUniqueBeneficiaries(data.Unique_Beneficiaries || "0");
         setTotalVisionEnhancements(data.Vision_Enhancement || "0");
         setTotalTrainings(data.Training || "0");
@@ -142,12 +140,6 @@ export default function Home(props) {
     }`;
 
   const kpiData = [
-    {
-      key: KPI_KEYS.BENEFICIARIES,
-      kpi: totalBeneficiaries,
-      descriptor: "Beneficiaries",
-      href: baseHref(0),
-    },
     {
       key: KPI_KEYS.UNIQUE_BENEFICIARIES,
       kpi: uniqueBeneficiaries,
@@ -247,7 +239,9 @@ export async function getServerSideProps(ctx) {
   }
 
   const user = await readUser(session.user.email);
-  const hospitals = await findAllHospital();
+  const hospitals = (await findAllHospital()).filter(
+    (hospital) => !hospital.name?.toLowerCase().startsWith("test")
+  );
 
   return {
     props: {

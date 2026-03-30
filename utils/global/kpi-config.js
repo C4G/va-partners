@@ -1,5 +1,4 @@
 export const KPI_KEYS = {
-  BENEFICIARIES: "beneficiaries",
   UNIQUE_BENEFICIARIES: "unique_beneficiaries",
   VISION: "vision",
   TRAININGS: "trainings",
