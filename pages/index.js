@@ -52,7 +52,7 @@ export default function Home(props) {
         setUniqueBeneficiaries(data.Unique_Beneficiaries || "0");
         setTotalVisionEnhancements(data.Vision_Enhancement || "0");
         setTotalTrainings(data.Training || "0");
-        setTotalEvaluations(data.Low_Vision_Evaluation || "0");
+        setTotalEvaluations(data.Comprehensive_Low_Vision_Evaluation || "0");
         setTotalCounseling(data.Counselling_Education || "0");
         const devices = data.Devices_Dispensed || {};
         setTotalDevicesDispensed(
