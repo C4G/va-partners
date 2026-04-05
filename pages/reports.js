@@ -807,7 +807,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
 
   // Filter states
   const [selectedGenders, setSelectedGenders] = useState(["Male", "Female", "Other"]);
-  const [selectedMdvi, setSelectedMdvi] = useState(["Yes", "No"]);
+  const [selectedMdvi, setSelectedMdvi] = useState([]);
   const [minAge, setMinAge] = useState(null);
   const [maxAge, setMaxAge] = useState(null);
 
@@ -914,7 +914,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
         setSelectedMdvi(parsedMdvi);
       } catch (error) {
         console.error("Error parsing selectedMdvi from query:", error);
-        setSelectedMdvi(["Yes", "No"]);
+        setSelectedMdvi([]);
       }
     }
     if (qMinAge) {

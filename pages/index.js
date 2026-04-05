@@ -35,8 +35,8 @@ export default function Home(props) {
 
   const fetchCountsData = async (hospital) => {
     try {
-      const startDateUTC = moment().quarter(moment().quarter()).startOf("quarter").toISOString();
-      const endDateUTC = moment().quarter(moment().quarter()).endOf("quarter").toISOString();
+      const startDateUTC = moment.utc().startOf("quarter").toISOString();
+      const endDateUTC = moment.utc().endOf("quarter").toISOString();
 
       const params = {
         startDate: startDateUTC,
@@ -51,7 +51,12 @@ export default function Home(props) {
       if (response.ok) {
         setUniqueBeneficiaries(data.Unique_Beneficiaries || "0");
         setTotalVisionEnhancements(data.Vision_Enhancement || "0");
-        setTotalTrainings(data.Training || "0");
+        setTotalTrainings(
+          (data.Training || 0) +
+          (data.Computer_Training || 0) +
+          (data.Mobile_Training || 0) +
+          (data.Orientation_Mobility_Training || 0)
+        );
         setTotalEvaluations(data.Comprehensive_Low_Vision_Evaluation || "0");
         setTotalCounseling(data.Counselling_Education || "0");
         const devices = data.Devices_Dispensed || {};
@@ -135,7 +140,7 @@ export default function Home(props) {
   const hospitalIds = selectedHospitalIds.join(",");
 
   const baseHref = (subTabIndex = "", extra = "") =>
-    `/reports?selectedHospitals=[${hospitalIds}]&startDate=&endDate=&selectedGenders=["Male"%2C"Female"%2C"Other"]&selectedMdvi=["Yes"%2C"No"]&minAge=&maxAge=&masterTabIndex=0&quarter=Q${moment().quarter()}${extra}${
+    `/reports?selectedHospitals=[${hospitalIds}]&startDate=&endDate=&selectedGenders=["Male"%2C"Female"%2C"Other"]&selectedMdvi=[]&minAge=&maxAge=&masterTabIndex=0&quarter=Q${moment().quarter()}${extra}${
       subTabIndex !== "" ? `&subTabIndex=${subTabIndex}` : ""
     }`;
 
