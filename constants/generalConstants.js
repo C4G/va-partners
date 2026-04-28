@@ -6,6 +6,10 @@ export const CLVEDiagnosis = [
   "Posterior Eye Disease",
   "Hereditary Eye Disease",
   "Neuro-ophthalmic Condition",
+  "Hypermetropia",
+  "Astigmatism",
+  "Myopia",
+  "Presbyopia",
   "Other",
   "No clear diagnosis",
 ];

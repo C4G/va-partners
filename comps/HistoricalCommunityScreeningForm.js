@@ -3,6 +3,7 @@ import { FormControl, Select, MenuItem } from "@mui/material";
 import moment from "moment";
 import { spectacleDevices } from "@/constants/devicesConstants";
 import { createMenu } from "@/constants/globalFunctions";
+import { CLVEDiagnosis } from "@/constants/generalConstants";
 
 export default function HistoricalCommunityScreeningForm(props) {
   const ITEM_HEIGHT = 48;
@@ -72,7 +73,8 @@ export default function HistoricalCommunityScreeningForm(props) {
     await props.refetchUser();
   };
 
-    const recommendationSpectacleOptions = createMenu(spectacleDevices, true, data.recommendationSpectacle ? data.recommendationSpectacle.split(", ") : []);
+  const diagnosisOptions = createMenu(CLVEDiagnosis, true, data.diagnosis ? data.diagnosis.split(", ") : []);
+  const recommendationSpectacleOptions = createMenu(spectacleDevices, true, data.recommendationSpectacle ? data.recommendationSpectacle.split(", ") : []);
   const dispensedSpectacleOptions = createMenu(spectacleDevices, true, data.dispensedSpectacle ? data.dispensedSpectacle.split(", ") : []);
 
   const handleMultiSelectChange = (e) => {
@@ -112,13 +114,16 @@ export default function HistoricalCommunityScreeningForm(props) {
         )}
         {editMode && fieldName === "diagnosis" && (
           <FormControl fullWidth size="small">
-            <input
-              type="text"
+            <Select
+              onChange={(e) => handleMultiSelectChange(e)}
+              value={data.diagnosis ? data.diagnosis.split(", ") : []}
               name="diagnosis"
-              value={data.diagnosis}
-              onChange={(e) => handleChange(e)}
-              autoComplete="off"
-            />
+              multiple
+              renderValue={(selected) => selected.join(", ")}
+              MenuProps={MenuProps}
+            >
+              {diagnosisOptions}
+            </Select>
           </FormControl>
         )}
         {editMode && fieldName === "mdvi" && (
@@ -164,9 +169,9 @@ export default function HistoricalCommunityScreeningForm(props) {
         {editMode && fieldName === "trainingGivenSpectacle" && (
           <FormControl fullWidth size="small">
             <Select onChange={(e) => handleChange(e)} value={data.trainingGivenSpectacle ?? ""} name="trainingGivenSpectacle">
-               <MenuItem value=""></MenuItem>
-               <MenuItem value="Yes">Yes</MenuItem>
-               <MenuItem value="No">No</MenuItem>
+              <MenuItem value=""></MenuItem>
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
             </Select>
           </FormControl>
         )}
@@ -186,7 +191,7 @@ export default function HistoricalCommunityScreeningForm(props) {
         )}
         {editMode && fieldName === "dispensedSpectacle" && (
           <FormControl fullWidth size="small">
-             <Select
+            <Select
               onChange={(e) => handleMultiSelectChange(e)}
               value={data.dispensedSpectacle ? data.dispensedSpectacle.split(", ") : []}
               name="dispensedSpectacle"
