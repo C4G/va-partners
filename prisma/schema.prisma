@@ -76,6 +76,7 @@ model Beneficiary {
   Counselling_Education               Counselling_Education[]
   Comprehensive_Low_Vision_Evaluation Comprehensive_Low_Vision_Evaluation[]
   Low_Vision_Evaluation               Low_Vision_Evaluation[]
+  Community_Screening                 Community_Screening[]
   Training                            Training[]
 
   @@id([mrn, hospitalId])
@@ -312,4 +313,40 @@ model Feedback {
   rating            Int
   comment           String?
   email             String?
+}
+
+model Community_Screening {
+  id                         Int         @id @default(autoincrement())
+  beneficiaryId              String
+  hospitalId                 Int
+  date                       DateTime?
+  sessionNumber              Int?
+  diagnosis                  String?
+  mdvi                       String?
+  uncorrectedDistanceRE      String?
+  uncorrectedDistanceLE      String?
+  uncorrectedDistanceBE      String?
+  uncorrectedNearRE          String?
+  uncorrectedNearLE          String?
+  uncorrectedNearBE          String?
+  bestCorrectedDistanceRE    String?
+  bestCorrectedDistanceLE    String?
+  bestCorrectedDistanceBE    String?
+  bestCorrectedNearRE        String?
+  bestCorrectedNearLE        String?
+  bestCorrectedNearBE        String?
+  recommendationSpectacle    String?
+  dispensedSpectacle         String?
+  costSpectacle              Int?
+  costToBeneficiarySpectacle Int?
+  dispensedDateSpectacle     DateTime?
+  trainingGivenSpectacle     String?
+  extraInformation           String      @db.Text
+  beneficiary                Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
+}
+
+model Community_Screening_Mirror {
+  id                       Int     @id
+  extraInformationRequired String  @db.Text
+  hospitalName             String?
 }

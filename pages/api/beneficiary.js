@@ -44,6 +44,7 @@ export const readBeneficiaryMrn = async (mrn, hospitalId) => {
         Comprehensive_Low_Vision_Evaluation: true,
         Counselling_Education: true,
         Low_Vision_Evaluation: true,
+        Community_Screening: true,
         Training: true,
       },
     });
@@ -88,6 +89,7 @@ export const readBeneficiaryOtherParam = async (otherParam) => {
         Comprehensive_Low_Vision_Evaluation: true,
         Counselling_Education: true,
         Low_Vision_Evaluation: true,
+        Community_Screening: true,
         Training: true,
       },
     });
@@ -128,6 +130,7 @@ async function readData(req, res) {
           Comprehensive_Low_Vision_Evaluation: true,
           Counselling_Education: true,
           Low_Vision_Evaluation: true,
+        Community_Screening: true,
           Training: true,
         },
       });
@@ -261,6 +264,7 @@ export async function findAllBeneficiary(isAdmin, hospitalIds) {
         Counselling_Education: true,
         Comprehensive_Low_Vision_Evaluation: true,
         Low_Vision_Evaluation: true,
+        Community_Screening: true,
         Training: true,
         Computer_Training: true,
         Mobile_Training: true,
@@ -278,6 +282,7 @@ export async function findAllBeneficiary(isAdmin, hospitalIds) {
         Counselling_Education: true,
         Comprehensive_Low_Vision_Evaluation: true,
         Low_Vision_Evaluation: true,
+        Community_Screening: true,
         Training: true,
         Computer_Training: true,
         Mobile_Training: true,
@@ -310,6 +315,7 @@ export async function findAllBeneficiaryForHospitalId(hospitalId) {
         Comprehensive_Low_Vision_Evaluation: true,
         Counselling_Education: true,
         Low_Vision_Evaluation: true,
+        Community_Screening: true,
         Training: true,
       },
     });

@@ -26,58 +26,56 @@ export default function UserProfileCard({
       <div className="profile-info">
         <hr />
 
-        <table>
-          <tbody>
-            <tr>
-              <td>MRN:</td>
-              <td>{MRN}</td>
-            </tr>
-            <tr>
-              <td>Beneficiary Name:</td>
-              <td>{beneficiaryName}</td>
-            </tr>
-            <tr>
-              <td>Hospital Name:</td>
-              <td>{hospitalName}</td>
-            </tr>
-            <tr>
-              <td>Gender:</td>
-              <td>{gender}</td>
-            </tr>
-            <tr>
-              <td>MDVI:</td>
-              <td>{mdvi}</td>
-            </tr>
-            <tr>
-              <td>Phone Number:</td>
-              <td>{phoneNumber}</td>
-            </tr>
-            <tr>
-              <td>Date of Birth:</td>
-              <td>{dob}</td>
-            </tr>
-            <tr>
-              <td>Occupation:</td>
-              <td>{occupation}</td>
-            </tr>
-            <tr>
-              <td>Education:</td>
-              <td>{education}</td>
-            </tr>
-            <tr>
-              <td>Districts:</td>
-              <td>{districts}</td>
-            </tr>
-            <tr>
-              <td>State:</td>
-              <td>{state}</td>
-            </tr>
-            <tr>
-              <td>Extra Information:</td>
-              <td>{extraInformation}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="profile-info-grid">
+          <div className="profile-info-row">
+            <div className="profile-info-label">MRN:</div>
+            <div className="profile-info-value">{MRN}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Beneficiary Name:</div>
+            <div className="profile-info-value">{beneficiaryName}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Hospital Name:</div>
+            <div className="profile-info-value">{hospitalName}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Gender:</div>
+            <div className="profile-info-value">{gender}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">MDVI:</div>
+            <div className="profile-info-value">{mdvi}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Phone Number:</div>
+            <div className="profile-info-value">{phoneNumber}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Date of Birth:</div>
+            <div className="profile-info-value">{dob}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Occupation:</div>
+            <div className="profile-info-value">{occupation}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Education:</div>
+            <div className="profile-info-value">{education}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Districts:</div>
+            <div className="profile-info-value">{districts}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">State:</div>
+            <div className="profile-info-value">{state}</div>
+          </div>
+          <div className="profile-info-row">
+            <div className="profile-info-label">Extra Information:</div>
+            <div className="profile-info-value">{extraInformation}</div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -207,6 +207,7 @@ async function readData(req, res) {
       "Counselling_Education",
       "Comprehensive_Low_Vision_Evaluation",
       "Low_Vision_Evaluation",
+      "Community_Screening",
     ];
 
     const activitySubtypes = ["Screenings", "Vision_Enhancement", "CLVE", "Counselling", "Training"];
@@ -228,6 +229,7 @@ async function readData(req, res) {
       Counselling_Education: prisma.Counselling_Education,
       Comprehensive_Low_Vision_Evaluation: prisma.Comprehensive_Low_Vision_Evaluation,
       Low_Vision_Evaluation: prisma.Low_Vision_Evaluation,
+      Community_Screening: prisma.Community_Screening,
     };
 
     // const uniqueBeneficiariesCondition = dateRangeCondition

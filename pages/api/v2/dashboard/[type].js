@@ -17,6 +17,7 @@ export default async function handler(req, res) {
     "Comprehensive_Low_Vision_Evaluation",
     "Counselling_Education",
     "Low_Vision_Evaluation",
+    "Community_Screening",
   ];
   if (!validTypes.includes(type)) {
     return res.status(400).json({ error: "Bad request" });
@@ -114,6 +115,7 @@ export async function readData(req, res) {
         "Counselling_Education",
         "Comprehensive_Low_Vision_Evaluation",
         "Low_Vision_Evaluation",
+        "Community_Screening",
       ];
 
       const beneficiaries = await prisma.Beneficiary.findMany({

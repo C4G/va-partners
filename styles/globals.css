@@ -248,20 +248,26 @@ label {
   text-align: left;
 }
 
-.profile-info table {
-  margin: 10px auto;
-  border-collapse: collapse;
+.profile-info-grid {
+  margin: 10px 0;
   width: 100%;
 }
 
-.profile-info table tr td {
-  padding: 5px;
-  width: 50%;
+.profile-info-row {
+  display: flex;
+  padding: 5px 0;
 }
 
-.profile-info table tr td:first-child {
+.profile-info-label {
+  width: 50%;
   text-align: left;
   color: #777;
+  padding: 5px;
+}
+
+.profile-info-value {
+  width: 50%;
+  padding: 5px;
 }
 
 .new-beneficiary-page {
