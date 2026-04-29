@@ -82,6 +82,13 @@ function Navigation(props) {
                 </Link>
               </li>
             )}
+            {user && role != "invalid" && (role === "admin") && (
+              <li className="nav-item p-2">
+                <Link href="/grants" legacyBehavior>
+                  <a className={`nav-link custom-link ${router.pathname === "/grants" ? "active" : ""}`}>Grants</a>
+                </Link>
+              </li>
+            )}
             {user && role != "invalid" && role === "admin" && (
               <li className="nav-item p-2">
                 <Link href="/requiredfields" legacyBehavior>

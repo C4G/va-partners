@@ -315,6 +315,27 @@ model Feedback {
   email             String?
 }
 
+model CashGrant {
+  id                  Int       @id @default(autoincrement())
+  quarter             String
+  year                Int
+  hospital            String
+  budgetHead          String
+  openingBalance      Float?
+  amountReceived      Float?
+  dateOfReceipt       DateTime?
+  remarks             String?
+  closingBalance      Float?
+  manpowerCost        Float?
+  equipmentCost       Float?
+  operationalExpenses Float?
+  freeLVDs            Float?
+  trainingCosts       Float?
+  additionalCosts       Float?
+  details             String?
+  createdAt           DateTime  @default(now())
+}
+
 model Community_Screening {
   id                         Int         @id @default(autoincrement())
   beneficiaryId              String
