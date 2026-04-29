@@ -342,6 +342,9 @@ model Community_Screening {
   dispensedDateSpectacle     DateTime?
   trainingGivenSpectacle     String?
   extraInformation           String      @db.Text
+  diagnosisNotes             String?     @db.Text
+  referral                   String?     @db.Text
+  comments                   String?     @db.Text
   beneficiary                Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 

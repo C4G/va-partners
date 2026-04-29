@@ -82,6 +82,9 @@ async function addData(req, res) {
       dispensedDateSpectacle: body.dispensedDateSpectacle,
       trainingGivenSpectacle: body.trainingGivenSpectacle,
       extraInformation: body.extraInformation,
+      diagnosisNotes: body.diagnosisNotes,
+      referral: body.referral,
+      comments: body.comments,
     },
     include: {
       beneficiary: true,
@@ -117,6 +120,9 @@ async function addData(req, res) {
           dispensedDateSpectacle: body.dispensedDateSpectacle,
           trainingGivenSpectacle: body.trainingGivenSpectacle,
           extraInformation: body.extraInformation,
+          diagnosisNotes: body.diagnosisNotes,
+          referral: body.referral,
+          comments: body.comments,
         },
         include: {
           beneficiary: true,

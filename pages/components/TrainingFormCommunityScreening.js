@@ -43,6 +43,9 @@ const TrainingFormCommunityScreening = ({
   const [mdviValue, setMdviValue] = useState(mdvi);
   const [section, setSection] = useState("presentingVisual");
   const [diagnosis, setDiagnosis] = useState([]);
+  const requiresDiagnosisNotes = diagnosis.some((d) => 
+    ["Anterior Segment Condition", "Posterior Eye Disease", "Hereditary Eye Disease", "Neuro-ophthalmic Condition", "Others", "Other"].includes(d)
+  );
 
   const [devices, setDevices] = useState({
     recommendationSpectacle: [],
@@ -226,6 +229,7 @@ const TrainingFormCommunityScreening = ({
 
     const newScreening = {
       diagnosis: diagnosis.join(", ").trim(),
+      diagnosisNotes: requiresDiagnosisNotes ? (formData["diagnosisNotes"] ?? "") : "",
       mdvi: mdviValue,
       date: formData["date"] ?? null,
       sessionNumber: formData["sessionNumber"] ?? null,
@@ -257,6 +261,8 @@ const TrainingFormCommunityScreening = ({
             trainingGivenSpectacle: null,
           }),
       extraInformation: formData.extraInformation ?? "",
+      referral: formData["referral"] ?? "",
+      comments: formData["comments"] ?? "",
     };
     updateMDVIForBeneficiary({ mDVI: mdviValue });
     addNewTraining(newScreening);
@@ -329,10 +335,24 @@ const TrainingFormCommunityScreening = ({
                   {diagnosisOptions}
                 </Select>
               </FormControl>
+              {requiresDiagnosisNotes && (
+                <Form.Group controlId="diagnosisNotes" className="mt-2">
+                  <Form.Label>Diagnosis Notes{required()}</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    required
+                    autoComplete="off"
+                    placeholder="Please describe the diagnosis"
+                    value={formData["diagnosisNotes"] ?? ""}
+                    onChange={(e) => updateFormData(e, "diagnosisNotes")}
+                  />
+                </Form.Group>
+              )}
             </Col>
             <Col>
               <Form.Group controlId="mdvi">
-                <Form.Label>MDVI</Form.Label>
+                <Form.Label>CVI / MDVI</Form.Label>
                 <Form.Control
                   as="select"
                   value={mdviValue}
@@ -616,6 +636,34 @@ const TrainingFormCommunityScreening = ({
                   autoComplete="off"
                   value={formData["extraInformation"] ?? ""}
                   onChange={(e) => updateFormData(e, "extraInformation")}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row className="mt-3">
+            <Col>
+              <Form.Group controlId="referral">
+                <Form.Label>Referral if any</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  autoComplete="off"
+                  value={formData["referral"] ?? ""}
+                  onChange={(e) => updateFormData(e, "referral")}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row className="mt-3">
+            <Col>
+              <Form.Group controlId="comments">
+                <Form.Label>Comments if any</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  autoComplete="off"
+                  value={formData["comments"] ?? ""}
+                  onChange={(e) => updateFormData(e, "comments")}
                 />
               </Form.Group>
             </Col>

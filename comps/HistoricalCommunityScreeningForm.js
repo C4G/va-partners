@@ -77,6 +77,12 @@ export default function HistoricalCommunityScreeningForm(props) {
   const recommendationSpectacleOptions = createMenu(spectacleDevices, true, data.recommendationSpectacle ? data.recommendationSpectacle.split(", ") : []);
   const dispensedSpectacleOptions = createMenu(spectacleDevices, true, data.dispensedSpectacle ? data.dispensedSpectacle.split(", ") : []);
 
+  const requiresDiagnosisNotes = data.diagnosis
+    ? data.diagnosis.split(", ").some((d) => 
+        ["Anterior Segment Condition", "Posterior Eye Disease", "Hereditary Eye Disease", "Neuro-ophthalmic Condition", "Others", "Other"].includes(d)
+      )
+    : false;
+
   const handleMultiSelectChange = (e) => {
     setData({
       ...data,
@@ -146,6 +152,19 @@ export default function HistoricalCommunityScreeningForm(props) {
             />
           </FormControl>
         )}
+        {editMode && (fieldName === "diagnosisNotes" || fieldName === "referral" || fieldName === "comments") && (
+          <FormControl fullWidth size="small">
+            <textarea
+              name={fieldName}
+              value={data[fieldName] ?? ""}
+              onChange={(e) => handleChange(e)}
+              rows={2}
+              autoComplete="off"
+              required={fieldName === "diagnosisNotes" && requiresDiagnosisNotes}
+              style={{ width: "100%", borderColor: fieldName === "diagnosisNotes" && requiresDiagnosisNotes && !data[fieldName] ? "red" : undefined }}
+            />
+          </FormControl>
+        )}
         {editMode && (fieldName === "costSpectacle" || fieldName === "costToBeneficiarySpectacle") && (
           <FormControl fullWidth size="small">
             <input
@@ -209,6 +228,9 @@ export default function HistoricalCommunityScreeningForm(props) {
           fieldName !== "diagnosis" &&
           fieldName !== "mdvi" &&
           fieldName !== "extraInformation" &&
+          fieldName !== "diagnosisNotes" &&
+          fieldName !== "referral" &&
+          fieldName !== "comments" &&
           fieldName !== "costSpectacle" &&
           fieldName !== "costToBeneficiarySpectacle" &&
           fieldName !== "dispensedDateSpectacle" &&
@@ -256,7 +278,8 @@ export default function HistoricalCommunityScreeningForm(props) {
           {renderSectionHeader("Presenting Visual")}
           {renderRow("Date", "date")}
           {renderRow("Diagnosis", "diagnosis")}
-          {renderRow("MDVI", "mdvi")}
+          {requiresDiagnosisNotes && renderRow("Diagnosis Notes", "diagnosisNotes")}
+          {renderRow("CVI / MDVI", "mdvi")}
           {renderRow("Session Number", "sessionNumber")}
           <tr className="row"><th scope="row" className="col-md-12" style={{ backgroundColor: "#f8f9fa", fontStyle: "italic" }}>Uncorrected / Presenting Distance Acuity</th></tr>
           {renderRow("RE (Right Eye)", "uncorrectedDistanceRE")}
@@ -285,6 +308,8 @@ export default function HistoricalCommunityScreeningForm(props) {
           {renderRow("Cost to Beneficiary Spectacle", "costToBeneficiarySpectacle")}
           {renderRow("Training Given Spectacle", "trainingGivenSpectacle")}
           {renderRow("Extra Information", "extraInformation")}
+          {renderRow("Referral if any", "referral")}
+          {renderRow("Comments if any", "comments")}
         </tbody>
       </table>
       {props.evaluationData.editable && !editMode && (
