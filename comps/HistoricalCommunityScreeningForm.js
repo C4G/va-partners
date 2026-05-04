@@ -152,7 +152,7 @@ export default function HistoricalCommunityScreeningForm(props) {
             />
           </FormControl>
         )}
-        {editMode && (fieldName === "diagnosisNotes" || fieldName === "referral" || fieldName === "comments") && (
+        {editMode && (fieldName === "diagnosisNotes" || fieldName === "referral") && (
           <FormControl fullWidth size="small">
             <textarea
               name={fieldName}
@@ -210,15 +210,9 @@ export default function HistoricalCommunityScreeningForm(props) {
         )}
         {editMode && fieldName === "dispensedSpectacle" && (
           <FormControl fullWidth size="small">
-            <Select
-              onChange={(e) => handleMultiSelectChange(e)}
-              value={data.dispensedSpectacle ? data.dispensedSpectacle.split(", ") : []}
-              name="dispensedSpectacle"
-              multiple
-              renderValue={(selected) => selected.join(", ")}
-              MenuProps={MenuProps}
-            >
-              {dispensedSpectacleOptions}
+            <Select onChange={(e) => handleChange(e)} value={data.dispensedSpectacle ?? ""} name="dispensedSpectacle" MenuProps={MenuProps}>
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
             </Select>
           </FormControl>
         )}
@@ -230,7 +224,6 @@ export default function HistoricalCommunityScreeningForm(props) {
           fieldName !== "extraInformation" &&
           fieldName !== "diagnosisNotes" &&
           fieldName !== "referral" &&
-          fieldName !== "comments" &&
           fieldName !== "costSpectacle" &&
           fieldName !== "costToBeneficiarySpectacle" &&
           fieldName !== "dispensedDateSpectacle" &&
@@ -309,7 +302,6 @@ export default function HistoricalCommunityScreeningForm(props) {
           {renderRow("Training Given Spectacle", "trainingGivenSpectacle")}
           {renderRow("Extra Information", "extraInformation")}
           {renderRow("Referral if any", "referral")}
-          {renderRow("Comments if any", "comments")}
         </tbody>
       </table>
       {props.evaluationData.editable && !editMode && (

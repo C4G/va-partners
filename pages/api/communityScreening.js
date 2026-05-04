@@ -84,7 +84,6 @@ async function addData(req, res) {
       extraInformation: body.extraInformation,
       diagnosisNotes: body.diagnosisNotes,
       referral: body.referral,
-      comments: body.comments,
     },
     include: {
       beneficiary: true,
@@ -122,7 +121,6 @@ async function addData(req, res) {
           extraInformation: body.extraInformation,
           diagnosisNotes: body.diagnosisNotes,
           referral: body.referral,
-          comments: body.comments,
         },
         include: {
           beneficiary: true,

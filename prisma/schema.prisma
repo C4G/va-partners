@@ -17,6 +17,7 @@ enum Gender {
 enum HospitalTier {
   NIL_CASH_GRANT
   RECEIVE_CASH_GRANT
+  COMMUNITY_SCREENING
 }
 
 model User {
@@ -365,7 +366,6 @@ model Community_Screening {
   extraInformation           String      @db.Text
   diagnosisNotes             String?     @db.Text
   referral                   String?     @db.Text
-  comments                   String?     @db.Text
   beneficiary                Beneficiary @relation(fields: [beneficiaryId, hospitalId], references: [mrn, hospitalId], onDelete: Cascade)
 }
 

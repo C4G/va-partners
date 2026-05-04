@@ -67,7 +67,6 @@ const TrainingFormCommunityScreening = ({
   };
 
   const recommendationSpectacleOptions = createMenu(spectacleDevices, true, devices["recommendationSpectacle"]);
-  const dispensedSpectacleOptions = createMenu(spectacleDevices, true, devices["dispensedSpectacle"]);
 
   let config = { quotes: true, quoteChar: '"' };
   const [formData, setFormData] = useState({
@@ -105,6 +104,7 @@ const TrainingFormCommunityScreening = ({
   };
 
   // Initialize field defaults when acuity values change
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     uncorrectedDistanceFields.forEach((field) => {
       setFormData((prev) => ({ ...prev, [field]: uncorrectedDistanceValues[0] }));
@@ -128,6 +128,7 @@ const TrainingFormCommunityScreening = ({
       setFormData((prev) => ({ ...prev, [field]: bestCorrectedNearValues[0] }));
     });
   }, [bestCorrectedNearValues]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const createOptionList = (values) => {
     return values.map((value) => <option key={value}>{value}</option>);
@@ -220,13 +221,6 @@ const TrainingFormCommunityScreening = ({
       devices.recommendationSpectacle.push(formData["recommendationSpectacleOther"]);
     }
     
-    let dispensedSpec = devices.dispensedSpectacle;
-    if (showOther.dispensedSpectacle) {
-      dispensedSpec = [...devices.dispensedSpectacle];
-      dispensedSpec.splice(dispensedSpec.indexOf("Other"), 1);
-      dispensedSpec.push(formData["dispensedSpectacleOther"]);
-    }
-
     const newScreening = {
       diagnosis: diagnosis.join(", ").trim(),
       diagnosisNotes: requiresDiagnosisNotes ? (formData["diagnosisNotes"] ?? "") : "",
@@ -246,8 +240,8 @@ const TrainingFormCommunityScreening = ({
       bestCorrectedNearLE: appendUnit(formData["bestCorrectedNearLE"], formData["unitBestCorrectedNear"]),
       bestCorrectedNearBE: appendUnit(formData["bestCorrectedNearBE"], formData["unitBestCorrectedNear"]),
       recommendationSpectacle: devices.recommendationSpectacle.length > 0 ? jsonToCSV([devices.recommendationSpectacle], { ...config, delimiter: comma }) : "",
-      dispensedSpectacle: dispensedSpec.join(", "),
-      ...(devices.dispensedSpectacle.length > 0
+      dispensedSpectacle: formData["dispensedSpectacle"] ?? "",
+      ...(formData["dispensedSpectacle"] === "Yes"
         ? {
             dispensedDateSpectacle: formData["dispensedDateSpectacle"] ? new Date(formData["dispensedDateSpectacle"] + "T00:00:00") : null,
             costSpectacle: formData["costSpectacle"] ?? null,
@@ -262,7 +256,6 @@ const TrainingFormCommunityScreening = ({
           }),
       extraInformation: formData.extraInformation ?? "",
       referral: formData["referral"] ?? "",
-      comments: formData["comments"] ?? "",
     };
     updateMDVIForBeneficiary({ mDVI: mdviValue });
     addNewTraining(newScreening);
@@ -314,8 +307,8 @@ const TrainingFormCommunityScreening = ({
       <hr />
       <div className="row">
         {sectionBtn("presentingVisual", "Presenting Visual")}
-        {sectionBtn("bestCorrectedVision", "Best Corrected Vision")}
         {sectionBtn("spectacle", "Spectacle")}
+        {sectionBtn("bestCorrectedVision", "Best Corrected Vision")}
       </div>
       <hr />
       <Form className="mt-3" id="community_screening_form">
@@ -437,7 +430,7 @@ const TrainingFormCommunityScreening = ({
             <Button
               className="btn btn-success btn-block border-0"
               type="button"
-              onClick={() => setSection("bestCorrectedVision")}
+              onClick={() => setSection("spectacle")}
             >
               Continue
             </Button>
@@ -488,9 +481,10 @@ const TrainingFormCommunityScreening = ({
             <Button
               className="btn btn-success btn-block border-0"
               type="button"
-              onClick={() => setSection("spectacle")}
+              disabled={loading}
+              onClick={() => handleSubmit()}
             >
-              Continue
+              {loading ? "Submitting..." : "Submit Community Screening"}
             </Button>
           </div>
         </div>
@@ -530,43 +524,39 @@ const TrainingFormCommunityScreening = ({
           )}
 
           <div className="mt-4">
-            <Row>
+            <Row className="mt-3">
               <Col>
-                <Row>
-                  <Form.Group controlId="dispensedSpectacle">
-                    <Form.Label>Dispensed Spectacle</Form.Label>
-                  </Form.Group>
-                </Row>
-                <FormControl fullWidth size="small">
-                  <Select
-                    value={devices.dispensedSpectacle}
-                    onChange={(e) => {
-                      handleMultiSelectChange(e, "dispensedSpectacle");
-                    }}
-                    multiple
-                    renderValue={(selected) => selected.join(", ")}
-                    MenuProps={MenuProps}
+                <Form.Group controlId="dispensedSpectacle">
+                  <Form.Label>Dispensed Spectacle</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={formData["dispensedSpectacle"] ?? ""}
+                    onChange={(e) => updateFormData(e, "dispensedSpectacle")}
                   >
-                    {dispensedSpectacleOptions}
-                  </Select>
-                </FormControl>
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </Form.Control>
+                </Form.Group>
               </Col>
+              {formData["dispensedSpectacle"] === "Yes" && (
+                <Col>
+                  <Form.Group controlId="costSpectacle">
+                    <Form.Label>Cost Spectacle</Form.Label>
+                    <Form.Control
+                      type="number"
+                      min={0}
+                      autoComplete="off"
+                      value={formData["costSpectacle"] ?? ""}
+                      onChange={(e) => updateFormData(e, "costSpectacle")}
+                    />
+                  </Form.Group>
+                </Col>
+              )}
             </Row>
-            {devices.dispensedSpectacle.length > 0 && (
+            {formData["dispensedSpectacle"] === "Yes" && (
               <>
                 <Row className="mt-3">
-                  <Col>
-                    <Form.Group controlId="costSpectacle">
-                      <Form.Label>Cost Spectacle</Form.Label>
-                      <Form.Control
-                        type="number"
-                        min={0}
-                        autoComplete="off"
-                        value={formData["costSpectacle"] ?? ""}
-                        onChange={(e) => updateFormData(e, "costSpectacle")}
-                      />
-                    </Form.Group>
-                  </Col>
                   <Col>
                     <Form.Group controlId="dispensedDateSpectacle">
                       <Form.Label>Dispensed Date Spectacle</Form.Label>
@@ -581,8 +571,6 @@ const TrainingFormCommunityScreening = ({
                       />
                     </Form.Group>
                   </Col>
-                </Row>
-                <Row className="mt-3">
                   <Col>
                     <Form.Group controlId="costToBeneficiarySpectacle">
                       <Form.Label>Cost to Beneficiary Spectacle</Form.Label>
@@ -595,6 +583,8 @@ const TrainingFormCommunityScreening = ({
                       />
                     </Form.Group>
                   </Col>
+                </Row>
+                <Row className="mt-3">
                   <Col>
                     <Form.Group controlId="trainingGivenSpectacle">
                       <Form.Label>Training Given Spectacle</Form.Label>
@@ -609,19 +599,9 @@ const TrainingFormCommunityScreening = ({
                       </Form.Control>
                     </Form.Group>
                   </Col>
+                  <Col></Col>
                 </Row>
               </>
-            )}
-            {showOther.dispensedSpectacle && (
-              <Form.Group controlId="dispensedSpectacleOther" className="mt-2">
-                <Form.Label>Other Dispensed Spectacle</Form.Label>
-                <Form.Control
-                  as="input"
-                  autoComplete="off"
-                  value={formData["dispensedSpectacleOther"] ?? ""}
-                  onChange={(e) => updateFormData(e, "dispensedSpectacleOther")}
-                />
-              </Form.Group>
             )}
           </div>
 
@@ -654,29 +634,15 @@ const TrainingFormCommunityScreening = ({
               </Form.Group>
             </Col>
           </Row>
-          <Row className="mt-3">
-            <Col>
-              <Form.Group controlId="comments">
-                <Form.Label>Comments if any</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  autoComplete="off"
-                  value={formData["comments"] ?? ""}
-                  onChange={(e) => updateFormData(e, "comments")}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+
           <div>
             <br />
             <Button
               className="btn btn-success btn-block border-0"
               type="button"
-              disabled={loading}
-              onClick={() => handleSubmit()}
+              onClick={() => setSection("bestCorrectedVision")}
             >
-              {loading ? "Submitting..." : "Submit Community Screening"}
+              Continue
             </Button>
           </div>
         </div>

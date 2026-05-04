@@ -870,6 +870,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   }, 300); // 300ms debounce delay
 
   // Synchronize URL with filter states
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     updateURL();
 
@@ -888,6 +889,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
     subTabIndex,
     masterTabIndex,
   ]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Initialize filter states from URL query parameters on mount
   useEffect(() => {

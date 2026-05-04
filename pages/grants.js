@@ -117,7 +117,7 @@ export default function Grant(props) {
       quarter: g.quarter,
       date: g.dateOfReceipt,
     }));
-  }, [props.grants]);
+  }, [props.grants, props.hospitals]);
 
   const handleOpen = () => setOpen(true);
 
