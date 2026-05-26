@@ -82,6 +82,7 @@ function Navigation(props) {
                 </Link>
               </li>
             )}
+            {/* Grants view is hidden for now, will enable after testing
             {user && role != "invalid" && (role === "admin") && (
               <li className="nav-item p-2">
                 <Link href="/grants" legacyBehavior>
@@ -89,6 +90,7 @@ function Navigation(props) {
                 </Link>
               </li>
             )}
+            */}
             {user && role != "invalid" && role === "admin" && (
               <li className="nav-item p-2">
                 <Link href="/requiredfields" legacyBehavior>
