@@ -236,6 +236,29 @@ async function main() {
       value: "Certificate course in Mobile technology - MT",
     },
   });
+
+  await prisma.CashGrant.create({
+    data: {
+      quarter: "Q2",
+      year: 2026,
+      hospital: "1",
+      budgetHead: "NOAH",
+
+      openingBalance: 10000,
+      amountReceived: 5000,
+      dateOfReceipt: new Date(),
+      remarks: "Initial funding",
+      closingBalance: 15000,
+
+      manpowerCost: 2000,
+      equipmentCost: 1500,
+      operationalExpenses: 1000,
+      freeLVDs: 300,
+      trainingCosts: 200,
+      additionalCosts: 200,
+      details: "Seed record"
+    }
+  });
 }
 
 main()

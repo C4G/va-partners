@@ -147,6 +147,28 @@ export default function BeneficiaryServicesTable(props) {
               </button>
             </td>
           </tr>
+          <tr>
+            <th scope="row">Community Screening</th>
+            <td>
+              <button
+                type="button"
+                className="btn btn-success btn-block border-0"
+                onClick={() =>
+                  openUserHistoricalEvaluationPage(props.user.mrn, props.user.hospitalId, "Community_Screening")
+                }
+              >
+                History
+              </button>
+              <div className="divider" />
+              <button
+                type="button"
+                className="btn btn-success btn-block border-0"
+                onClick={() => openNewEvalutaionPage(props.user.mrn, props.user.hospitalId, "Community_Screening")}
+              >
+                New Evaluation
+              </button>
+            </td>
+          </tr>
         </tbody>
       </table>
     </>

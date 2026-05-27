@@ -68,6 +68,7 @@ function buildActivitiesGraph(countsData) {
 
   const lowVisionScreeningCount = countsData["Low_Vision_Evaluation"] || 0;
   const comprehensiveLowVisionEvaluationCount = countsData["Comprehensive_Low_Vision_Evaluation"] || 0;
+  const communityScreeningCount = countsData["Community_Screening"] || 0;
   const visionEnhancementCount = countsData["Vision_Enhancement"] || 0;
 
   const mobileTrainingCount = countsData["Mobile_Training"] || 0;
@@ -82,6 +83,7 @@ function buildActivitiesGraph(countsData) {
     labels: [
       `Low Vision Screening (${lowVisionScreeningCount})`,
       `Comprehensive Low Vision Evaluation (${comprehensiveLowVisionEvaluationCount})`,
+      `Community Screening (${communityScreeningCount})`,
       `Vision Enhancement (${visionEnhancementCount})`,
       `All Training (${trainingCount})`,
       `All Counselling (${counsellingCount})`,
@@ -92,6 +94,7 @@ function buildActivitiesGraph(countsData) {
         data: [
           lowVisionScreeningCount,
           comprehensiveLowVisionEvaluationCount,
+          communityScreeningCount,
           visionEnhancementCount,
           trainingCount,
           counsellingCount,
@@ -337,6 +340,7 @@ function buildSessionsGraph(countsData, selectedHospitals, hospitals) {
       const activityCounts = [
         hospitalCounts["Low_Vision_Evaluation"] || 0,
         hospitalCounts["Comprehensive_Low_Vision_Evaluation"] || 0,
+        hospitalCounts["Community_Screening"] || 0,
         hospitalCounts["Vision_Enhancement"] || 0,
         hospitalCounts["Training"] || 0,
         hospitalCounts["Mobile_Training"] || 0,
@@ -371,6 +375,7 @@ function buildSessionsGraph(countsData, selectedHospitals, hospitals) {
     const activityCounts = [
       countsData["Low_Vision_Evaluation"] || 0,
       countsData["Comprehensive_Low_Vision_Evaluation"] || 0,
+      countsData["Community_Screening"] || 0,
       countsData["Vision_Enhancement"] || 0,
       countsData["Training"] || 0,
       countsData["Mobile_Training"] || 0,
@@ -788,10 +793,12 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   const [trainingPage, setTrainingPage] = useState(1);
   const [comprehensivePage, setComprehensivePage] = useState(1);
   const [counselingPage, setCounselingPage] = useState(1);
+  const [communityScreeningPage, setCommunityScreeningPage] = useState(1);
 
   // Data states
   const [comprehensiveEvaluations, setComprehensiveEvaluations] = useState([]);
   const [counselingRecords, setCounselingRecords] = useState([]);
+  const [communityScreenings, setCommunityScreenings] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [visionEnhancements, setVisionEnhancements] = useState([]);
   const [trainings, setTrainings] = useState([]);
@@ -804,6 +811,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   const [totalTrainings, setTotalTrainings] = useState(0);
   const [totalComprehensiveEvaluations, setTotalComprehensiveEvaluations] = useState(0);
   const [totalCounselingRecords, setTotalCounselingRecords] = useState(0);
+  const [totalCommunityScreenings, setTotalCommunityScreenings] = useState(0);
 
   // Filter states
   const [selectedGenders, setSelectedGenders] = useState(["Male", "Female", "Other"]);
@@ -815,7 +823,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
-  const [downloadDataTypes, setDownloadDataTypes] = useState(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"]);
+  const [downloadDataTypes, setDownloadDataTypes] = useState(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education", "Community_Screening"]);
   const [downloadGenders, setDownloadGenders] = useState(["Male", "Female", "Other"]);
   const [downloadMdvi, setDownloadMdvi] = useState(["Yes", "No"]);
   const [downloadMinAge, setDownloadMinAge] = useState(null);
@@ -862,6 +870,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   }, 300); // 300ms debounce delay
 
   // Synchronize URL with filter states
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     updateURL();
 
@@ -880,6 +889,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
     subTabIndex,
     masterTabIndex,
   ]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Initialize filter states from URL query parameters on mount
   useEffect(() => {
@@ -1299,6 +1309,9 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       case 4:
         fetchData("Counselling_Education", counselingPage, setCounselingRecords, setTotalCounselingRecords);
         break;
+      case 5:
+        fetchData("Community_Screening", communityScreeningPage, setCommunityScreenings, setTotalCommunityScreenings);
+        break;
       default:
         break;
     }
@@ -1310,6 +1323,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
     trainingPage,
     comprehensivePage,
     counselingPage,
+    communityScreeningPage,
     selectedHospitals,
     startDate,
     endDate,
@@ -1328,6 +1342,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
     setTrainingPage(1);
     setComprehensivePage(1);
     setCounselingPage(1);
+    setCommunityScreeningPage(1);
   };
 
   // Handle drawer open
@@ -1700,6 +1715,137 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       headerName: "MDVI",
       filter: true,
       sortable: true,
+    },
+  ];
+
+  const communityScreeningColDefs = [
+    {
+      field: "id",
+      headerName: "ID",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "beneficiaryId",
+      headerName: "Beneficiary ID",
+      filter: true,
+      sortable: true,
+    },
+    {
+      headerName: "Beneficiary Name",
+      valueGetter: (params) => params.data.beneficiary?.beneficiaryName || "",
+      filter: true,
+      sortable: true,
+    },
+    {
+      headerName: "Hospital",
+      valueGetter: (params) => params.data.beneficiary?.hospital?.name || "",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "date",
+      headerName: "Date",
+      filter: true,
+      sortable: true,
+      valueFormatter: (params) => (params.value ? new Date(params.value).toLocaleDateString() : ""),
+    },
+    {
+      field: "sessionNumber",
+      headerName: "Session Number",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "diagnosis",
+      headerName: "Diagnosis",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "mdvi",
+      headerName: "MDVI",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "uncorrectedDistanceRE",
+      headerName: "Uncorrected Distance RE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "uncorrectedDistanceLE",
+      headerName: "Uncorrected Distance LE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "uncorrectedDistanceBE",
+      headerName: "Uncorrected Distance BE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "uncorrectedNearRE",
+      headerName: "Uncorrected Near RE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "uncorrectedNearLE",
+      headerName: "Uncorrected Near LE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "uncorrectedNearBE",
+      headerName: "Uncorrected Near BE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "bestCorrectedDistanceRE",
+      headerName: "Best Corrected Distance RE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "bestCorrectedDistanceLE",
+      headerName: "Best Corrected Distance LE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "bestCorrectedDistanceBE",
+      headerName: "Best Corrected Distance BE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "bestCorrectedNearRE",
+      headerName: "Best Corrected Near RE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "bestCorrectedNearLE",
+      headerName: "Best Corrected Near LE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "bestCorrectedNearBE",
+      headerName: "Best Corrected Near BE",
+      filter: true,
+      sortable: true,
+    },
+    {
+      field: "extraInformation",
+      headerName: "Extra Information",
+      filter: true,
+      sortable: true,
+      cellStyle: { whiteSpace: "normal", wordWrap: "break-word" },
     },
   ];
 
@@ -2669,7 +2815,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
                   color="primary"
                   startIcon={<DownloadIcon />}
                   onClick={() => {
-                    setDownloadDataTypes(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education"]);
+                    setDownloadDataTypes(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education", "Community_Screening"]);
                     setDownloadGenders([...selectedGenders]);
                     setDownloadMdvi([...selectedMdvi]);
                     setDownloadMinAge(minAge);
@@ -2688,6 +2834,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
                 <Tab label="Training" />
                 <Tab label="Comprehensive Low Vision Evaluation" />
                 <Tab label="Counselling" />
+                <Tab label="Community Screening" />
               </Tabs>
 
               {/* Beneficiaries Tab */}
@@ -2793,6 +2940,27 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
                   />
                 ) : (
                   <p>No Counselling records found for the selected filters.</p>
+                ))}
+
+              {/* Community Screening Tab */}
+              {subTabIndex === 5 &&
+                (isLoading ? (
+                  <div style={{ textAlign: "center", margin: "20px 0" }}>
+                    <CircularProgress />
+                    <p>Loading community screenings ...</p>
+                  </div>
+                ) : communityScreenings.length > 0 ? (
+                  <PaginatedTable
+                    data={communityScreenings}
+                    columnDefs={communityScreeningColDefs}
+                    page={communityScreeningPage}
+                    totalRecords={totalCommunityScreenings}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    onPageChange={(newPage) => setCommunityScreeningPage(newPage)}
+                  />
+                ) : (
+                  <p>No Community Screening records found for the selected filters.</p>
                 ))}
             </div>
           )}
@@ -2905,6 +3073,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
               { key: "Training", label: "Training" },
               { key: "Comprehensive_Low_Vision_Evaluation", label: "Comprehensive Low Vision Evaluation" },
               { key: "Counselling_Education", label: "Counselling Education" },
+              { key: "Community_Screening", label: "Community Screening" },
             ].map(({ key, label }) => (
               <FormControlLabel
                 key={key}

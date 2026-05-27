@@ -22,6 +22,7 @@ export default function Home(props) {
   const [hospitals, setHospitals] = useState("0");
 
   const [visibleKpis, setVisibleKpis] = useState([]);
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const saved = localStorage.getItem("visibleKpis");
 
@@ -31,6 +32,7 @@ export default function Home(props) {
       setVisibleKpis(kpiData.map((k) => k.key));
     }
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
 
   const fetchCountsData = async (hospital) => {
@@ -81,6 +83,7 @@ export default function Home(props) {
   console.log(props.hospitals?.map((item) => item.id));
   console.log(props?.user?.hospitalRole);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (isAdmin) {
       fetchCountsData(props.hospitals?.map((item) => item.id));
@@ -88,6 +91,7 @@ export default function Home(props) {
       fetchCountsData(props?.user.hospitalRole?.map((item) => item.hospitalId));
     }
   }, [isAdmin, props.hospitals]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   function KpiCard({ kpi, descriptor, href }) {
     return (

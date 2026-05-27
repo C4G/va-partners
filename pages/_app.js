@@ -1,6 +1,8 @@
 import "../styles/globals.css";
 import "../styles/vaPartner.css";
 import "bootstrap/dist/css/bootstrap.css";
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { SessionProvider } from "next-auth/react";
 import { Inter } from "next/font/google";
 import { useEffect } from "react";

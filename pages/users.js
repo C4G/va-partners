@@ -325,9 +325,11 @@ function Users(props) {
   }
 
   // Update rowData whenever the usersList logic recalculates
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     setRowData(usersList);
   }, [props.users]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   return (
     <Layout>

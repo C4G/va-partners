@@ -114,11 +114,13 @@ function GraphCustomizer({
   };
 
   // If no quarter is selected, default to the current quarter
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!selectedQuarter) {
       setQuarter(moment().year(), initialQuarterIndex);
     }
   }, [selectedQuarter, initialQuarterIndex]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleQuarterSelection = (event) => {
     let quarterLabel = event.target.value;

@@ -625,6 +625,7 @@ function RequiredFields(props) {
 
   const [selected, setSelected] = useState([]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const saved = localStorage.getItem("visibleKpis");
 
@@ -634,6 +635,7 @@ function RequiredFields(props) {
       setSelected(ALL_KPIS.map((k) => k.key));
     }
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleToggle = (key) => {
     setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));

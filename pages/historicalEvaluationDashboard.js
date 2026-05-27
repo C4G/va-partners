@@ -8,6 +8,7 @@ import HistoricalCLVForm from "../comps/HistoricalCLVForm";
 import HistoricalVisionEnhancementForm from "../comps/HistoricalVisionEnhancementForm";
 import HistoricalCounselingForm from "../comps/HistoricalCounselingForm";
 import HistoricalTrainingForm from "../comps/HistoricalTrainingForm";
+import HistoricalCommunityScreeningForm from "../comps/HistoricalCommunityScreeningForm";
 import { getCounsellingType } from "./api/counsellingType";
 import { getTrainingTypes } from "./api/trainingType";
 import { getTrainingSubTypes } from "./api/trainingSubType";
@@ -117,6 +118,8 @@ export default function HistoricalEvaluationPage(props) {
             trainingSubTypeList={props.trainingSubTypeList}
           />
         );
+      } else if (props.service == "Community_Screening") {
+        historicalDashboard = <HistoricalCommunityScreeningForm {...commonProps} key={evaluationData.service.id} />;
       }
     }
 

@@ -2,11 +2,16 @@ export const delimiter = "|||"; // To store multiple recommendation devices in d
 export const comma = ",";
 export const commaAndSpace = ", ";
 export const CLVEDiagnosis = [
+  "Emmetropia",
+  "Hypermetropia",
+  "Astigmatism",
+  "Myopia",
+  "Presbyopia",
   "Anterior Segment Condition",
   "Posterior Eye Disease",
   "Hereditary Eye Disease",
   "Neuro-ophthalmic Condition",
-  "Other",
+  "Others",
   "No clear diagnosis",
 ];
 export const VEDiagnosis = [

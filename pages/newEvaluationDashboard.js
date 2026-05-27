@@ -2,6 +2,7 @@ import Router from "next/router";
 import { useState, useEffect } from "react";
 import { getSession } from "next-auth/react";
 import TrainingFormCLVE from "./components/TrainingFormCLVE";
+import TrainingFormCommunityScreening from "./components/TrainingFormCommunityScreening";
 import TrainingForm from "./components/TrainingForm";
 import UserProfileCard from "./components/UserProfileCard";
 import Navigation from "./navigation/Navigation";
@@ -22,6 +23,7 @@ export default function NewEvaluationDashboard(props) {
   const [visionTrainingData, setVisionTrainingData] = useState([]);
   const [comprehensiveLowVisionEvaluationData, setComprehensiveLowVisionEvaluationData] = useState([]);
   const [lowVisionEvaluationData, setLowVisionEvaluationData] = useState([]);
+  const [communityScreeningData, setCommunityScreeningData] = useState([]);
   const [counsellingEducationData, setCounsellingEducationData] = useState([]);
 
   useEffect(() => {
@@ -36,6 +38,9 @@ export default function NewEvaluationDashboard(props) {
   useEffect(() => {
     setLowVisionEvaluationData(props.user.Low_Vision_Evaluation);
   }, [props.user.Low_Vision_Evaluation]);
+  useEffect(() => {
+    setCommunityScreeningData(props.user.Community_Screening);
+  }, [props.user.Community_Screening]);
   useEffect(() => {
     setCounsellingEducationData(props.user.Counselling_Education);
   }, [props.user.Counselling_Education]);
@@ -111,6 +116,12 @@ export default function NewEvaluationDashboard(props) {
     // Submit the VisionTraining data to the API
     const url = "/api/lowVisionEvaluation";
     callMe(data, url, setVisionTrainingData, visionTrainingData);
+  };
+
+  const handleSubmitCommunityScreening = async (data) => {
+    // Submit the Community Screening data to the API
+    const url = "/api/communityScreening";
+    callMe(data, url, setCommunityScreeningData, communityScreeningData);
   };
 
   const handleSubmitCounsellingEducation = async (data) => {
@@ -230,6 +241,17 @@ export default function NewEvaluationDashboard(props) {
                 typeList={trainingTypeList}
                 mdvi={false}
                 subTypeList={trainingSubTypeList}
+                loading={loading}
+                onSubmit={setLoading}
+              />
+            )}
+            {props.service === "Community_Screening" && (
+              <TrainingFormCommunityScreening
+                existingTrainings={communityScreeningData}
+                addNewTraining={handleSubmitCommunityScreening}
+                mdvi={props.user.mDVI}
+                updateMDVIForBeneficiary={updateMDVIForBeneficiary}
+                title="Community Screening"
                 loading={loading}
                 onSubmit={setLoading}
               />
