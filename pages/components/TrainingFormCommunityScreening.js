@@ -41,7 +41,7 @@ const TrainingFormCommunityScreening = ({
     mdvi = "No";
   }
   const [mdviValue, setMdviValue] = useState(mdvi);
-  const [section, setSection] = useState("presentingVisual");
+  const [section, setSection] = useState("presentingVision");
   const [diagnosis, setDiagnosis] = useState([]);
   const requiresDiagnosisNotes = diagnosis.some((d) => 
     ["Anterior Segment Condition", "Posterior Eye Disease", "Hereditary Eye Disease", "Neuro-ophthalmic Condition", "Others", "Other"].includes(d)
@@ -306,14 +306,14 @@ const TrainingFormCommunityScreening = ({
       </div>
       <hr />
       <div className="row">
-        {sectionBtn("presentingVisual", "Presenting Visual")}
+        {sectionBtn("presentingVision", "Presenting Vision")}
         {sectionBtn("spectacle", "Spectacle")}
         {sectionBtn("bestCorrectedVision", "Best Corrected Vision")}
       </div>
       <hr />
       <Form className="mt-3" id="community_screening_form">
         {/* Basic Info Section */}
-        <div className={section !== "presentingVisual" ? "d-none" : "d-block"}>
+        <div className={section !== "presentingVision" ? "d-none" : "d-block"}>
           <Row>
             <Col>
               <Form.Label>Diagnosis</Form.Label>
@@ -387,7 +387,7 @@ const TrainingFormCommunityScreening = ({
         </div>
 
         {/* Uncorrected / Presenting Distance Acuity */}
-        <div className={section !== "presentingVisual" ? "d-none" : "d-block"}>
+        <div className={section !== "presentingVision" ? "d-none" : "d-block"}>
           <h5>Uncorrected / Presenting Distance Acuity</h5>
           <Form.Group controlId="unit-uncorrected-distance">
             <Form.Label>Select Distance metric:{required()}</Form.Label>
@@ -407,7 +407,7 @@ const TrainingFormCommunityScreening = ({
         </div>
 
         {/* Uncorrected / Presenting Near Acuity */}
-        <div className={section !== "presentingVisual" ? "d-none" : "d-block"}>
+        <div className={section !== "presentingVision" ? "d-none" : "d-block"}>
           <h5>Uncorrected / Presenting Near Acuity</h5>
           <Form.Group controlId="unit-uncorrected-near">
             <Form.Label>Select Near metric:{required()}</Form.Label>
