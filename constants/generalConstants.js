@@ -13,6 +13,16 @@ export const CLVEDiagnosis = [
   "Neuro-ophthalmic Condition",
   "Others",
   "No clear diagnosis",
+  "Cataract",
+  "Cerebral Palsy",
+  "Global Developmental Delay",
+  "Developmental Delay",
+  "Seizures",
+  "Head Injury",
+  "Infections :Viral Meningitis",
+  "Retinopathy of Prematurity",
+  "Any hereditary conditions",
+  "Leber's Congenital Amaurosis",
 ];
 export const VEDiagnosis = [
   "Cerebral Palsy",
