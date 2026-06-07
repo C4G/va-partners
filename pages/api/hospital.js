@@ -27,6 +27,7 @@ async function addData(req, res) {
   const create = {
     data: {
       name: body.name,
+      tier: body.tier,
     },
     include: {
       hospitalRole: true,
