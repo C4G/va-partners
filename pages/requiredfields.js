@@ -775,6 +775,7 @@ function RequiredFields(props) {
                       >
                         <option value="NIL_CASH_GRANT">NIL CASH GRANT</option>
                         <option value="RECEIVE_CASH_GRANT">RECEIVE CASH GRANT</option>
+                        <option value="COMMUNITY_SCREENING">COMMUNITY SCREENING</option>
                       </select>
                     </div>
                     <br />
@@ -821,6 +822,7 @@ function RequiredFields(props) {
                                 >
                                   <option value="NIL_CASH_GRANT">NIL CASH GRANT</option>
                                   <option value="RECEIVE_CASH_GRANT">RECEIVE CASH GRANT</option>
+                                  <option value="COMMUNITY_SCREENING">COMMUNITY SCREENING</option>
                                 </select>
                               )}
                             </td>
