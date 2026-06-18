@@ -158,6 +158,7 @@ function GraphCustomizer({
         "Low_Vision_Evaluation",
         "Comprehensive_Low_Vision_Evaluation",
         "Counselling_Education",
+        "Community_Screening",
       ];
 
       const apiCalls = types.map((type) =>
@@ -174,6 +175,7 @@ function GraphCustomizer({
         ...record,
         Comprehensive_Low_Vision_Evaluation: finalResult[4].records.filter((clve) => clve.beneficiaryId === record.mrn),
         Counselling_Education: finalResult[5].records.filter((ce) => ce.beneficiaryId === record.mrn),
+        Community_Screening: finalResult[6].records.filter((cs) => cs.beneficiaryId === record.mrn),
         Vision_Enhancement: finalResult[1].records.filter((ve) => ve.beneficiaryId === record.mrn),
         Training: finalResult[2].records.filter((t) => t.beneficiaryId === record.mrn),
         Low_Vision_Evaluation: finalResult[3].records.filter((lve) => lve.beneficiaryId === record.mrn),
@@ -189,6 +191,7 @@ function GraphCustomizer({
           lowVisionEvaluation: finalResult[3].records.filter((lve) => lve.hospitalId === hospital.id),
           comprehensiveLowVisionEvaluation: finalResult[4].records.filter((clve) => clve.hospitalId === hospital.id),
           counsellingEducation: finalResult[5].records.filter((ce) => ce.hospitalId === hospital.id),
+          communityScreening: finalResult[6].records.filter((cs) => cs.hospitalId === hospital.id),
         }));
 
       const reportData = getReportData(allBeneficiaryData, hospitalSummary, true);
@@ -201,6 +204,7 @@ function GraphCustomizer({
         electronicDevicesData = [],
         trainingData = [],
         counsellingEducationData = [],
+        communityScreeningData = finalResult[6].records || [],
         aggregatedHospitalData = [],
       } = reportData;
 
@@ -217,9 +221,34 @@ function GraphCustomizer({
       const wtd = XLSX.utils.json_to_sheet(trainingData);
       const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
 
+      // Clean up the nested beneficiary object and reorder/rename columns
+      const cleanedCsData = communityScreeningData.map(record => {
+        const newRecord = {};
+
+        for (const key in record) {
+          if (key === "beneficiaryId") {
+            // Rename 'beneficiaryId' to 'MRN'
+            newRecord["MRN"] = record.beneficiaryId;
+            // Insert 'Beneficiary Name' immediately after
+            newRecord["Beneficiary Name"] = record.beneficiary?.beneficiaryName || "";
+          } else if (key === "beneficiary") {
+            // Skip the nested object so it doesn't create an [object Object] column
+            continue;
+          } else {
+            // Copy over all other standard columns in their natural order
+            newRecord[key] = record[key];
+          }
+        }
+
+        return newRecord;
+      });
+
+      // Pass the ordered, cleaned data to the sheet creator
+      const wcsd = XLSX.utils.json_to_sheet(cleanedCsData);
+
       const wahd = XLSX.utils.json_to_sheet([]);
 
-      var all_sheets = [wref, wben, wved, wlved, wclve, wed, wtd, wahd]
+      var all_sheets = [wref, wben, wved, wlved, wclve, wed, wtd, wahd, wcsd]
 
       // --- NEW WIDTH LOGIC START ---
       const defaultColumnWidth = 12;
@@ -253,6 +282,7 @@ function GraphCustomizer({
       XLSX.utils.book_append_sheet(wb, wtd, "Training Sheet");
       XLSX.utils.book_append_sheet(wb, wced, "Counselling Education Sheet");
       XLSX.utils.book_append_sheet(wb, wlved, "Camp_Low Vision Screening");
+      XLSX.utils.book_append_sheet(wb, wcsd, "Community Screening");
       XLSX.utils.book_append_sheet(wb, wben, "Overall Beneficiary Sheet");
       XLSX.utils.book_append_sheet(wb, wed, "Electronic Devices Break Up");
       XLSX.utils.book_append_sheet(wb, [], "Action items from prev quarter");

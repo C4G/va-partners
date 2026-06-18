@@ -283,14 +283,14 @@ function getClveJson(commonData, clveData) {
     "Diagnosis Notes": clveData["diagnosisNotes"],
     Districts: commonData["District"], // Note: still using District from commonData
     State: commonData["State"],
-    "Acuity Notation": clveData["distanceVisualAcuityRE"].split(" ")[1], // insert check for if [1] exists
-    "Acuity RE": clveData["distanceVisualAcuityRE"].split(" ")[0],
-    "Acuity LE": clveData["distanceVisualAcuityLE"].split(" ")[0],
-    "Acuity BE": clveData["distanceBinocularVisionBE"].split(" ")[0],
-    "Near Visual Acuity Notation": clveData["nearVisualAcuityRE"].split(" ")[1], // insert check for if [1] exists
-    "Near Visual Acuity RE": clveData["nearVisualAcuityRE"].split(" ")[0],
-    "Near Visual Acuity LE": clveData["nearVisualAcuityLE"].split(" ")[0],
-    "Near Visual Acuity BE": clveData["nearBinocularVisionBE"].split(" ")[0],
+    "Acuity Notation": clveData["distanceVisualAcuityRE"]?.split(" ")?.[1] || "", // insert check for if [1] exists
+    "Acuity RE": clveData["distanceVisualAcuityRE"]?.split(" ")?.[0] || "",
+    "Acuity LE": clveData["distanceVisualAcuityLE"]?.split(" ")?.[0] || "",
+    "Acuity BE": clveData["distanceBinocularVisionBE"]?.split(" ")?.[0] || "",
+    "Near Visual Acuity Notation": clveData["nearVisualAcuityRE"]?.split(" ")?.[1] || "",
+    "Near Visual Acuity RE": clveData["nearVisualAcuityRE"]?.split(" ")?.[0] || "",
+    "Near Visual Acuity LE": clveData["nearVisualAcuityLE"]?.split(" ")?.[0] || "",
+    "Near Visual Acuity BE": clveData["nearBinocularVisionBE"]?.split(" ")?.[0] || "",
     "Recommended Optical Aid": clveData["recommendationOptical"],
     "Recommended Non-Optical Aid": clveData["recommendationNonOptical"],
     "Recommended Electronic Aid": clveData["recommendationElectronic"],
