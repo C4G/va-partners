@@ -220,7 +220,31 @@ function GraphCustomizer({
       const wed = XLSX.utils.json_to_sheet(electronicDevicesData);
       const wtd = XLSX.utils.json_to_sheet(trainingData);
       const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
-      const wcsd = XLSX.utils.json_to_sheet(communityScreeningData);
+
+      // Clean up the nested beneficiary object and reorder/rename columns
+      const cleanedCsData = communityScreeningData.map(record => {
+        const newRecord = {};
+
+        for (const key in record) {
+          if (key === "beneficiaryId") {
+            // Rename 'beneficiaryId' to 'MRN'
+            newRecord["MRN"] = record.beneficiaryId;
+            // Insert 'Beneficiary Name' immediately after
+            newRecord["Beneficiary Name"] = record.beneficiary?.beneficiaryName || "";
+          } else if (key === "beneficiary") {
+            // Skip the nested object so it doesn't create an [object Object] column
+            continue;
+          } else {
+            // Copy over all other standard columns in their natural order
+            newRecord[key] = record[key];
+          }
+        }
+
+        return newRecord;
+      });
+
+      // Pass the ordered, cleaned data to the sheet creator
+      const wcsd = XLSX.utils.json_to_sheet(cleanedCsData);
 
       const wahd = XLSX.utils.json_to_sheet([]);
 
