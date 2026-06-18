@@ -56,6 +56,9 @@ const TrainingFormCommunityScreening = ({
     dispensedSpectacle: false,
   });
 
+  // Check if any spectacle recommendation is selected to make BCVA mandatory
+  const requiresBestCorrected = devices.recommendationSpectacle.length > 0;
+
   const handleMultiSelectChange = (e, field) => {
     const value = e.target.value;
     setDevices({ ...devices, [field]: value });
@@ -274,17 +277,17 @@ const TrainingFormCommunityScreening = ({
     </div>
   );
 
-  const renderAcuitySection = (fields, values) => (
+  const renderAcuitySection = (fields, values, isRequired = true) => (
     <Row>
       {fields.map((field) => (
         <Col key={field}>
           <Form.Group controlId={field}>
             <Form.Label>
               {fieldLabels[field]}
-              {required()}
+              {isRequired && required()}
             </Form.Label>
             <Form.Control
-              required
+              required={isRequired}
               as="select"
               value={formData[field]}
               onChange={(e) => updateFormData(e, field)}
@@ -441,10 +444,10 @@ const TrainingFormCommunityScreening = ({
         <div className={section !== "bestCorrectedVision" ? "d-none" : "d-block"}>
           <h5>Best Corrected Distance Acuity</h5>
           <Form.Group controlId="unit-best-corrected-distance">
-            <Form.Label>Select Distance metric:{required()}</Form.Label>
+            <Form.Label>Select Distance metric:{requiresBestCorrected && required()}</Form.Label>
             <Form.Control
               as="select"
-              required
+              required={requiresBestCorrected}
               value={formData["unitBestCorrectedDistance"]}
               onChange={changeBestCorrectedDistanceValues}
             >
@@ -453,7 +456,7 @@ const TrainingFormCommunityScreening = ({
               <option>20ft</option>
             </Form.Control>
           </Form.Group>
-          {renderAcuitySection(bestCorrectedDistanceFields, bestCorrectedDistanceValues)}
+          {renderAcuitySection(bestCorrectedDistanceFields, bestCorrectedDistanceValues, requiresBestCorrected)}
 
         </div>
 
@@ -461,10 +464,10 @@ const TrainingFormCommunityScreening = ({
         <div className={section !== "bestCorrectedVision" ? "d-none" : "d-block"}>
           <h5>Best Corrected Near Acuity</h5>
           <Form.Group controlId="unit-best-corrected-near">
-            <Form.Label>Select Near metric:{required()}</Form.Label>
+            <Form.Label>Select Near metric:{requiresBestCorrected && required()}</Form.Label>
             <Form.Control
               as="select"
-              required
+              required={requiresBestCorrected}
               value={formData["unitBestCorrectedNear"]}
               onChange={changeBestCorrectedNearValues}
             >
@@ -475,7 +478,7 @@ const TrainingFormCommunityScreening = ({
               <option>Snellen - Metric</option>
             </Form.Control>
           </Form.Group>
-          {renderAcuitySection(bestCorrectedNearFields, bestCorrectedNearValues)}
+          {renderAcuitySection(bestCorrectedNearFields, bestCorrectedNearValues, requiresBestCorrected)}
           <div>
             <br />
             <Button
