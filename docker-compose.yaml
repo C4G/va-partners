@@ -33,8 +33,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       # Prisma connection string (defaults to the bundled db service)
       - DATABASE_URL=${DATABASE_URL:-mysql://root:root@db:3306/vision}
