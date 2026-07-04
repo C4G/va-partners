@@ -1,12 +1,5 @@
 #!/bin/sh
-# Container entrypoint: apply pending Prisma migrations, then hand off to the
-# Next.js standalone server (the image CMD). Replaces the "Apply Prisma
-# Migrations" step that previously ran in the Vercel GitHub Action.
-#
-# The database may not be accepting connections at the exact moment the
-# container starts (e.g. a MySQL first-run initialization, or a managed DB
-# that is briefly failing over), so connection errors are retried. Any other
-# migration failure aborts so it is surfaced rather than silently looped.
+# Apply pending Prisma migrations (retrying while the DB is unreachable), then start the server.
 set -e
 
 SCHEMA=./prisma/schema.prisma

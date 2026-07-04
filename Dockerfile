@@ -20,9 +20,9 @@ ENV NEXT_PUBLIC_NEXTAUTH_URL=$NEXT_PUBLIC_NEXTAUTH_URL
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY prisma ./prisma
 
-# Install dependencies. --ignore-scripts skips husky's prepare hook and the
-# prisma postinstall; the build step below runs `prisma generate` explicitly.
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# --ignore-scripts skips husky/prisma postinstall; build runs prisma generate. Cache mount persists the store across builds.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts --store-dir=/pnpm/store
 
 # Copy source code
 COPY . .
@@ -42,10 +42,6 @@ RUN apk add --no-cache openssl wget
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Install the Prisma CLI so the entrypoint can run `prisma migrate deploy`.
-# Pinned to match the @prisma/client version resolved in pnpm-lock.yaml.
-RUN npm install -g prisma@5.22.0
-
 # Copy the standalone build output with correct ownership
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -53,6 +49,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prisma schema + migrations, needed at runtime by `prisma migrate deploy`
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+# Prisma CLI for `migrate deploy` (version matches @prisma/client); placed after COPY so it doesn't fight the builder for network.
+RUN --mount=type=cache,target=/root/.npm npm install -g prisma@5.22.0
 
 # Entrypoint applies pending migrations, then starts the server
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
