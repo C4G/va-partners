@@ -1,0 +1,33 @@
+.npmrc
+  s_3f1d762215aec9::t_14a2c5a33797ee 4,6-9
+  s_3f1d762215aec9::t_bc7e509c1b4fea 5
+docker-entrypoint.sh
+  s_3f1d762215aec9::t_b2e269ca8d0954 2
+Dockerfile
+  s_3f1d762215aec9::t_99a110e14ed6de 23
+  s_3f1d762215aec9::t_5a2854959777b2 24-25
+  s_3f1d762215aec9::t_634d24c65b3d6e 53
+  s_3f1d762215aec9::t_210d6272044487 54
+  s_3f1d762215aec9::t_97a92953fe7c01 55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b2dc44c60cde24d8da5cf908ca8e72fae0e292c6",
+  "prompts": {},
+  "humans": {
+    "h_d5b6f744415839": {
+      "author": "Justin McLellan <jmclellan9@gatech.edu>"
+    }
+  },
+  "sessions": {
+    "s_3f1d762215aec9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a0b67643-2204-4991-9bec-434b0107d5f3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Justin McLellan <jmclellan9@gatech.edu>"
+    }
+  }
+}
