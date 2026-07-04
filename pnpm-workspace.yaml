@@ -1,0 +1,14 @@
+# Packages that ship native binaries or a postinstall build step and are
+# allowed to run their install scripts (pnpm blocks build scripts by default).
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+  unrs-resolver: true
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - prisma
+  - esbuild
+  - sharp
+  - unrs-resolver

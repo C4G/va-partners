@@ -1,0 +1,71 @@
+name: Build and Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build production image and verify it boots
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          # The bundled MySQL service (docker-compose) provides the database so
+          # `prisma migrate deploy` can run at container startup. Dummy auth
+          # values keep NextAuth from erroring at boot.
+          NEXTAUTH_SECRET: ci-dummy-secret
+        run: |
+          docker compose -f ./docker-compose.yaml -p "va-partners-pr-${PR_NUMBER}" up --build -d
+
+          echo "Waiting for the app to become healthy..."
+          for i in {1..90}; do
+            if docker compose -p "va-partners-pr-${PR_NUMBER}" ps | grep -q "va-partners-pr-${PR_NUMBER}-app.*healthy"; then
+              echo "App is healthy!"
+              break
+            fi
+            if [ $i -eq 90 ]; then
+              echo "App failed to become healthy"
+              docker compose -p "va-partners-pr-${PR_NUMBER}" ps
+              docker compose -p "va-partners-pr-${PR_NUMBER}" logs
+              exit 1
+            fi
+            echo "Waiting... (attempt $i/90)"
+            sleep 2
+          done
+
+      - name: Clean up
+        if: always()
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          docker compose -p "va-partners-pr-${PR_NUMBER}" -f ./docker-compose.yaml down --volumes --remove-orphans || true
