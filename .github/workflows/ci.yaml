@@ -45,7 +45,7 @@ jobs:
           # values keep NextAuth from erroring at boot.
           NEXTAUTH_SECRET: ci-dummy-secret
         run: |
-          docker compose -f ./docker-compose.yaml -p "va-partners-pr-${PR_NUMBER}" up --build -d
+          docker compose -f ./docker-compose.yaml -f ./docker-compose.ci.yaml -p "va-partners-pr-${PR_NUMBER}" up --build -d
 
           echo "Waiting for the app to become healthy..."
           for i in {1..90}; do
@@ -68,4 +68,4 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          docker compose -p "va-partners-pr-${PR_NUMBER}" -f ./docker-compose.yaml down --volumes --remove-orphans || true
+          docker compose -p "va-partners-pr-${PR_NUMBER}" -f ./docker-compose.yaml -f ./docker-compose.ci.yaml down --volumes --remove-orphans || true

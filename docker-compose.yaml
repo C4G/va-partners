@@ -1,28 +1,7 @@
 services:
-  # Bundled MySQL for local development and CI. In production (Coolify) the app
-  # points DATABASE_URL at the managed database and this service is not used
-  # (deploy the Dockerfile directly, or override this file).
-  db:
-    image: mysql:8.3
-    cap_add:
-      - SYS_NICE
-    restart: unless-stopped
-    environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-vision}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
-    ports:
-      - "3306:3306"
-    volumes:
-      - db:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
-      interval: 5s
-      timeout: 5s
-      retries: 15
-      start_period: 20s
-
   # Next.js application. The entrypoint runs `prisma migrate deploy` against
-  # DATABASE_URL before starting the server.
+  # DATABASE_URL before starting the server. In production (Coolify) DATABASE_URL
+  # points at the managed database; the bundled MySQL lives in docker-compose.ci.yaml.
   app:
     build:
       context: .
@@ -30,15 +9,10 @@ services:
       args:
         # NEXT_PUBLIC_* vars are inlined into the client bundle at build time
         - NEXT_PUBLIC_NEXTAUTH_URL=${NEXT_PUBLIC_NEXTAUTH_URL:-http://localhost:3000}
-    depends_on:
-      db:
-        condition: service_healthy
     expose:
       - "3000"
     environment:
-      # Prisma connection string (defaults to the bundled db service)
       - DATABASE_URL=${DATABASE_URL:-mysql://root:root@db:3306/vision}
-      # Auth
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-dev-secret}
       - NEXT_PUBLIC_NEXTAUTH_URL=${NEXT_PUBLIC_NEXTAUTH_URL:-http://localhost:3000}
@@ -51,7 +25,3 @@ services:
       retries: 5
       start_period: 40s
     restart: unless-stopped
-
-volumes:
-  db:
-    driver: local
