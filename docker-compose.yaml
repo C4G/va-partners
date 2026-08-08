@@ -1,14 +1,11 @@
+# No `build:` key on purpose — publish.yaml builds the image; IMAGE_TAG picks
+# which build each Coolify app runs (test tracks latest, production pins a SHA).
 services:
   # Next.js application. The entrypoint runs `prisma migrate deploy` against
   # DATABASE_URL before starting the server. In production (Coolify) DATABASE_URL
   # points at the managed database; the bundled MySQL lives in docker-compose.ci.yaml.
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        # NEXT_PUBLIC_* vars are inlined into the client bundle at build time
-        - NEXT_PUBLIC_NEXTAUTH_URL=${NEXT_PUBLIC_NEXTAUTH_URL:-http://localhost:3000}
+    image: ghcr.io/c4g/va-partners:${IMAGE_TAG:-latest}
     expose:
       - "3000"
     environment:
