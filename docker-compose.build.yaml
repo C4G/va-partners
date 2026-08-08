@@ -1,0 +1,7 @@
+# Adds the `build:` key that docker-compose.yaml omits, for building locally:
+#   docker compose -f docker-compose.yaml -f docker-compose.build.yaml up --build -d
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile

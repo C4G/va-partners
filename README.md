@@ -51,6 +51,7 @@ Enter "root" when prompted for password.
 Helpful Commands:
 
 mysql
+
 ```
 use vision;
 show tables;
@@ -59,6 +60,7 @@ describe <table name>;
 ```
 
 docker
+
 ```
 # Database Clean Slate
 docker compose down -v
@@ -86,16 +88,50 @@ To learn more about Next.js, take a look at the following resources:
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions
 are welcome!
 
-## Deploy on Vercel
+## Deployment (Coolify + GHCR)
 
-The easiest way to deploy your Next.js app is to use
-the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme)
-from the creators of Next.js.
+`.github/workflows/publish.yaml` runs on every push to `main` (and on manual
+dispatch). It builds the image, pushes `ghcr.io/c4g/va-partners:latest` and
+`:<commit-sha>`, then triggers a Coolify deployment of **va-partners-test**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+`docker-compose.yaml` references that published image and has **no `build:`
+key**, which keeps the shared Coolify host from compiling the application on
+every deploy — it only pulls and restarts. Coolify's git auto-deploy is off on
+both applications, so the workflow is the single trigger and cannot race a
+half-finished image push.
+
+| Environment                | Coolify app        | Image tag                                 |
+| -------------------------- | ------------------ | ----------------------------------------- |
+| `va-partners-test.c4g.dev` | `va-partners-test` | `latest` (deployed automatically on main) |
+| `va-partners.c4g.dev`      | `va-partners`      | `IMAGE_TAG` pinned to a commit SHA        |
+
+**Promoting to production** is manual: set `IMAGE_TAG` to the commit SHA of a
+build already verified on va-partners-test in the `va-partners` application's
+Coolify environment variables, then redeploy. Production runs the exact image
+that was tested — no rebuild.
+
+Nothing environment-specific is baked into the image, so one build serves both.
+Migrations are applied by `docker-entrypoint.sh` (`prisma migrate deploy`) when
+the container starts, so there is no separate migration image.
+
+Required configuration: `COOLIFY_TOKEN` (organization secret) and a
+`COOLIFY_APP_UUID` repository variable pointing at va-partners-test. The deploy
+step skips itself if either is missing.
+
+### Building locally
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.ci.yaml \
+  -f docker-compose.build.yaml up --build -d
+```
+
+Note: the repo-root `.env` is auto-loaded by Docker Compose and may point
+`DATABASE_URL` at a remote database. Pass `--env-file /dev/null` to force the
+bundled MySQL from `docker-compose.ci.yaml`.
 
 ## Prisma
 
 > [!CAUTION]
 > **DO NOT MANUALLY CHANGE SCHEMA** - Create a migration instead - this ensures the schema/data is correct across staging/production database.
+
 - [Prisma Getting Started](https://www.prisma.io/docs/getting-started) - learn how prisma operates and works
