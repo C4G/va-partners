@@ -152,7 +152,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function readData(req, res) {
+export async function readData(req, res) {
   try {
     const { hospitalIds, startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
 
@@ -212,12 +212,13 @@ async function readData(req, res) {
 
     const activitySubtypes = ["Screenings", "Vision_Enhancement", "CLVE", "Counselling", "Training"];
 
-    const activityModelMap = {
-      Screenings: prisma.Low_Vision_Evaluation,
-      Vision_Enhancement: prisma.Vision_Enhancement,
-      CLVE: prisma.Comprehensive_Low_Vision_Evaluation,
-      Counselling: prisma.Counselling_Education,
-      Training: prisma.Training,
+    // Activity labels map onto the subtype models below, so their distinct-pair queries are shared.
+    const activityToSubtype = {
+      Screenings: "Low_Vision_Evaluation",
+      Vision_Enhancement: "Vision_Enhancement",
+      CLVE: "Comprehensive_Low_Vision_Evaluation",
+      Counselling: "Counselling_Education",
+      Training: "Training",
     };
 
     const modelMap = {
@@ -236,101 +237,106 @@ async function readData(req, res) {
     //   ? { OR: subtypes.map(st => ({ [st]: { some: { date: dateRangeCondition } } })) }
     //   : {};
 
-    // Pre-fetch beneficiaries once
-    const selectedBeneficiaries = await prisma.Beneficiary.findMany({
-      where: beneficiaryFilters,
-      select: { mrn: true, hospitalId: true, dateOfBirth: true, gender: true },
+    const beneficiarySelect = { mrn: true, hospitalId: true, dateOfBirth: true, gender: true };
+    const activityWhere = {
+      beneficiary: beneficiaryFilters,
+      ...(dateRangeCondition && { date: dateRangeCondition }),
+    };
+
+    // Distinct pairs are only needed for every subtype when a date range narrows the
+    // beneficiary set; otherwise just the five activity models reported on below.
+    const distinctSubtypes = dateRangeCondition ? subtypes : [...new Set(Object.values(activityToSubtype))];
+
+    const [distinctResults, subtypeGroups] = await Promise.all([
+      Promise.all(
+        distinctSubtypes.map((st) =>
+          modelMap[st].findMany({
+            where: activityWhere,
+            distinct: ["beneficiaryId", "hospitalId"],
+            select: { beneficiaryId: true, hospitalId: true },
+          })
+        )
+      ),
+      // One groupBy per subtype yields both the overall count and the per-hospital split.
+      Promise.all(
+        subtypes.map((st) => modelMap[st].groupBy({ by: ["hospitalId"], where: activityWhere, _count: { _all: true } }))
+      ),
+    ]);
+
+    const distinctPairsBySubtype = new Map(distinctSubtypes.map((st, i) => [st, distinctResults[i]]));
+
+    const subtypeTotals = {};
+    const subtypeCountsByHospital = {};
+    subtypes.forEach((st, i) => {
+      const byHospital = {};
+      let total = 0;
+      for (const g of subtypeGroups[i]) {
+        byHospital[g.hospitalId] = g._count._all;
+        total += g._count._all;
+      }
+      subtypeCountsByHospital[st] = byHospital;
+      subtypeTotals[st] = total;
     });
 
-    let uniqueBenefIds = new Set();
+    // mrn is only unique per hospital, so unique beneficiaries are tracked as hospitalId -> Set<mrn>.
+    const uniqueBenefIdsByHospital = new Map();
+    const addUniqueBenef = (hospitalId, mrn) => {
+      if (!uniqueBenefIdsByHospital.has(hospitalId)) uniqueBenefIdsByHospital.set(hospitalId, new Set());
+      uniqueBenefIdsByHospital.get(hospitalId).add(mrn);
+    };
+
+    let filteredBeneficiaries;
     if (dateRangeCondition) {
-      // We need to find those with activity in the date range
-      const activityPromises = subtypes.map((st) =>
-        modelMap[st].findMany({
-          where: {
-            beneficiary: beneficiaryFilters,
-            ...(dateRangeCondition && { date: dateRangeCondition }),
-          },
-          distinct: ["beneficiaryId", "hospitalId"],
-          select: { beneficiaryId: true, hospitalId: true },
-        })
-      );
-      const activityResults = await Promise.all(activityPromises);
-      for (const arr of activityResults) {
-        for (const r of arr) {
-          uniqueBenefIds.add(`${r.beneficiaryId}-${r.hospitalId}`);
-        }
+      // Only beneficiaries with activity in range count, so fetch just those.
+      for (const st of subtypes) {
+        for (const r of distinctPairsBySubtype.get(st)) addUniqueBenef(r.hospitalId, r.beneficiaryId);
       }
+
+      filteredBeneficiaries = uniqueBenefIdsByHospital.size
+        ? await prisma.Beneficiary.findMany({
+            where: {
+              ...beneficiaryFilters,
+              OR: [...uniqueBenefIdsByHospital].map(([hospitalId, mrns]) => ({
+                hospitalId,
+                mrn: { in: [...mrns] },
+              })),
+            },
+            select: beneficiarySelect,
+          })
+        : [];
     } else {
-      // No date filter: all beneficiaries are unique
-      for (const b of selectedBeneficiaries) {
-        uniqueBenefIds.add(`${b.mrn}-${b.hospitalId}`);
-      }
+      // No date filter: every matching beneficiary counts.
+      filteredBeneficiaries = await prisma.Beneficiary.findMany({
+        where: beneficiaryFilters,
+        select: beneficiarySelect,
+      });
+      for (const b of filteredBeneficiaries) addUniqueBenef(b.hospitalId, b.mrn);
     }
 
-    const filteredBeneficiaries = dateRangeCondition
-      ? selectedBeneficiaries.filter((b) => uniqueBenefIds.has(`${b.mrn}-${b.hospitalId}`))
-      : selectedBeneficiaries;
-
     const totalBeneficiariesCount = filteredBeneficiaries.length;
-    const uniqueBeneficiariesCount = uniqueBenefIds.size;
+    const uniqueBeneficiariesCount = [...uniqueBenefIdsByHospital.values()].reduce((n, s) => n + s.size, 0);
 
     const formattedCounts = {
       Total_Beneficiaries: totalBeneficiariesCount,
       Unique_Beneficiaries: uniqueBeneficiariesCount,
     };
 
-    // Compute subtype counts
-    const subtypeCountPromises = subtypes.map((st) =>
-      modelMap[st].count({
-        where: {
-          beneficiary: beneficiaryFilters,
-          ...(dateRangeCondition && { date: dateRangeCondition }),
-        },
-      })
-    );
-    const subtypeCounts = await Promise.all(subtypeCountPromises);
-    for (let i = 0; i < subtypes.length; i++) {
-      formattedCounts[subtypes[i]] = subtypeCounts[i];
+    for (const st of subtypes) {
+      formattedCounts[st] = subtypeTotals[st];
     }
 
     // If multiple hospitals, build Activity_Counts_Per_Hospital
     let activityCountsPerHospital = {};
     if (parsedHospitalIds.length > 1) {
-      // Compute totals/uniques per hospital from selectedBeneficiaries and uniqueBenefIds
+      // Compute totals/uniques per hospital from filteredBeneficiaries and uniqueBenefIdsByHospital
       const totalByHospitalMap = {};
       for (const b of filteredBeneficiaries) {
         totalByHospitalMap[b.hospitalId] = (totalByHospitalMap[b.hospitalId] || 0) + 1;
       }
 
       const uniqueByHospitalMap = {};
-      for (const key of uniqueBenefIds) {
-        const [, hospId] = key.split("-");
-        const hid = parseInt(hospId, 10);
-        uniqueByHospitalMap[hid] = (uniqueByHospitalMap[hid] || 0) + 1;
-      }
-
-      // subtype per hospital
-      const subtypePerHospitalPromises = subtypes.map((st) =>
-        modelMap[st].findMany({
-          where: {
-            beneficiary: beneficiaryFilters,
-            ...(dateRangeCondition && { date: dateRangeCondition }),
-          },
-          select: { beneficiaryId: true, hospitalId: true },
-        })
-      );
-
-      const subtypePerHospitalResultsRaw = await Promise.all(subtypePerHospitalPromises);
-      const subtypePerHospitalMap = {};
-      for (let i = 0; i < subtypes.length; i++) {
-        const st = subtypes[i];
-        const records = subtypePerHospitalResultsRaw[i];
-        const countByHospital = {};
-        for (const r of records) {
-          countByHospital[r.hospitalId] = (countByHospital[r.hospitalId] || 0) + 1;
-        }
-        subtypePerHospitalMap[st] = countByHospital;
+      for (const [hid, mrns] of uniqueBenefIdsByHospital) {
+        uniqueByHospitalMap[hid] = mrns.size;
       }
 
       for (const hid of parsedHospitalIds) {
@@ -342,7 +348,7 @@ async function readData(req, res) {
         };
         let totalSessions = 0;
         for (const st of subtypes) {
-          const c = subtypePerHospitalMap[st][hid] || 0;
+          const c = subtypeCountsByHospital[st][hid] || 0;
           activityCountsPerHospital[hid][st] = c;
           totalSessions += c;
         }
@@ -449,7 +455,7 @@ async function readData(req, res) {
     formattedCounts["Devices_Dispensed_Details"] = devicesDispensedDetails;
     formattedCounts["Devices_Recommended_Details"] = devicesRecommendedDetails;
 
-    // Now compute gender and age from filteredBeneficiaries, not selectedBeneficiaries.
+    // Gender and age come from filteredBeneficiaries, which already honours the date range.
     const genderCountsFormatted = { Male: 0, Female: 0, Other: 0 };
     const ageGroups = { "0-18": 0, "19-35": 0, "36-50": 0, "51-65": 0, "66+": 0 };
 
@@ -498,19 +504,10 @@ async function readData(req, res) {
     }
     formattedCounts["distanceBinocularVisionBE_counts"] = distanceBinocularVisionBE_counts;
 
-    // Unique Beneficiaries By Activity
-    // Already have activities from previous queries? We can re-use or fetch again:
-    const uniqueByActivityPromises = activitySubtypes.map((act) =>
-      activityModelMap[act].findMany({
-        where: {
-          beneficiary: beneficiaryFilters,
-          ...(dateRangeCondition && { date: dateRangeCondition }),
-        },
-        distinct: ["beneficiaryId", "hospitalId"],
-        select: { beneficiaryId: true, hospitalId: true },
-      })
+    // Unique Beneficiaries By Activity, from the distinct pairs already fetched above
+    const uniqueByActivityResultsArr = activitySubtypes.map((act) =>
+      distinctPairsBySubtype.get(activityToSubtype[act])
     );
-    const uniqueByActivityResultsArr = await Promise.all(uniqueByActivityPromises);
     const uniqueBeneficiariesByActivity = {};
     activitySubtypes.forEach((act, i) => {
       uniqueBeneficiariesByActivity[act] = uniqueByActivityResultsArr[i].length;
