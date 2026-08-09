@@ -20,6 +20,10 @@
 **/.DS_Store
 *.pem
 
+# database dumps (root only - prisma/migrations/*.sql stays tracked)
+/*.sql
+/*.sql.gz
+
 # debug
 npm-debug.log*
 yarn-debug.log*
