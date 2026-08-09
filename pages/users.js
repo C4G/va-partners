@@ -1,5 +1,6 @@
 import Navigation from "./navigation/Navigation";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { allUsers, allHospitalRoles, readUser } from "@/pages/api/user";
 import { findAllHospital } from "@/pages/api/hospital";
 import Router from "next/router";
@@ -12,7 +13,7 @@ import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the 
 import "ag-grid-community/styles/ag-theme-quartz.css"; // Optional Theme applied to the Data Grid
 
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     console.log("session is null");
     return {

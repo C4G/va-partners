@@ -1,4 +1,5 @@
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Navigation from "./navigation/Navigation";
@@ -178,14 +179,28 @@ export default function Grant(props) {
   };
 
   const expenses = useMemo(() => {
-    const keys = ["manpowerCost", "equipmentCost", "operationalExpenses", "freeLVDs", "trainingCosts", "additionalCosts"];
+    const keys = [
+      "manpowerCost",
+      "equipmentCost",
+      "operationalExpenses",
+      "freeLVDs",
+      "trainingCosts",
+      "additionalCosts",
+    ];
     return formFields.filter((f) => keys.includes(f.name)).reduce((sum, f) => sum + (parseFloat(f.value) || 0), 0);
   }, [formFields]);
 
   const selectedExpenses = useMemo(() => {
     if (!selectedGrant) return 0;
 
-    const keys = ["manpowerCost", "equipmentCost", "operationalExpenses", "freeLVDs", "trainingCosts", "additionalCosts"];
+    const keys = [
+      "manpowerCost",
+      "equipmentCost",
+      "operationalExpenses",
+      "freeLVDs",
+      "trainingCosts",
+      "additionalCosts",
+    ];
     return keys.reduce((sum, key) => {
       return sum + (parseFloat(selectedGrant[key]) || 0);
     }, 0);
@@ -350,7 +365,7 @@ export default function Grant(props) {
 }
 
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
 
   if (!session) {
     return { props: { user: null, hospitals: [], grants: [] } };
@@ -360,7 +375,7 @@ export async function getServerSideProps(ctx) {
 
   const hospitals = (await findAllHospital()).filter((h) => !h.name?.toLowerCase().startsWith("test"));
 
-  const grants = (await findAllGrants());
+  const grants = await findAllGrants();
 
   return {
     props: {

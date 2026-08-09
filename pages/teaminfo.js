@@ -5,11 +5,12 @@ import amber from "public/images/amber.webp";
 import chris from "public/images/chris.webp";
 import nasa from "public/images/nasa.webp";
 import Layout from "./components/layout";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { readUser } from "./api/user";
 
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     return {
       props: {
