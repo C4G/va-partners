@@ -1,0 +1,53 @@
+pages/users.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 2-3,16
+pages/beneficiary.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 9-10,14
+  s_61bf1372a6cbeb::t_e1c93bf5fed723 114
+pages/grants.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 1-2,182-189,196-203,368
+  s_61bf1372a6cbeb::t_7eba6404fe7f86 378
+pages/newEvaluationDashboard.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 3-4,268
+pages/requiredfields.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 11-12,26
+  s_61bf1372a6cbeb::t_9289140dde60ef 44-66,70-78
+  s_61bf1372a6cbeb::t_dd66c44434d7e4 733,760,808,882,1008,1361
+pages/index.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 1-3,59-61,241
+  s_61bf1372a6cbeb::t_049fbc7433e84c 252
+pages/user.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 4-5,372,417,462,476,502,614
+pages/beneficiaryinformation.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 5-6,15
+  s_61bf1372a6cbeb::t_1a872e57c126bc 403
+pages/historicalEvaluationDashboard.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 2-3,266
+pages/reports.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 33-34,647
+  s_61bf1372a6cbeb::t_74bc72f286570c 7-24,844-851,999,1003,1007,1040,2131-2155,2835-2842,3092-3094,3118-3120,3126-3130,3137-3139,3152-3154
+pages/teaminfo.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 8-9,13
+pages/feedback.js
+  s_61bf1372a6cbeb::t_d01d6c4a1178f0 5-6,11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "2c1b046ded217091c08dfb8c1f01a813d84e960c",
+  "prompts": {},
+  "humans": {
+    "h_d5b6f744415839": {
+      "author": "Justin McLellan <jmclellan9@gatech.edu>"
+    }
+  },
+  "sessions": {
+    "s_61bf1372a6cbeb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "15f4c3c0-cb2e-4092-9dce-690af6e4285d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Justin McLellan <jmclellan9@gatech.edu>"
+    }
+  }
+}
