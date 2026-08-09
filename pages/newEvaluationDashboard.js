@@ -1,6 +1,7 @@
 import Router from "next/router";
 import { useState, useEffect } from "react";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import TrainingFormCLVE from "./components/TrainingFormCLVE";
 import TrainingFormCommunityScreening from "./components/TrainingFormCommunityScreening";
 import TrainingForm from "./components/TrainingForm";
@@ -264,7 +265,7 @@ export default function NewEvaluationDashboard(props) {
 }
 
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     console.log("session is null");
     return {

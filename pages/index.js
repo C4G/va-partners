@@ -1,4 +1,6 @@
-import { useSession, getSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import Link from "next/link";
 import moment from "moment";
 import { Container, Grid, Card, CardContent, CardActionArea, Typography } from "@mui/material";
@@ -34,7 +36,6 @@ export default function Home(props) {
   }, []);
   /* eslint-enable react-hooks/exhaustive-deps */
 
-
   const fetchCountsData = async (hospital) => {
     try {
       const startDateUTC = moment.utc().startOf("quarter").toISOString();
@@ -55,9 +56,9 @@ export default function Home(props) {
         setTotalVisionEnhancements(data.Vision_Enhancement || "0");
         setTotalTrainings(
           (data.Training || 0) +
-          (data.Computer_Training || 0) +
-          (data.Mobile_Training || 0) +
-          (data.Orientation_Mobility_Training || 0)
+            (data.Computer_Training || 0) +
+            (data.Mobile_Training || 0) +
+            (data.Orientation_Mobility_Training || 0)
         );
         setTotalEvaluations(data.Comprehensive_Low_Vision_Evaluation || "0");
         setTotalCounseling(data.Counselling_Education || "0");
@@ -237,7 +238,7 @@ export default function Home(props) {
 }
 
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
 
   if (session == null) {
     return {
@@ -248,9 +249,7 @@ export async function getServerSideProps(ctx) {
   }
 
   const user = await readUser(session.user.email);
-  const hospitals = (await findAllHospital()).filter(
-    (hospital) => !hospital.name?.toLowerCase().startsWith("test")
-  );
+  const hospitals = (await findAllHospital()).filter((hospital) => !hospital.name?.toLowerCase().startsWith("test"));
 
   return {
     props: {

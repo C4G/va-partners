@@ -2,7 +2,8 @@
 import { readBeneficiaryMirror } from "@/pages/api/beneficiaryMirror";
 import { findAllHospital } from "@/pages/api/hospital";
 import moment from "moment";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { required } from "../comps/required";
@@ -11,7 +12,7 @@ import Navigation from "./navigation/Navigation";
 
 // http://localhost:3000/beneficiaryinformation
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     console.log("session is null");
     return {
@@ -399,7 +400,7 @@ function RequiredFields(props) {
     <div>
       <Navigation user={props.user} />
       <div className="container">
-        <h1 className="mt-4 mb-4 text-center">Register Beneficiary</h1>
+        <h1 className="mb-4 mt-4 text-center">Register Beneficiary</h1>
         <div className="beneficiary-child-container">
           <form action="#" method="POST" onSubmit={(e) => submitInfo(e)}>
             <div className="row">

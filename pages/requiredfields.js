@@ -1,16 +1,15 @@
 // This function gets called at build time
 import { readBeneficiaryMirror } from "@/pages/api/beneficiaryMirror";
 import { readComprehensiveLowVisionEvaluationMirror } from "@/pages/api/comprehensiveLowVisionEvaluationMirror";
-import { readComputerTrainingMirror } from "@/pages/api/computerTrainingMirror";
 import { readCounsellingEducationMirror } from "@/pages/api/counsellingEducationMirror";
 import { getCounsellingType } from "@/pages/api/counsellingType";
 import { findAllHospital } from "@/pages/api/hospital";
 import { readMobileTrainingMirror } from "@/pages/api/mobileTrainingMirror";
-import { readOrientationMobilityTrainingMirror } from "@/pages/api/orientationMobilityTrainingMirror";
 import { getTrainingSubTypes } from "@/pages/api/trainingSubType";
 import { getTrainingTypes } from "@/pages/api/trainingType";
 import { readVisionEnhancementMirror } from "@/pages/api/visionEnhancementMirror";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import Router from "next/router";
 import { useState, useEffect } from "react";
 import { Button, Form, Modal, Table } from "react-bootstrap";
@@ -24,7 +23,7 @@ import { KPI_KEYS } from "@/utils/global/kpi-config";
 
 // http://localhost:3000/requiredfields
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     return {
       redirect: {
@@ -42,20 +41,41 @@ export async function getServerSideProps(ctx) {
       },
     };
   }
+  // Independent queries: run concurrently so the page pays one round trip of DB latency, not one per query.
+  const [
+    requiredBeneficiaryFields,
+    requiredMobileTraining,
+    requiredVisionEnhancement,
+    requiredComprehensiveLowVisionEvaluation,
+    requiredCounsellingEducation,
+    hospitals,
+    counselingTypeList,
+    trainingTypeList,
+    trainingSubTypeList,
+  ] = await Promise.all([
+    readBeneficiaryMirror(),
+    readMobileTrainingMirror(),
+    readVisionEnhancementMirror(),
+    readComprehensiveLowVisionEvaluationMirror(),
+    readCounsellingEducationMirror(),
+    findAllHospital(true),
+    getCounsellingType(),
+    getTrainingTypes(),
+    getTrainingSubTypes(),
+  ]);
+
   return {
     props: {
       user: JSON.parse(JSON.stringify(user)),
-      requiredBeneficiaryFields: await readBeneficiaryMirror(),
-      requiredMobileTraining: await readMobileTrainingMirror(),
-      requiredComputerTraining: await readComputerTrainingMirror(),
-      requiredOrientationMobilityTraining: await readOrientationMobilityTrainingMirror(),
-      requiredVisionEnhancement: await readVisionEnhancementMirror(),
-      requiredComprehensiveLowVisionEvaluation: await readComprehensiveLowVisionEvaluationMirror(),
-      requiredCounsellingEducation: await readCounsellingEducationMirror(),
-      hospitals: await findAllHospital(true),
-      counselingTypeList: await getCounsellingType(),
-      trainingTypeList: await getTrainingTypes(),
-      trainingSubTypeList: await getTrainingSubTypes(),
+      requiredBeneficiaryFields,
+      requiredMobileTraining,
+      requiredVisionEnhancement,
+      requiredComprehensiveLowVisionEvaluation,
+      requiredCounsellingEducation,
+      hospitals,
+      counselingTypeList,
+      trainingTypeList,
+      trainingSubTypeList,
       error: null,
     },
   };
@@ -710,7 +730,7 @@ function RequiredFields(props) {
               <div className="container m-4 p-4">
                 <form action="#" method="POST" onSubmit={(e) => addHospital(e)}>
                   <div className="text-center">
-                    <h2 className="mt-4 mb-4 text-center">
+                    <h2 className="mb-4 mt-4 text-center">
                       <strong>Toggle Home Screen Cards</strong>
                       <br />
                       <Grid container spacing={2}>
@@ -737,7 +757,7 @@ function RequiredFields(props) {
               <div className="container m-4 p-4">
                 <form action="#" method="POST" onSubmit={(e) => addHospital(e)}>
                   <div className="text-center">
-                    <h2 className="mt-4 mb-4 text-center">
+                    <h2 className="mb-4 mt-4 text-center">
                       <strong>Add Hospital</strong>
                     </h2>
                     <div>
@@ -785,7 +805,7 @@ function RequiredFields(props) {
                   </div>
                 </form>
                 <div>
-                  <h2 className="mt-4 mb-4 text-center">
+                  <h2 className="mb-4 mt-4 text-center">
                     <strong>Remove Hospital</strong>
                   </h2>
                   <div>
@@ -859,7 +879,7 @@ function RequiredFields(props) {
             {section === "beneficiaries" && (
               <div className="container m-4 p-4">
                 <form action="#" method="POST" onSubmit={(e) => addFieldsSubmit(e)}>
-                  <h2 className="mt-4 mb-4 text-center">
+                  <h2 className="mb-4 mt-4 text-center">
                     <strong>Required Beneficiary Fields</strong>
                   </h2>
 
@@ -985,7 +1005,7 @@ function RequiredFields(props) {
             )}
             {section === "evaluations" && (
               <div className="container m-4 p-4">
-                <h2 className="mt-4 mb-4 text-center">
+                <h2 className="mb-4 mt-4 text-center">
                   <strong>Other Form Required Fields</strong>
                 </h2>
                 <br />
@@ -1338,7 +1358,7 @@ function RequiredFields(props) {
             )}
             {section === "trainings" && (
               <div className="container mt-4 p-4">
-                <h2 className="mt-4 mb-4 text-center">
+                <h2 className="mb-4 mt-4 text-center">
                   <strong>Add Types</strong>
                 </h2>
                 <br />

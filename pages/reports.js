@@ -4,7 +4,24 @@ import { buildDashboardQueryParams } from "@/utils/ui/build-dashboard-query-para
 import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, FormControlLabel, FormGroup, IconButton, Paper, Tab, Tabs, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Drawer,
+  FormControlLabel,
+  FormGroup,
+  IconButton,
+  Paper,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -13,7 +30,8 @@ import { BarElement, CategoryScale, Chart as ChartJS, Filler, Legend, LinearScal
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import debounce from "lodash.debounce";
 import moment from "moment";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
@@ -626,7 +644,7 @@ function buildUniqueBeneficiariesGraph(countsData, selectedHospitals, hospitals,
 
 // Fetch data server-side
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
 
   if (session == null) {
     console.log("session is null");
@@ -823,7 +841,14 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
-  const [downloadDataTypes, setDownloadDataTypes] = useState(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education", "Community_Screening"]);
+  const [downloadDataTypes, setDownloadDataTypes] = useState([
+    "Beneficiary",
+    "Vision_Enhancement",
+    "Training",
+    "Comprehensive_Low_Vision_Evaluation",
+    "Counselling_Education",
+    "Community_Screening",
+  ]);
   const [downloadGenders, setDownloadGenders] = useState(["Male", "Female", "Other"]);
   const [downloadMdvi, setDownloadMdvi] = useState(["Yes", "No"]);
   const [downloadMinAge, setDownloadMinAge] = useState(null);
@@ -971,21 +996,15 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   };
 
   const toggleDownloadDataType = (key) => {
-    setDownloadDataTypes((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    setDownloadDataTypes((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
   };
 
   const toggleDownloadGender = (g) => {
-    setDownloadGenders((prev) =>
-      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
-    );
+    setDownloadGenders((prev) => (prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]));
   };
 
   const toggleDownloadMdvi = (m) => {
-    setDownloadMdvi((prev) =>
-      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]
-    );
+    setDownloadMdvi((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
   };
 
   const flattenRecord = (record) => {
@@ -1018,9 +1037,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       let sanitizedHospitalNames = "All_Hospitals";
       if (Array.isArray(selectedHospitalNames) && selectedHospitalNames.length > 0) {
         sanitizedHospitalNames =
-          selectedHospitalNames.length === 1
-            ? selectedHospitalNames[0].replace(/\s+/g, "_")
-            : "MULTI";
+          selectedHospitalNames.length === 1 ? selectedHospitalNames[0].replace(/\s+/g, "_") : "MULTI";
       }
       const formattedStart = moment(startDate).format("YYYY-MM-DD");
       const formattedEnd = moment(endDate).format("YYYY-MM-DD");
@@ -2111,31 +2128,31 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
   const visualAcuityChartData =
     countsData && countsData.distanceBinocularVisionBE_counts
       ? {
-        labels: visualAcuityCategories,
-        datasets: [
-          {
-            label: "Number of Cases",
-            data: visualAcuityCategories.map(
-              (category) => countsData.distanceBinocularVisionBE_counts[category] || 0
-            ),
-            backgroundColor: [
-              "rgba(255, 99, 132, 0.6)",
-              "rgba(255, 206, 86, 0.6)",
-              "rgba(54, 162, 235, 0.6)",
-              "rgba(255, 159, 64, 0.6)",
-              "rgba(153, 102, 255, 0.6)",
-            ],
-            borderColor: [
-              "rgba(255, 99, 132, 1)",
-              "rgba(255, 206, 86, 1)",
-              "rgba(54, 162, 235, 1)",
-              "rgba(255, 159, 64, 1)",
-              "rgba(153, 102, 255, 1)",
-            ],
-            borderWidth: 1,
-          },
-        ],
-      }
+          labels: visualAcuityCategories,
+          datasets: [
+            {
+              label: "Number of Cases",
+              data: visualAcuityCategories.map(
+                (category) => countsData.distanceBinocularVisionBE_counts[category] || 0
+              ),
+              backgroundColor: [
+                "rgba(255, 99, 132, 0.6)",
+                "rgba(255, 206, 86, 0.6)",
+                "rgba(54, 162, 235, 0.6)",
+                "rgba(255, 159, 64, 0.6)",
+                "rgba(153, 102, 255, 0.6)",
+              ],
+              borderColor: [
+                "rgba(255, 99, 132, 1)",
+                "rgba(255, 206, 86, 1)",
+                "rgba(54, 162, 235, 1)",
+                "rgba(255, 159, 64, 1)",
+                "rgba(153, 102, 255, 1)",
+              ],
+              borderWidth: 1,
+            },
+          ],
+        }
       : null;
 
   // Generate Unique Beneficiaries Graph Data with Drilldown
@@ -2815,7 +2832,14 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
                   color="primary"
                   startIcon={<DownloadIcon />}
                   onClick={() => {
-                    setDownloadDataTypes(["Beneficiary", "Vision_Enhancement", "Training", "Comprehensive_Low_Vision_Evaluation", "Counselling_Education", "Community_Screening"]);
+                    setDownloadDataTypes([
+                      "Beneficiary",
+                      "Vision_Enhancement",
+                      "Training",
+                      "Comprehensive_Low_Vision_Evaluation",
+                      "Counselling_Education",
+                      "Community_Screening",
+                    ]);
                     setDownloadGenders([...selectedGenders]);
                     setDownloadMdvi([...selectedMdvi]);
                     setDownloadMinAge(minAge);
@@ -3065,7 +3089,9 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       <Dialog open={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: "bold" }}>Customize Download</DialogTitle>
         <DialogContent dividers>
-          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>Data Type</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+            Data Type
+          </Typography>
           <FormGroup sx={{ mb: 2 }}>
             {[
               { key: "Beneficiary", label: "Beneficiaries" },
@@ -3089,20 +3115,28 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
             ))}
           </FormGroup>
 
-          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>Gender</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+            Gender
+          </Typography>
           <FormGroup row sx={{ mb: 2 }}>
             {["Male", "Female", "Other"].map((g) => (
               <FormControlLabel
                 key={g}
                 control={
-                  <Checkbox checked={downloadGenders.includes(g)} onChange={() => toggleDownloadGender(g)} size="small" />
+                  <Checkbox
+                    checked={downloadGenders.includes(g)}
+                    onChange={() => toggleDownloadGender(g)}
+                    size="small"
+                  />
                 }
                 label={g}
               />
             ))}
           </FormGroup>
 
-          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>MDVI</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+            MDVI
+          </Typography>
           <FormGroup row sx={{ mb: 2 }}>
             {["Yes", "No"].map((m) => (
               <FormControlLabel
@@ -3115,7 +3149,9 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
             ))}
           </FormGroup>
 
-          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>Age Range</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+            Age Range
+          </Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               label="Min Age"

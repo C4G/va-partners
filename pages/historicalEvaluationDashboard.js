@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { readUser } from "./api/user";
 import Navigation from "./navigation/Navigation";
 import UserProfileCard from "./components/UserProfileCard";
@@ -262,7 +263,7 @@ export default function HistoricalEvaluationPage(props) {
 export async function getServerSideProps(ctx) {
   const query = ctx.query;
   const service = query.service;
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     console.log("session is null");
     return {

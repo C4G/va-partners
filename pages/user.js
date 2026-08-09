@@ -1,7 +1,8 @@
 import { getCounsellingType } from "@/pages/api/counsellingType";
 import { getTrainingSubTypes } from "@/pages/api/trainingSubType";
 import { getTrainingTypes } from "@/pages/api/trainingType";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/router";
 import { useState } from "react";
@@ -368,7 +369,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding">
+                <button type="submit" className="btn text-primary nopadding ms-2">
                   <Check2 />
                 </button>
               </div>
@@ -413,7 +414,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding">
+                <button type="submit" className="btn text-primary nopadding ms-2">
                   <Check2 />
                 </button>
               </div>
@@ -458,7 +459,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
+                <button type="submit" className="btn text-primary nopadding text-align-right ms-2">
                   <Check2 />
                 </button>
               </div>
@@ -472,7 +473,7 @@ function UserPage(props) {
           {formatDate(formData["dateOfBirth"].toString().split("T")[0])}
           <button
             type="button"
-            className="btn btn-link btn-sm text-primary ms-2 text-align-right"
+            className="btn btn-link btn-sm text-primary text-align-right ms-2"
             onClick={() => handleEditClick("dateOfBirth")}
           >
             <Pencil />
@@ -498,7 +499,7 @@ function UserPage(props) {
               </div>
               <div className="col-md-1 nopadding" />
               <div className="col-md-2 nopadding">
-                <button type="submit" className="btn text-primary ms-2 nopadding text-align-right">
+                <button type="submit" className="btn text-primary nopadding text-align-right ms-2">
                   <Check2 />
                 </button>
               </div>
@@ -610,7 +611,7 @@ function UserPage(props) {
 }
 
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     return {
       redirect: {

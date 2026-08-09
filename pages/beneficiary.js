@@ -6,11 +6,12 @@ import UserList from "./components/UserList";
 import Navigation from "./navigation/Navigation";
 import Layout from "./components/layout";
 import { useRouter } from "next/router";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
 import { readUser } from "./api/user";
 
 export async function getServerSideProps(ctx) {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
   if (session == null) {
     console.log("session is null");
     return {
@@ -110,7 +111,7 @@ function HomePage(props) {
       <div className="content">
         <Navigation user={props.user} />
         <div className="container">
-          <h1 className="mt-4 mb-4 text-center">Search / Register</h1>
+          <h1 className="mb-4 mt-4 text-center">Search / Register</h1>
           <div className="beneficiary-child-container">
             <SearchBar onSearch={searchUsers} />
             {users.length > 0 && choice === "search" && <UserList users={users} />}

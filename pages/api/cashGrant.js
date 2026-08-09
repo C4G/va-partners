@@ -34,9 +34,7 @@ async function addData(req, res) {
 
         openingBalance: parseFloatOrNull(body.openingBalance),
         amountReceived: parseFloatOrNull(body.amountReceived),
-        dateOfReceipt: body.dateOfReceipt
-          ? new Date(body.dateOfReceipt)
-          : null,
+        dateOfReceipt: body.dateOfReceipt ? new Date(body.dateOfReceipt) : null,
         remarks: body.remarks || null,
         closingBalance: parseFloatOrNull(body.closingBalance),
 
@@ -72,14 +70,12 @@ async function readData(req, res) {
   try {
     const { quarter, year, hospitalId } = req.query;
 
+    // `hospital` holds the hospital id as a string; there is no relation to include.
     const cashGrants = await prisma.cashGrant.findMany({
       where: {
         ...(quarter && { quarter }),
         ...(year && { year: Number(year) }),
-        ...(hospitalId && { hospitalId: String(hospitalId) }),
-      },
-      include: {
-        hospitalId: true,
+        ...(hospitalId && { hospital: String(hospitalId) }),
       },
       orderBy: {
         createdAt: "desc",
@@ -108,9 +104,7 @@ async function updateData(req, res) {
         budgetHead: body.budgetHead,
         openingBalance: parseFloatOrNull(body.openingBalance),
         amountReceived: parseFloatOrNull(body.amountReceived),
-        dateOfReceipt: body.dateOfReceipt
-          ? new Date(body.dateOfReceipt)
-          : null,
+        dateOfReceipt: body.dateOfReceipt ? new Date(body.dateOfReceipt) : null,
         remarks: body.remarks || null,
         closingBalance: parseFloatOrNull(body.closingBalance),
 
