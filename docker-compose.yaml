@@ -15,6 +15,12 @@ services:
       - NEXT_PUBLIC_NEXTAUTH_URL=${NEXT_PUBLIC_NEXTAUTH_URL:-http://localhost:3000}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      # off on the test app, required on production so a failed dump blocks the migration.
+      - BACKUP_MODE=${BACKUP_MODE:-best-effort}
+      - BACKUP_KEEP=${BACKUP_KEEP:-10}
+      - BACKUP_MYSQLDUMP_OPTS=${BACKUP_MYSQLDUMP_OPTS:-}
+    volumes:
+      - backups:/backups
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
       interval: 2m
@@ -23,3 +29,7 @@ services:
       start_period: 40s
       start_interval: 5s
     restart: unless-stopped
+
+volumes:
+  # Pre-migration dumps; must outlive the container, hence a named volume.
+  backups:

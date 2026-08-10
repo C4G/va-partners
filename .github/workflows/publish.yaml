@@ -79,6 +79,15 @@ jobs:
             exit 1
           }
 
+          # BACKUP_MODE=required in the ci overlay, so this also proves the dump was usable.
+          docker compose -p smoke logs app | grep -q "Backup complete" || {
+            echo "::error::entrypoint did not take a pre-migration backup"
+            docker compose -p smoke logs app
+            exit 1
+          }
+
+          docker exec "$app" sh -c 'gzip -t /backups/pre-migrate-*.sql.gz && ls -la /backups'
+
           docker exec "$app" wget -qO- http://localhost:3000/api/health
           echo "OK — pulled image migrated and served"
 
