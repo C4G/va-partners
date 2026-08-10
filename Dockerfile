@@ -33,11 +33,14 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# openssl for Prisma engines, wget for the container healthcheck
-RUN apk add --no-cache openssl wget
+# mariadb-connector-c is not optional: it supplies the caching_sha2_password plugin MySQL 8 authenticates with.
+RUN apk add --no-cache openssl wget mariadb-client mariadb-connector-c
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+
+# A named volume mounted here inherits this ownership, so the dump can be written as nextjs.
+RUN mkdir -p /backups && chown nextjs:nodejs /backups
 
 # Copy the standalone build output with correct ownership
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
