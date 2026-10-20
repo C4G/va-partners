@@ -1,0 +1,25 @@
+pages/components/GraphCustomizer.js
+  s_fb784a1334b315::t_9f5edd4454977b 186-188
+  s_fb784a1334b315::t_615dc9bd88d050 1,15-16,78-79,148-152,181-185,189-194,247,273,367,480-489
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8f4e92d61f1016fd70079377e40e77fb8b9b7723",
+  "prompts": {},
+  "humans": {
+    "h_d5b6f744415839": {
+      "author": "Justin McLellan <jmclellan9@gatech.edu>"
+    }
+  },
+  "sessions": {
+    "s_fb784a1334b315": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15789-06fd-7d12-819f-0273c474df7e",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Justin McLellan <jmclellan9@gatech.edu>"
+    }
+  }
+}
