@@ -1061,6 +1061,9 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
           credentials: "include",
         });
         const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "You do not have access to download this report.");
+        }
         const records = result.records || [];
 
         if (records.length === 0) {
@@ -1095,7 +1098,7 @@ export default function Summary({ user, hospitals, trainingTypes, trainingSubTyp
       setDownloadModalOpen(false);
     } catch (err) {
       console.error("Download error:", err);
-      alert("An error occurred while downloading the report.");
+      alert(err.message || "An error occurred while downloading the report.");
     } finally {
       setIsDownloading(false);
     }
