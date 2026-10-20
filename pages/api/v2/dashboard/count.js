@@ -1,6 +1,7 @@
 import prisma from "@/utils/api/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
+import { authorizeDashboardHospitalIds } from "@/utils/api/dashboard-access";
 import { updateUserLastModified } from "@/utils/api/update-user-last-modified";
 import moment from "moment";
 
@@ -146,25 +147,22 @@ export default async function handler(req, res) {
   await updateUserLastModified("dashboard/count", req.method, session.user.email);
 
   if (req.method === "GET") {
-    return readData(req, res);
+    const access = await authorizeDashboardHospitalIds(req, res, session);
+    if (access.error) {
+      return res.status(access.status).json({ error: access.error });
+    }
+    return readData(req, res, access.hospitalIds);
   } else {
     return res.status(405).json({ error: "Method not allowed" });
   }
 }
 
-export async function readData(req, res) {
+export async function readData(req, res, authorizedHospitalIds) {
   try {
-    const { hospitalIds, startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
-
-    // Parse hospital IDs
-    let parsedHospitalIds = [];
-    if (hospitalIds) {
-      parsedHospitalIds = Array.isArray(hospitalIds)
-        ? hospitalIds.map(Number).filter((id) => !isNaN(id))
-        : [Number(hospitalIds)].filter((id) => !isNaN(id));
-    }
-    if (parsedHospitalIds.length === 0) {
-      return res.status(400).json({ error: "hospitalIds is required and must be valid integers" });
+    const { startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
+    const parsedHospitalIds = authorizedHospitalIds;
+    if (!Array.isArray(parsedHospitalIds) || parsedHospitalIds.length === 0) {
+      return res.status(400).json({ error: "hospitalIds is required and must contain valid integers" });
     }
 
     // Date range

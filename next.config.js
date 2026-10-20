@@ -4,7 +4,7 @@ const nextConfig = {
   // Emit a self-contained server build (.next/standalone) for the Docker image.
   output: "standalone",
   images: {
-    domains: ["visionaid.org"],
+    remotePatterns: [{ protocol: "https", hostname: "visionaid.org" }],
   },
   webpack(config) {
     config.experiments = { ...config.experiments, topLevelAwait: true };

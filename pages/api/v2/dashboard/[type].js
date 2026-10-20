@@ -6,6 +6,7 @@
 
 import prisma from "@/utils/api/client";
 import { enrichBeneficiariesWithDiagnosis } from "@/utils/api/diagnosis-helper";
+import { authorizeDashboardHospitalIds } from "@/utils/api/dashboard-access";
 import moment from "moment";
 
 export default async function handler(req, res) {
@@ -23,26 +24,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Bad request" });
   }
 
-  if (req.method == "GET") {
-    return await readData(req, res);
-  } else {
+  if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  const access = await authorizeDashboardHospitalIds(req, res);
+  if (access.error) {
+    return res.status(access.status).json({ error: access.error });
+  }
+
+  return readData(req, res, access.hospitalIds);
 }
 
-export async function readData(req, res) {
+export async function readData(req, res, authorizedHospitalIds) {
   try {
     const { type } = req.query;
-    const { hospitalIds, offset, limit, startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
-
-    // Parse hospitalIds
-    let parsedHospitalIds;
-    if (Array.isArray(hospitalIds)) {
-      parsedHospitalIds = hospitalIds.map((id) => parseInt(id, 10));
-    } else if (typeof hospitalIds === "string") {
-      parsedHospitalIds = [parseInt(hospitalIds, 10)];
-    } else {
-      parsedHospitalIds = undefined;
+    const { offset, limit, startDate, endDate, genders, mdvis, min_age, max_age } = req.query;
+    const parsedHospitalIds = authorizedHospitalIds;
+    if (!Array.isArray(parsedHospitalIds) || parsedHospitalIds.length === 0) {
+      return res.status(400).json({ error: "hospitalIds is required and must contain valid integers" });
     }
 
     // Parse other query parameters

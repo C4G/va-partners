@@ -113,8 +113,7 @@ in `pages/api/hello.js`.
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated
 as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and
-load Inter, a custom Google Font.
+This project self-hosts Roboto through [`@fontsource/roboto`](https://fontsource.org/fonts/roboto).
 
 ## Learn More
 
