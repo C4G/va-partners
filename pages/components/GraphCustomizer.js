@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import DownloadIcon from "@mui/icons-material/Download";
 import {
   FormControl,
@@ -12,6 +12,8 @@ import {
   FormControlLabel,
   Tooltip,
   IconButton,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import moment from "moment";
 
@@ -73,6 +75,8 @@ function GraphCustomizer({
   genders,
   mdvis,
 }) {
+  const [downloadError, setDownloadError] = useState("");
+
   // Define quarters covering 3 months each
   const quarters = [
     { label: "Q4", startMonth: 9, endMonth: 11 }, // Oct - Dec
@@ -141,6 +145,11 @@ function GraphCustomizer({
         .filter((hospital) => selectedHospitals.includes(hospital.name))
         .map((hospital) => hospital.id);
 
+      if (hospitalIds.length === 0) {
+        setDownloadError("Select at least one hospital before downloading the report.");
+        return;
+      }
+
       const params = {
         hospitalIds,
         startDate: adjustedStartDate.toISOString(),
@@ -169,7 +178,20 @@ function GraphCustomizer({
       );
 
       const responses = await Promise.all(apiCalls);
-      const finalResult = await Promise.all(responses.map((res) => (res.json ? res.json().catch((err) => err) : res)));
+      const finalResult = await Promise.all(responses.map((response) => response.json().catch(() => null)));
+
+      const failedResponseIndex = responses.findIndex((response) => !response.ok);
+      if (failedResponseIndex !== -1) {
+        const errorMessage = finalResult[failedResponseIndex]?.error;
+        throw new Error(
+          errorMessage || `${types[failedResponseIndex]} request failed (${responses[failedResponseIndex].status}).`
+        );
+      }
+
+      const invalidResultIndex = finalResult.findIndex((result) => !Array.isArray(result?.records));
+      if (invalidResultIndex !== -1) {
+        throw new Error(`The ${types[invalidResultIndex]} report response was invalid.`);
+      }
 
       const allBeneficiaryData = finalResult[0].records.map((record) => ({
         ...record,
@@ -222,7 +244,7 @@ function GraphCustomizer({
       const wced = XLSX.utils.json_to_sheet(counsellingEducationData);
 
       // Clean up the nested beneficiary object and reorder/rename columns
-      const cleanedCsData = communityScreeningData.map(record => {
+      const cleanedCsData = communityScreeningData.map((record) => {
         const newRecord = {};
 
         for (const key in record) {
@@ -248,7 +270,7 @@ function GraphCustomizer({
 
       const wahd = XLSX.utils.json_to_sheet([]);
 
-      var all_sheets = [wref, wben, wved, wlved, wclve, wed, wtd, wahd, wcsd]
+      var all_sheets = [wref, wben, wved, wlved, wclve, wed, wtd, wahd, wcsd];
 
       // --- NEW WIDTH LOGIC START ---
       const defaultColumnWidth = 12;
@@ -342,6 +364,7 @@ function GraphCustomizer({
       XLSX.writeFile(wb, filename);
     } catch (error) {
       console.error("Error generating report:", error);
+      setDownloadError(error.message || "An error occurred while downloading the report.");
     }
   };
 
@@ -454,6 +477,16 @@ function GraphCustomizer({
           </Tooltip>
         </Grid>
       </Grid>
+      <Snackbar
+        open={Boolean(downloadError)}
+        autoHideDuration={6000}
+        onClose={() => setDownloadError("")}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setDownloadError("")} severity="error" variant="filled" sx={{ width: "100%" }}>
+          {downloadError}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
